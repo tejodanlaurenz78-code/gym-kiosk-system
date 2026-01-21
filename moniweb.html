@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script type="module">
+        // 1. IMPORT: Notice we added 'get' and 'child' here
+        // 'get' allows us to fetch data ONCE (not a live stream).
+        // 'child' allows us to point to a specific ID folder.
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // 2. CONFIG: Your specific project keys
+        const firebaseConfig = {
+            apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
+            authDomain: "group4-ee960.firebaseapp.com",
+            projectId: "group4-ee960",
+            storageBucket: "group4-ee960.firebasestorage.app",
+            messagingSenderId: "453765398844",
+            appId: "1:453765398844:web:219433f771cfd33b311e39",
+            measurementId: "G-41DZ3175NX"
+        };
+
+        // 3. INITIALIZE
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // 4. EXPORT: Make these tools available to your tracking script
+        window.db = db;
+        window.ref = ref;
+        window.get = get;     // Required to fetch the status
+        window.child = child; // Required to find the specific ID
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PnC Request Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- EXACT FONT IMPORT FROM ADMIN -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Great+Vibes&family=UnifrakturMaguntia&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --pnc-primary: #15803d;
+            --pnc-yellow: #FCD34D;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* --- TIMELINE STYLES --- */
+        .timeline-line {
+            position: absolute;
+            left: 1.25rem;
+            top: 2.5rem;
+            bottom: -1rem;
+            width: 4px;
+            background-color: #e5e7eb;
+            z-index: 0;
+        }
+
+        .step-completed .timeline-line {
+            background-color: #15803d;
+        }
+
+        .timeline-item:last-child .timeline-line {
+            display: none;
+        }
+
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .7;
+            }
+        }
+
+        /* --- FORM STYLES (MATCHING ADMINNN.HTML EXACTLY) --- */
+        .form-container {
+            background: white;
+            border: 1px solid #000;
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-title {
+            font-weight: bold;
+            text-align: center;
+            padding: 0.25rem;
+            text-transform: uppercase;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .line-input {
+            border-bottom: 1px solid #000;
+            width: 100%;
+            outline: none;
+            background: transparent;
+            padding-left: 0.25rem;
+        }
+
+        .input-disabled {
+            background-color: #E5E7EB;
+            /* Or transparent for monitoring view if preferred */
+            cursor: not-allowed;
+            color: #6B7280;
+            font-style: italic;
+            border: none;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .form-border {
+            border: 2px solid black;
+        }
+
+        .form-border-r {
+            border-right: 2px solid black;
+        }
+
+        .form-border-b {
+            border-bottom: 2px solid black;
+        }
+
+        /* Filled data styling */
+        .filled-data {
+            font-weight: bold;
+            color: black;
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+        }
+
+        /* Tab Styles */
+        .tab-btn.active {
+            border-bottom: 4px solid #15803d;
+            color: #15803d;
+            font-weight: 800;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-[#15803d] p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-3xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div
+                    class="bg-white text-[#15803d] w-10 h-10 p-2 rounded-full flex items-center justify-center font-black text-lg shadow-sm">
+                    PnC</div>
+                <div>
+                    <h1 class="text-white font-bold text-lg leading-tight">Request Monitoring</h1>
+                    <p class="text-green-100 text-xs">University of Cabuyao</p>
+                </div>
+            </div>
+            <button onclick="resetView()" class="text-white text-sm hover:underline" id="backBtn"
+                style="display:none;">&larr; Track Another</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow p-4 md:p-8">
+
+        <!-- View 1: Search / Landing -->
+        <div id="searchView" class="max-w-lg mx-auto bg-white rounded-2xl shadow-xl overflow-hidden mt-10">
+            <div class="bg-green-50 p-8 text-center border-b border-green-100">
+                <div class="w-20 h-20 bg-white rounded-2xl mx-auto flex items-center justify-center shadow-md mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-[#15803d]" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-extrabold text-gray-800">Track Your Request</h2>
+                <p class="text-gray-500 mt-2 text-sm">Enter the Transaction ID from your receipt or scan the QR Code.
+                </p>
+            </div>
+            <div class="p-8">
+                <label class="block text-sm font-bold text-gray-700 mb-2">Transaction ID</label>
+                <div class="flex gap-2">
+                    <input type="text" id="trackInput"
+                        class="flex-grow p-3 border-2 border-gray-300 rounded-lg focus:border-[#15803d] focus:ring-[#15803d] outline-none font-mono uppercase text-lg"
+                        placeholder="RES-XXXXXX" value="RES-101123">
+                    <button class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200" title="Simulate Scan QR">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                    </button>
+                </div>
+                <button onclick="trackRequest()"
+                    class="w-full bg-[#15803d] text-white font-bold py-4 rounded-lg mt-6 shadow-lg hover:bg-green-800 transition transform active:scale-95">
+                    Track Status
+                </button>
+
+                <div class="mt-6 text-center">
+                    <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Try ID:
+                        <b>RES-101123</b></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- View 2: Status Dashboard -->
+        <div id="statusView" class="hidden max-w-3xl mx-auto space-y-6">
+
+            <!-- Status Card -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden border-t-8" id="statusCardBorder">
+                <div class="p-6 md:p-8">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                        <div>
+                            <p class="text-gray-500 font-mono text-sm" id="displayId">ID: --</p>
+                            <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900 mt-1 leading-tight"
+                                id="displayActivity">Activity Name</h2>
+                        </div>
+                        <div id="statusBadge"
+                            class="mt-4 md:mt-0 px-4 py-2 rounded-full font-bold text-sm bg-gray-100 text-gray-600">
+                            Loading...
+                        </div>
+                    </div>
+
+                    <!-- Notification Area -->
+                    <div id="notificationArea"
+                        class="hidden mb-8 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-bold text-yellow-800" id="notifTitle">Attention Needed</h3>
+                                <div class="mt-1 text-sm text-yellow-700" id="notifMessage">--</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Actions Row -->
+                    <div class="flex flex-wrap gap-3 mb-6" id="userActionsRow">
+                        <button onclick="showDetailsModal()"
+                            class="flex-1 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-lg font-bold shadow-sm hover:bg-gray-50 transition text-sm flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            View Submission Documents
+                        </button>
+                        <button id="cancelRequestBtn" onclick="cancelRequest()"
+                            class="hidden flex-1 bg-white border border-red-200 text-red-600 py-2 px-4 rounded-lg font-bold shadow-sm hover:bg-red-50 transition text-sm flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Cancel Request
+                        </button>
+                    </div>
+
+                    <!-- Details Grid -->
+                    <div
+                        class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <div>
+                            <p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Date</p>
+                            <p class="font-semibold text-gray-800" id="displayDate">--</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Time</p>
+                            <p class="font-semibold text-gray-800" id="displayTime">--</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Venue</p>
+                            <p class="font-semibold text-gray-800 truncate" id="displayVenue">--</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Filed By</p>
+                            <p class="font-semibold text-gray-800" id="displayUser">--</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approval Timeline -->
+            <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+                <h3 class="text-lg font-bold text-gray-800 mb-6 border-b pb-2">Approval Progress</h3>
+                <div class="space-y-0" id="timelineContainer">
+                    <!-- Timeline items injected via JS -->
+                </div>
+            </div>
+
+            <!-- Action Area (Download) -->
+            <div id="downloadArea" class="hidden text-center">
+                <button
+                    class="bg-[#15803d] text-white text-lg font-bold px-8 py-3 rounded-full shadow-lg hover:bg-green-700 hover:shadow-xl transition flex items-center justify-center mx-auto space-x-2 animate-bounce">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Download Approved Permit</span>
+                </button>
+                <p class="text-gray-500 text-sm mt-3">Present this digital permit to the guard/custodian.</p>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- TABBED DETAILS MODAL -->
+    <div id="detailsModal"
+        class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-4xl max-h-[95vh] flex flex-col shadow-2xl relative">
+
+            <!-- Modal Header with Tabs -->
+            <div class="bg-white border-b sticky top-0 z-20 rounded-t-xl">
+                <div class="flex justify-between items-center p-4 bg-[#15803d] text-white rounded-t-xl">
+                    <h3 class="text-lg font-bold">Submission Documents</h3>
+                    <button onclick="closeDetailsModal()"
+                        class="hover:text-gray-200 text-2xl font-bold">&times;</button>
+                </div>
+                <div class="flex border-b bg-gray-50">
+                    <button onclick="switchModalTab('summary')"
+                        class="tab-btn active flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 transition"
+                        id="tab-summary">Summary</button>
+                    <button onclick="switchModalTab('form1')"
+                        class="tab-btn flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 transition"
+                        id="tab-form1">Proposal Letter</button>
+                    <button onclick="switchModalTab('form2')"
+                        class="tab-btn flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 transition"
+                        id="tab-form2">Request Form</button>
+                </div>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="flex-grow overflow-y-auto p-0 bg-gray-100" style="min-height: 400px;">
+
+                <!-- TAB 1: SUMMARY -->
+                <div id="content-summary" class="p-6 space-y-6">
+                    <!-- Basic Info -->
+                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-3">General Information</h4>
+                        <div class="grid grid-cols-2 gap-y-4 text-sm">
+                            <div>
+                                <p class="text-gray-500 text-xs">Transaction ID</p>
+                                <p class="font-bold font-mono" id="modalId">--</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-xs">Date of Filing</p>
+                                <p class="font-bold" id="modalFilingDate">--</p>
+                            </div>
+                            <div class="col-span-2">
+                                <p class="text-gray-500 text-xs">Activity Name</p>
+                                <p class="font-bold text-lg text-[#15803d]" id="modalActivityName">--</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-xs">Department</p>
+                                <p class="font-bold" id="modalDept">--</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-xs">Requester</p>
+                                <p class="font-bold" id="modalRequester">--</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logistics -->
+                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-3">Logistics & Venue</h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between border-b pb-2">
+                                <span class="text-gray-600">Date & Time</span>
+                                <span class="font-bold text-right"><span id="modalDate"></span> <br> <span
+                                        id="modalTime" class="text-xs text-gray-500"></span></span>
+                            </div>
+                            <div class="flex justify-between border-b pb-2">
+                                <span class="text-gray-600">Venue(s)</span>
+                                <span class="font-bold text-right" id="modalVenues">--</span>
+                            </div>
+                            <div class="flex justify-between border-b pb-2">
+                                <span class="text-gray-600">Participants</span>
+                                <span class="font-bold text-right"><span id="modalInternal">0</span> Internal / <span
+                                        id="modalExternal">0</span> External</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Equipment -->
+                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-3">Equipment Requested</h4>
+                        <ul class="list-disc list-inside text-sm text-gray-800 space-y-1" id="modalEquipmentList">
+                            <!-- Items injected here -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- TAB 2: PROPOSAL LETTER -->
+                <div id="content-form1" class="hidden p-4 md:p-8">
+                    <div id="form1Container" class="bg-white shadow-lg mx-auto max-w-3xl border border-gray-300">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- TAB 3: REQUEST FORM -->
+                <div id="content-form2" class="hidden p-4 md:p-8">
+                    <div class="bg-white shadow-lg mx-auto max-w-3xl p-8 border border-black" id="form2Container">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 text-white text-center p-4 text-xs mt-auto">
+        <p>&copy; 2025 Pamantasan ng Cabuyao - PMGSD. All rights reserved.</p>
+    </footer>
+
+    <script>
+
+
+
+        let currentRequestData = null;
+        const workflow = [
+            { key: 'pmOfficer', label: 'VP Admin & Linkages' },
+            { key: 'pmgsdDirector', label: 'OIC-Director PMGSD (Final)' }
+        ];
+
+        function trackRequest() {
+            const inputId = document.getElementById('trackInput').value.trim();
+            if (!inputId) return alert("Please enter a Transaction ID.");
+
+            // Check Firebase
+            const dbRef = window.ref(window.db);
+
+            window.get(window.child(dbRef, `requests/${inputId}`))
+                .then((snapshot) => {
+                    if (snapshot.exists()) {
+                        currentRequestData = snapshot.val();
+                        renderStatusView(currentRequestData);
+                    } else {
+                        alert("No request found with this ID.");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error fetching data:", error);
+                    alert("Network error. Please try again.");
+                });
+        }
+
+        function renderStatusView(request) {
+            document.getElementById('displayId').innerText = `Transaction ID: ${request.id}`;
+            document.getElementById('displayActivity').innerText = request.activityName;
+            document.getElementById('displayDate').innerText = request.activityDate;
+            document.getElementById('displayTime').innerText = request.time;
+            document.getElementById('displayVenue').innerText = request.venue.join(', ');
+            document.getElementById('displayUser').innerText = request.requestedBy;
+
+            const statusBadge = document.getElementById('statusBadge');
+            const border = document.getElementById('statusCardBorder');
+            const dlArea = document.getElementById('downloadArea');
+            const notifArea = document.getElementById('notificationArea');
+            const cancelBtn = document.getElementById('cancelRequestBtn');
+
+            statusBadge.className = "mt-4 md:mt-0 px-4 py-2 rounded-full font-bold text-sm";
+            border.className = "bg-white rounded-2xl shadow-xl overflow-hidden border-t-8";
+            dlArea.classList.add('hidden');
+            notifArea.classList.add('hidden');
+            cancelBtn.classList.add('hidden');
+
+            if (request.status.includes('Approved (Completed)')) {
+                statusBadge.innerText = "✅ APPROVED";
+                statusBadge.classList.add('bg-green-100', 'text-green-800');
+                border.classList.add('border-green-600');
+                dlArea.classList.remove('hidden');
+            } else if (request.status.includes('Rejected')) {
+                statusBadge.innerText = "❌ REJECTED";
+                statusBadge.classList.add('bg-red-100', 'text-red-800');
+                border.classList.add('border-red-600');
+            } else if (request.status.includes('Cancelled')) {
+                statusBadge.innerText = "🚫 CANCELLED";
+                statusBadge.classList.add('bg-gray-200', 'text-gray-600');
+                border.classList.add('border-gray-400');
+            } else if (request.status.includes('Appointment')) {
+                statusBadge.innerText = "📅 APPOINTMENT SET";
+                statusBadge.classList.add('bg-yellow-100', 'text-yellow-800', 'animate-pulse');
+                border.classList.add('border-yellow-500');
+                notifArea.classList.remove('hidden');
+                cancelBtn.classList.remove('hidden');
+                document.getElementById('notifTitle').innerText = "Action Required: Appointment Set";
+                let apptRemarks = "Please check with the office.";
+                for (const key in request.approvals) {
+                    if (request.approvals[key].status === 'Appointment Set') {
+                        apptRemarks = `${request.approvals[key].remarks} (${request.approvals[key].name})`;
+                    }
+                }
+                document.getElementById('notifMessage').innerText = apptRemarks;
+            } else {
+                statusBadge.innerText = "⏳ IN PROGRESS";
+                statusBadge.classList.add('bg-blue-100', 'text-blue-800');
+                border.classList.add('border-blue-500');
+                cancelBtn.classList.remove('hidden');
+            }
+
+            renderTimeline(request);
+            document.getElementById('searchView').classList.add('hidden');
+            document.getElementById('statusView').classList.remove('hidden');
+            document.getElementById('backBtn').style.display = 'block';
+        }
+
+        function renderTimeline(request) {
+            const container = document.getElementById('timelineContainer');
+            container.innerHTML = '';
+            let previousCompleted = true;
+            workflow.forEach((step, index) => {
+                const approvalData = request.approvals[step.key];
+                const status = approvalData.status;
+                let icon = ''; let colorClass = ''; let textColor = ''; let subText = approvalData.name || 'Waiting...';
+                let dateText = approvalData.date ? new Date(approvalData.date).toLocaleDateString() : '';
+
+                if (status === 'Approved') {
+                    icon = `<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                    colorClass = 'bg-[#15803d]'; textColor = 'text-gray-800';
+                } else if (status === 'Appointment Set') {
+                    icon = `<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    colorClass = 'bg-yellow-500'; textColor = 'text-gray-800'; subText = `<span class="text-yellow-600 font-bold">Appointment Required</span>`; previousCompleted = false;
+                } else if (status === 'Rejected') {
+                    icon = `<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+                    colorClass = 'bg-red-600'; textColor = 'text-red-600'; previousCompleted = false;
+                } else {
+                    icon = `<div class="w-2 h-2 bg-gray-400 rounded-full"></div>`;
+                    colorClass = previousCompleted && !request.status.includes('Cancelled') ? 'bg-blue-100 border-2 border-blue-500 animate-pulse-slow' : 'bg-gray-200';
+                    textColor = 'text-gray-400';
+                    if (previousCompleted && !request.status.includes('Cancelled')) { icon = `<div class="w-2 h-2 bg-blue-500 rounded-full"></div>`; textColor = 'text-blue-600 font-bold'; subText = 'In Review...'; }
+                    previousCompleted = false;
+                }
+
+                container.innerHTML += `
+                    <div class="timeline-item relative flex items-start pb-8 ${status === 'Approved' ? 'step-completed' : ''}">
+                        <div class="timeline-line"></div>
+                        <div class="relative z-10 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full ${colorClass} shadow-sm transition-all duration-500">${icon}</div>
+                        <div class="ml-4 flex-grow">
+                            <div class="flex justify-between items-center"><h4 class="text-base font-bold ${textColor}">${step.label}</h4><span class="text-xs text-gray-400 font-mono">${dateText}</span></div>
+                            <p class="text-sm text-gray-500">${subText}</p>
+                            ${status === 'Appointment Set' ? `<p class="text-xs text-yellow-700 bg-yellow-50 p-2 mt-1 rounded border border-yellow-200 italic">"${approvalData.remarks}"</p>` : ''}
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // --- DETAILS MODAL FUNCTIONS ---
+
+        function showDetailsModal() {
+            if (!currentRequestData) return;
+
+            // Populate Summary
+            document.getElementById('modalId').innerText = currentRequestData.id;
+            document.getElementById('modalFilingDate').innerText = currentRequestData.filingDate;
+            document.getElementById('modalActivityName').innerText = currentRequestData.activityName;
+            document.getElementById('modalDept').innerText = currentRequestData.department;
+            document.getElementById('modalRequester').innerText = currentRequestData.requestedBy;
+            document.getElementById('modalDate').innerText = currentRequestData.activityDate;
+            document.getElementById('modalTime').innerText = currentRequestData.time;
+            document.getElementById('modalVenues').innerText = currentRequestData.venue.join(', ');
+            document.getElementById('modalInternal').innerText = currentRequestData.internalParticipants || 0;
+            document.getElementById('modalExternal').innerText = currentRequestData.externalParticipants || 0;
+
+            const list = document.getElementById('modalEquipmentList');
+            list.innerHTML = '';
+            if (currentRequestData.equipment && currentRequestData.equipment.length > 0) {
+                currentRequestData.equipment.forEach(item => {
+                    let text = typeof item === 'object' ? `${item.count}x ${item.name} (${item.type || ''})` : item;
+                    list.innerHTML += `<li>${text}</li>`;
+                });
+            } else {
+                list.innerHTML = '<li class="text-gray-400 italic">No equipment requested</li>';
+            }
+
+            // Generate Forms
+            document.getElementById('form1Container').innerHTML = renderForm1Content(currentRequestData);
+            document.getElementById('form2Container').innerHTML = renderForm2Content(currentRequestData);
+
+            switchModalTab('summary');
+            document.getElementById('detailsModal').classList.remove('hidden');
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').classList.add('hidden');
+        }
+
+        function switchModalTab(tabName) {
+            ['summary', 'form1', 'form2'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('active');
+            });
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        function cancelRequest() {
+            if (!confirm("Are you sure you want to CANCEL this request? This action cannot be undone.")) return;
+            currentRequestData.status = 'Cancelled by User';
+            alert("Request has been cancelled.");
+            renderStatusView(currentRequestData);
+        }
+
+        function resetView() {
+            document.getElementById('searchView').classList.remove('hidden');
+            document.getElementById('statusView').classList.add('hidden');
+            document.getElementById('backBtn').style.display = 'none';
+            document.getElementById('trackInput').value = '';
+            currentRequestData = null;
+        }
+
+        // --- FORM GENERATORS (MATCHING ADMINNN.HTML EXACTLY) ---
+
+        function getStatusClass(status) {
+            if (status.includes('Approved') || status.includes('Submitted') || status.includes('Verified')) return 'bg-green-100 text-green-800';
+            if (status.includes('Rejected')) return 'bg-red-100 text-red-800';
+            if (status.includes('Appointment')) return 'bg-yellow-200 text-yellow-900 border border-yellow-400';
+            if (status.includes('Pending')) return 'bg-yellow-100 text-yellow-800';
+            return 'bg-gray-100 text-gray-800';
+        }
+
+        function formatApprovalBox(approval) {
+            let name = approval ? (approval.name || '---') : '---';
+            let date = (approval && approval.date) ? new Date(approval.date).toLocaleDateString() : '---';
+            let status = approval ? approval.status : 'Pending';
+            let statusClass = getStatusClass(status);
+
+            return `
+                <div class="text-center p-2 rounded ${status === 'Approved' || status === 'Verified' || status === 'Submitted' ? 'bg-green-50' : status === 'Rejected' ? 'bg-red-50' : 'bg-yellow-50'} border border-gray-300">
+                    <p class="text-sm font-semibold">${name}</p>
+                    <p class="text-xs italic">${date}</p>
+                    <span class="inline-block mt-1 px-2 text-xs font-bold rounded-full ${statusClass}">${status}</span>
+                </div>
+            `;
+        }
+
+        function renderForm1Content(request) {
+            const deptHeadApproval = request.approvals.deptHead;
+            const ovpasApproval = request.approvals.ovpas;
+            const oevpApproval = request.approvals.oevp;
+            const oupApproval = request.approvals.oup;
+
+            const logoUrl = 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c8/Pamantasan_ng_Cabuyao_Logo.png/220px-Pamantasan_ng_Cabuyao_Logo.png';
+            const purpose = request.form1 ? request.form1.purpose : "Purpose not specified.";
+
+            function getLetterSignature(title, approval) {
+                return `
+                    <div class="mt-4 mb-2">
+                        <div class="font-bold uppercase text-black">${approval.name}</div>
+                        <div class="text-xs font-semibold text-gray-600">${title}</div>
+                        <div class="text-[10px] text-green-700 font-bold">APPROVED - ${new Date(approval.date).toLocaleDateString()}</div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="bg-white p-8 text-gray-900 font-sans leading-relaxed relative">
+                    <div class="relative mb-10">
+                         <img src="${logoUrl}" alt="PnC Logo" class="w-24 h-24 object-contain absolute left-0">
+                        <div class="text-center relative z-10">
+                            <p class="text-xs font-serif text-gray-700">Republic of the Philippines</p>
+                            <h1 class="text-5xl tracking-wide my-1 text-[#005728]" style="font-family: 'UnifrakturMaguntia', cursive;">University of Cabuyao</h1>
+                            <p class="text-sm font-bold tracking-widest text-gray-700 uppercase font-serif">(PAMANTASAN NG CABUYAO)</p>
+                            <p class="text-sm italic text-gray-700 mt-1 font-serif">Property Management and General Service Department</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5 font-serif">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
+                        </div>
+                    </div>
+                    <div class="mb-8"><p class="text-xs text-gray-500">(${request.id})</p><p class="mt-2 text-sm">${new Date(request.filingDate).toLocaleDateString()}</p></div>
+                    <div class="mb-6"><p class="font-bold text-sm">Dr. Roberto F. Rañola Jr.</p><p class="text-sm">OIC-University President</p></div>
+                    <div class="mb-8 pl-8"><p class="text-sm"><span class="font-bold">Thru: Mr. Colin B. Garcia</span></p><p class="text-sm ml-9">Vice President for Administration and Linkages</p></div>
+                    <div class="text-sm text-justify space-y-4">
+                        <p class="indent-8">I am writing to respectfully request your approval for the activity titled "<span class="font-bold uppercase">${request.activityName}</span>". The purpose is ${purpose.toLowerCase()}.</p>
+                        <p class="indent-8">We would like to reserve <span class="font-bold">${request.venue.join(' and ')}</span> on <span class="font-bold">${new Date(request.activityDate).toLocaleDateString()}</span>.</p>
+                        <p class="indent-8">Thank you very much for your favorable response.</p>
+                    </div>
+                    <div class="mt-8"><p class="text-sm mb-4">Respectfully yours,</p><div class="mt-4"><p class="font-bold uppercase">${request.requestedBy}</p><p class="text-sm text-gray-600">Requester / ${request.department}</p></div></div>
+                    <div class="mt-10 pt-4 border-t-2 border-dashed border-gray-200">
+                        <p class="text-xs font-bold text-gray-400 uppercase mb-4">Administrative Action / Signatories</p>
+                        <div class="grid grid-cols-2 gap-y-6 gap-x-8">
+                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Department / Division Head', deptHeadApproval)}</div>
+                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('OVPAS', ovpasApproval)}</div>
+                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Office of the Executive VP', oevpApproval)}</div>
+                            <div><p class="text-xs italic text-gray-500 font-bold">Approved / Disapproved:</p>${getLetterSignature('Office of the University President', oupApproval)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderForm2Content(request) {
+            const deptHeadApproval = request.approvals.deptHead;
+            const pmOfficer = request.approvals.pmOfficer;
+            const pmgsdDirector = request.approvals.pmgsdDirector;
+
+            const chairData = request.equipment.find(e => typeof e === 'object' && e.name === 'Chair');
+            const tableData = request.equipment.find(e => typeof e === 'object' && e.name === 'Table');
+            const venues = ['Gym Stage / Court', 'Multi-Purpose Hall', 'Library', 'Cafeteria', 'Classroom #', 'Laboratory #', 'Others:'];
+
+            return `
+                <div class="form-header flex items-center justify-center space-x-4 mb-2">
+                    <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-500">[LOGO]</div>
+                    <div class="text-center">
+                         <p class="text-[10px] text-right w-full mb-2">PNC:AF-FO-15 rev.0 02012023</p>
+                        <h2 class="text-xl font-bold text-black font-sans">Pamantasan ng Cabuyao</h2>
+                        <p class="text-xs font-bold">(University of Cabuyao)</p>
+                        <p class="font-bold text-gray-800 mt-1 text-sm italic">Property Management and General Services Department</p>
+                    </div>
+                </div>
+                <div class="form-title text-black text-center font-bold text-lg mb-4">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
+                <div class="p-0 space-y-4 text-sm text-black">
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div class="flex-1"><label class="font-normal">Transaction Number</label><div class="line-input input-disabled filled-data">${request.id}</div></div>
+                        <div class="flex-1"><label class="font-normal">Date of Filing</label><div class="line-input input-disabled filled-data">${request.filingDate}</div></div>
+                        <div class="flex-1"><label class="font-normal">Department</label><div class="line-input input-disabled filled-data">${request.department}</div></div>
+                    </div>
+                    <div class="flex flex-wrap gap-4">
+                         <div class="flex-1"><label class="font-normal">Activity Date</label><div class="line-input input-disabled filled-data">${request.activityDate}</div></div>
+                         <div class="flex-1"><label class="font-normal">Time</label><div class="line-input input-disabled filled-data">${request.time}</div></div>
+                    </div>
+                     <div><label class="font-normal">Activity Name</label><div class="line-input input-disabled filled-data">${request.activityName}</div></div>
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div class="w-1/3">Participants:</div>
+                        <div class="flex-1 flex items-center"><span class="mr-2">Internal</span><div class="line-input input-disabled w-20 text-center filled-data">${request.internalParticipants || 0}</div></div>
+                        <div class="flex-1 flex items-center"><span class="mr-2">External</span><div class="line-input input-disabled w-20 text-center filled-data">${request.externalParticipants || 0}</div></div>
+                    </div>
+                </div>
+                <div class="form-border form-border-b mt-4 flex">
+                    <div class="w-48 font-bold p-2 form-border-r">Venue Reservation</div>
+                    <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                         ${venues.map(v => `<label class="flex items-center space-x-2"><input type="checkbox" disabled ${request.venue.includes(v) ? 'checked' : ''} class="form-checkbox h-3 w-3 accent-black"> <span class="${request.venue.includes(v) ? 'font-bold text-black' : ''}">${v}</span></label>`).join('')}
+                    </div>
+                </div>
+                 <div class="form-border flex mb-4">
+                    <div class="w-48 font-bold p-2 form-border-r">Equipment</div>
+                    <div class="flex-1 p-2 text-sm">
+                        <p class="flex items-center gap-2">Chair # <span class="border-b border-black w-16 text-center font-bold text-black">${chairData ? chairData.count : ''}</span></p>
+                        <p class="flex items-center gap-2">Table # <span class="border-b border-black w-16 text-center font-bold text-black">${tableData ? tableData.count : ''}</span></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-4 text-center mt-8 text-xs">
+                    <div><p class="font-bold mb-8">Requested by:</p><div class="border-b border-black font-bold uppercase text-black">${request.requestedBy}</div></div>
+                    <div><p class="font-bold mb-8">Reviewed by:</p><div class="border-b border-black font-bold uppercase text-black">${deptHeadApproval.name}</div><p class="mt-1">Dept Head</p></div>
+                    <div><p class="font-bold mb-8">Recommended by:</p>${formatApprovalBox(pmOfficer)}<p class="mt-1">Mr. Colin B. Garcia</p></div>
+                    <div><p class="font-bold mb-8">Approved by:</p>${formatApprovalBox(pmgsdDirector)}<p class="mt-1">Alfredo Glenn H. Beaño</p></div>
+                </div>
+            `;
+        }
+        window.onload = () => {
+            // 1. Look at the URL address bar
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // 2. Try to get the "id" value (e.g., RES-123456)
+            const idFromUrl = urlParams.get('id');
+
+            if (idFromUrl) {
+                // 3. IF FOUND: Auto-fill the input box
+                document.getElementById('trackInput').value = idFromUrl;
+
+                // 4. Auto-click the track button (runs the search)
+                trackRequest();
+            } else {
+                // 5. IF NOT FOUND: Just stay on the search screen
+                // (You might need to make sure the search view is visible here)
+                document.getElementById('searchView').classList.remove('hidden');
+            }
+        };
+        // --- FIREBASE DEBUGGER ---
+        // Add this to ALL THREE PAGES (kioskkiosk.html, adminnn.html, moniweb.html)
+
+        function debugFirebase() {
+            console.log("=== FIREBASE DATA CHECK ===");
+
+            // Check if Firebase is properly set up
+            if (!window.db || !window.ref || !window.get) {
+                console.error("❌ Firebase not initialized properly!");
+                console.log("Available:", {
+                    db: !!window.db,
+                    ref: !!window.ref,
+                    get: !!window.get
+                });
+                return;
+            }
+
+            // Get all requests from Firebase
+            const requestsRef = window.ref(window.db, 'requests');
+            window.get(requestsRef).then((snapshot) => {
+                const data = snapshot.val();
+
+                if (!data) {
+                    console.log("📭 Firebase 'requests' folder is EMPTY");
+                    console.log("No reservations have been submitted yet.");
+                    return;
+                }
+
+                console.log(`📊 Found ${Object.keys(data).length} reservation(s):`);
+                console.log("IDs:", Object.keys(data));
+
+                // Show structure of first request (as example)
+                const firstId = Object.keys(data)[0];
+                console.log("---");
+                console.log(`📄 Example structure of: ${firstId}`);
+                console.log(JSON.stringify(data[firstId], null, 2));
+
+                // Check what each website expects vs what exists
+                console.log("---");
+                console.log("🔍 Data Structure Check:");
+
+                const example = data[firstId];
+                const checks = {
+                    "Has 'id' field": !!example.id,
+                    "Has 'status' field": !!example.status,
+                    "Has 'approvals' object": !!example.approvals,
+                    "Has 'activityName'": !!example.activityName,
+                    "Has 'requestedBy'": !!example.requestedBy,
+                };
+
+                Object.entries(checks).forEach(([check, exists]) => {
+                    console.log(`${exists ? '✅' : '❌'} ${check}`);
+                });
+
+            }).catch((error) => {
+                console.error("🔥 Firebase error:", error);
+            });
+        }
+
+        // Make it available in browser console
+        window.debugFirebase = debugFirebase;
+        console.log("📢 Debug tool ready! Type 'debugFirebase()' in console.");
+    </script>
+</body>
+
+</html>

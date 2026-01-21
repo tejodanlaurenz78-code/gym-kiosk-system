@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        // FIXED LINE BELOW: Added 'update' and 'onValue'
+        import { getDatabase, ref, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
+            authDomain: "group4-ee960.firebaseapp.com",
+            projectId: "group4-ee960",
+            storageBucket: "group4-ee960.firebasestorage.app",
+            messagingSenderId: "453765398844",
+            appId: "1:453765398844:web:219433f771cfd33b311e39",
+            measurementId: "G-41DZ3175NX"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.db = db;
+        window.set = set;
+        window.ref = ref;
+        window.update = update;
+        window.onValue = onValue; 
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PnC Gymnasium Approver Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Added UnifrakturMaguntia for the Header Old English font -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Great+Vibes&family=UnifrakturMaguntia&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* MATCHED THEME: Kiosk Green */
+            --pnc-primary: #15803d;
+            --pnc-yellow: #FCD34D;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* Form Template Styles */
+        .form-container {
+            background: white;
+            border: 1px solid #000;
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-title {
+            font-weight: bold;
+            text-align: center;
+            padding: 0.25rem;
+            text-transform: uppercase;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .line-input {
+            border-bottom: 1px solid #000;
+            width: 100%;
+            outline: none;
+            background: transparent;
+            padding-left: 0.25rem;
+        }
+
+        /* Dashboard specific styles */
+        .kiosk-btn {
+            background-color: var(--pnc-primary);
+            color: white;
+            padding: 1rem 2rem;
+            font-size: 1.25rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .kiosk-btn:hover {
+            background-color: #166534;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .kiosk-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Read-Only Input */
+        .input-disabled {
+            background-color: #E5E7EB;
+            cursor: not-allowed;
+            color: #6B7280;
+            font-style: italic;
+            border: none;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .request-item:hover {
+            background-color: #F0FDF4;
+            /* Green-50 hover */
+            cursor: pointer;
+        }
+
+        /* Custom Table Borders for Form 2 to match image */
+        .form-border {
+            border: 2px solid black;
+        }
+
+        .form-border-r {
+            border-right: 2px solid black;
+        }
+
+        .form-border-b {
+            border-bottom: 2px solid black;
+        }
+
+        /* Filled data styling */
+        .filled-data {
+            font-weight: bold;
+            color: black;
+            /* Changed from blue to black */
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+        }
+
+        /* Sidebar Transitions */
+        #sidebarPanel {
+            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+        }
+
+        #sidebarPanel.hidden-sidebar {
+            width: 0 !important;
+            min-width: 0 !important;
+            flex-basis: 0 !important;
+            transform: translateX(-100%);
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+        }
+
+        /* Calendar Styles */
+        .calendar-day {
+            min-height: 100px;
+            border: 1px solid #e5e7eb;
+            padding: 4px;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background-color: #f9fafb;
+        }
+
+        .calendar-event {
+            font-size: 0.75rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin-bottom: 2px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .event-confirmed {
+            background-color: #dcfce7;
+            color: #166534;
+            border-left: 3px solid #15803d;
+        }
+
+        .event-temporary {
+            background-color: #fef3c7;
+            color: #92400e;
+            border-left: 3px solid #d97706;
+        }
+
+        /* Editable Mode Styles */
+        .editable-day:hover {
+            background-color: #dcfce7 !important;
+            cursor: cell;
+            position: relative;
+        }
+
+        .editable-day:hover::after {
+            content: '+ Plot Event';
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            font-size: 10px;
+            background-color: #15803d;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-start justify-center p-4">
+
+    <!-- Landing/Login View -->
+    <div id="landingView" class="w-full max-w-lg mt-20 p-8 bg-white rounded-2xl shadow-2xl border-t-8 border-[#15803d]">
+        <div class="text-center mb-8">
+            <div
+                class="w-16 h-16 mx-auto bg-[#15803d] text-white p-2 rounded-full flex items-center justify-center font-black text-2xl mb-3">
+                PnC</div>
+            <h1 class="text-3xl font-extrabold text-[#15803d]">Approver Login</h1>
+            <p class="text-gray-500 mt-1">Please enter your credentials.</p>
+        </div>
+
+        <div class="space-y-4">
+            <!-- Username Input -->
+            <div>
+                <label for="usernameInput" class="block text-sm font-bold text-gray-700 mb-1">Username</label>
+                <input type="text" id="usernameInput"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition"
+                    placeholder="e.g. colin or alfredo">
+            </div>
+
+            <!-- Password Input -->
+            <div>
+                <label for="passwordInput" class="block text-sm font-bold text-gray-700 mb-1">Password</label>
+                <input type="password" id="passwordInput"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition"
+                    placeholder="e.g. admin">
+            </div>
+
+            <button onclick="handleLogin()" class="kiosk-btn w-full text-lg py-3 mt-6 font-bold shadow-lg">
+                Login
+            </button>
+
+            <div class="text-center mt-4">
+                <p class="text-sm text-gray-600">Don't have an account? <button onclick="showView('signupView')"
+                        class="text-[#15803d] font-bold hover:underline">Create an Account</button></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup View -->
+    <div id="signupView"
+        class="hidden w-full max-w-lg mt-20 p-8 bg-white rounded-2xl shadow-2xl border-t-8 border-[#15803d]">
+        <div class="text-center mb-8">
+            <div
+                class="w-16 h-16 mx-auto bg-[#15803d] text-white p-2 rounded-full flex items-center justify-center font-black text-2xl mb-3">
+                PnC</div>
+            <h1 class="text-3xl font-extrabold text-[#15803d]">Create Account</h1>
+            <p class="text-gray-500 mt-1">Register as a new approver.</p>
+        </div>
+
+        <div class="space-y-4">
+            <!-- Role Selection -->
+            <div>
+                <label for="signupRole" class="block text-sm font-bold text-gray-700 mb-1">Select Role</label>
+                <select id="signupRole"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition">
+                    <option value="" disabled selected>--- Choose Role ---</option>
+                    <option value="pmOfficer">VP Admin & Linkages</option>
+                    <option value="pmgsdDirector">OIC-Director PMGSD</option>
+                </select>
+            </div>
+
+            <!-- Username Input -->
+            <div>
+                <label for="signupUsername" class="block text-sm font-bold text-gray-700 mb-1">Username</label>
+                <input type="text" id="signupUsername"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition"
+                    placeholder="Choose a username">
+            </div>
+
+            <!-- Password Input -->
+            <div>
+                <label for="signupPassword" class="block text-sm font-bold text-gray-700 mb-1">Password</label>
+                <input type="password" id="signupPassword"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition"
+                    placeholder="Create a password">
+            </div>
+
+            <button onclick="handleSignup()" class="kiosk-btn w-full text-lg py-3 mt-6 font-bold shadow-lg">
+                Register
+            </button>
+
+            <div class="text-center mt-4">
+                <p class="text-sm text-gray-600">Already have an account? <button onclick="showView('landingView')"
+                        class="text-[#15803d] font-bold hover:underline">Back to Login</button></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard View -->
+    <div id="approverView"
+        class="hidden w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden min-h-[800px] flex flex-col">
+
+        <header
+            class="bg-[#15803d] p-4 border-b-4 border-green-600 flex justify-between items-center sticky top-0 z-20 shadow-md">
+            <div class="flex items-center space-x-3">
+                <!-- Sidebar Toggle Button -->
+                <button onclick="toggleSidebar()"
+                    class="text-white p-2 rounded hover:bg-green-700 focus:outline-none mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
+                <div
+                    class="bg-white text-[#15803d] w-10 h-10 p-2 rounded flex items-center justify-center font-black text-lg">
+                    PnC</div>
+                <h1 class="text-2xl font-extrabold text-white">Gym Reservation Approver Dashboard</h1>
+            </div>
+
+            <div class="text-right">
+                <button onclick="showView('landingView')"
+                    class="text-xs text-green-100 hover:text-white transition font-semibold">
+                    &larr; Logout
+                </button>
+                <p class="text-sm font-semibold text-white" id="approverRoleDisplay">Current Role: --</p>
+                <p class="text-xs text-green-100" id="approverNameDisplay">Welcome, --</p>
+            </div>
+        </header>
+
+        <main class="flex-grow flex overflow-hidden relative">
+
+            <!-- Left Panel: Sidebar (Requests Only) - HIDDEN BY DEFAULT -->
+            <div id="sidebarPanel"
+                class="w-1/3 min-w-[300px] bg-gray-50 border-r border-gray-200 flex flex-col h-full hidden-sidebar">
+                <div class="p-4 bg-white border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-[#15803d]">Pending Requests (<span id="pendingCount">0</span>)
+                    </h2>
+                </div>
+                <div id="sidebarRequests" class="p-4 overflow-y-auto flex-1">
+                    <div id="requestList" class="space-y-2">
+                        <!-- Request items rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Main Content Area -->
+            <div class="flex-1 bg-white p-6 overflow-y-auto h-full relative" id="mainContentArea">
+
+                <!-- Initial / Empty State - REMOVED, replaced by calendar as default -->
+                <div id="initialView" class="hidden text-center py-40">
+                    <!-- (Placeholder kept in DOM but hidden by default) -->
+                </div>
+
+                <!-- Request Review View -->
+                <div id="reviewView" class="hidden flex flex-col h-full">
+                    <div class="flex justify-between items-center pb-3 border-b mb-4">
+                        <h3 class="text-2xl font-bold text-gray-800" id="activityTitleHeader">Activity: --</h3>
+                        <div class="flex items-center space-x-2">
+                            <!-- Back to Calendar Button -->
+                            <button onclick="loadCalendarView()"
+                                class="text-sm text-gray-500 hover:text-blue-600 underline mr-4">Back to
+                                Calendar</button>
+                            <span id="currentStatusTag"
+                                class="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">Status:
+                                Pending...</span>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Approval Actions -->
+                    <div id="approvalActionsContainer"></div>
+
+                    <!-- Supporting Doc Trigger -->
+                    <div id="supportingDocTrigger" class="mb-4">
+                        <button onclick="openForm1Modal()"
+                            class="flex items-center space-x-2 text-[#15803d] hover:text-green-800 font-bold bg-green-50 px-4 py-2 rounded-lg border border-green-200 w-full justify-center hover:bg-green-100 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>📄 View Approved Proposal Letter (Form 1)</span>
+                        </button>
+                    </div>
+
+                    <!-- Form Container (Read-Only) -->
+                    <div id="readOnlyFormContainer" class="flex-grow overflow-y-auto relative pb-20">
+                        <div class="form-container shadow-xl border-gray-300">
+                            <!-- Read-only form content goes here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Main View (DEFAULT VISIBLE) -->
+                <div id="calendarMainView" class="hidden h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <!-- Removed the status badge span from here -->
+                        <h2 class="text-3xl font-bold text-gray-800">Facility Calendar</h2>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeCalendarMonth(-1)"
+                                class="p-2 bg-gray-200 rounded hover:bg-gray-300">&lt;</button>
+                            <span id="calendarMonthYear" class="font-bold text-xl w-40 text-center">Month Year</span>
+                            <button onclick="changeCalendarMonth(1)"
+                                class="p-2 bg-gray-200 rounded hover:bg-gray-300">&gt;</button>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Grid -->
+                    <div class="flex-grow border-t border-l border-gray-300">
+                        <div
+                            class="grid grid-cols-7 text-center bg-gray-100 font-bold py-2 border-b border-gray-300 border-r">
+                            <div>Sun</div>
+                            <div>Mon</div>
+                            <div>Tue</div>
+                            <div>Wed</div>
+                            <div>Thu</div>
+                            <div>Fri</div>
+                            <div>Sat</div>
+                        </div>
+                        <div id="calendarGrid" class="grid grid-cols-7 h-full overflow-y-auto">
+                            <!-- Days rendered here -->
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex gap-4 text-sm text-gray-600">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-[#dcfce7] border border-[#15803d] mr-2"></div> Confirmed Event
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-[#fef3c7] border border-[#d97706] mr-2"></div> Temporary Plot
+                        </div>
+                        <div id="editHint" class="hidden flex items-center ml-auto font-bold text-[#15803d]">👉 Click a
+                            day to Add, click an Event to Edit/Delete</div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- FORM 1 MODAL (Hidden by default) -->
+        <div id="form1Modal"
+            class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
+                <div class="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
+                    <h3 class="text-xl font-bold text-gray-800">Supporting Document: Proposal Letter</h3>
+                    <button onclick="closeForm1Modal()"
+                        class="text-gray-500 hover:text-red-600 text-2xl font-bold">&times;</button>
+                </div>
+                <div class="p-4 bg-gray-100">
+                    <div id="form1ModalContent" class="bg-white shadow-lg mx-auto" style="max-width: 800px;">
+                        <!-- Form 1 Content Injected Here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: PLOT EVENT MODAL -->
+        <div id="eventModal"
+            class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg w-full max-w-md shadow-xl overflow-hidden animate-fade-in-down">
+                <div class="bg-[#15803d] p-4 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-white" id="eventModalTitle">Plot New Event</h3>
+                    <button onclick="closeEventModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <input type="hidden" id="eventDateHidden">
+                    <input type="hidden" id="eventIdHidden"> <!-- Added to track edit mode -->
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Event Title <span
+                                class="text-red-500">*</span></label>
+                        <input type="text" id="eventTitleInput"
+                            class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none"
+                            placeholder="e.g., Basketball Practice">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Date</label>
+                            <input type="text" id="eventDateDisplay" disabled
+                                class="w-full bg-gray-100 border border-gray-300 p-2 rounded text-gray-500 cursor-not-allowed">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Time</label>
+                            <!-- Changed to Dropdowns -->
+                            <div class="flex space-x-1">
+                                <select id="eventStartTime"
+                                    class="w-1/2 border border-gray-300 p-2 rounded text-xs focus:ring-green-500 outline-none"></select>
+                                <span class="self-center">-</span>
+                                <select id="eventEndTime"
+                                    class="w-1/2 border border-gray-300 p-2 rounded text-xs focus:ring-green-500 outline-none"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Description / Purpose</label>
+                        <textarea id="eventDescInput" rows="3"
+                            class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none"
+                            placeholder="Additional details..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Status</label>
+                        <select id="eventStatusInput"
+                            class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none">
+                            <option value="confirmed">Confirmed</option>
+                            <option value="temporary">Temporary Plot</option>
+                        </select>
+                    </div>
+
+                    <div class="flex justify-between pt-4 border-t items-center">
+                        <button id="btnDeleteEvent" onclick="deleteCurrentEvent()"
+                            class="px-4 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-bold hidden">🗑
+                            Delete</button>
+                        <div class="flex space-x-2 ml-auto">
+                            <button onclick="closeEventModal()"
+                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Cancel</button>
+                            <button onclick="saveEvent()"
+                                class="px-4 py-2 bg-[#15803d] text-white rounded hover:bg-green-700 font-bold shadow transition">Save
+                                Event</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: APPOINTMENT MODAL -->
+        <div id="appointmentModal"
+            class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg w-full max-w-md shadow-xl overflow-hidden animate-fade-in-down">
+                <div class="bg-yellow-500 p-4 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-white">📅 Set Appointment</h3>
+                    <button onclick="closeAppointmentModal()"
+                        class="text-white hover:text-gray-200 text-2xl">&times;</button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <p class="text-sm text-gray-600 mb-2">Schedule a meeting with the requester before proceeding.</p>
+                    <input type="hidden" id="apptRequestId">
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Date</label>
+                        <input type="date" id="apptDate"
+                            class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Time</label>
+                        <input type="time" id="apptTime"
+                            class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Reason / Instruction</label>
+                        <textarea id="apptReason" rows="3"
+                            class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none">Please meet me in the office to discuss the details of your request.</textarea>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-4 border-t">
+                        <button onclick="closeAppointmentModal()"
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Cancel</button>
+                        <button onclick="submitAppointment()"
+                            class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 font-bold shadow transition">Set
+                            Appointment</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- CONFIGURATION & GLOBAL STATE ---
+        let currentRoleKey = null;
+        let currentUserName = '';
+
+        // NEW FLOW: Colin Garcia (PM Officer role) -> Alfredo Beaño (Director)
+        // Form 1 is pre-approved by Dept Head/OVPAS/OEVP/OUP
+        const approvalOrder = ['pmOfficer', 'pmgsdDirector'];
+
+        const roleLabels = {
+            pmOfficer: 'VP Admin & Linkages (Recommending)',
+            pmgsdDirector: 'OIC-Director PMGSD (Approving)' // CHANGED FROM PMGS Dept. Director
+        };
+
+        const userDetails = {
+            pmOfficer: 'Mr. Colin B. Garcia',
+            pmgsdDirector: 'Alfredo Glenn H. Beaño'
+        };
+
+        // LOGIN CREDENTIALS (Changed to let for Signup functionality)
+        let userCredentials = {
+            'colin': { role: 'pmOfficer', password: 'admin' },
+            'alfredo': { role: 'pmgsdDirector', password: 'admin' }
+        };
+
+        // --- CALENDAR DATA & STATE ---
+        let calendarMonth = new Date().getMonth();
+        let calendarYear = new Date().getFullYear();
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        // Mock Events for Calendar
+        let calendarEvents = [
+            { id: 1, title: 'Robotics Competition', date: '2026-01-05', time: '1:00 PM - 5:00 PM', status: 'confirmed', description: 'Annual College Robotics Competition for College of Engineering' },
+            { id: 2, title: 'Christmas Party', date: '2025-12-28', time: '10:00 AM - 4:00 PM', status: 'confirmed', description: 'Annual Christmas Outreach Program by SAO' },
+            { id: 3, title: 'Maintenance', date: '2025-12-15', time: '8:00 AM - 12:00 PM', status: 'temporary', description: 'General Maintenance' }
+        ];
+
+        // --- VIEW MANAGEMENT ---
+
+        function showView(viewId) {
+            // Hide all main views
+            document.getElementById('landingView').classList.add('hidden');
+            document.getElementById('signupView').classList.add('hidden');
+            document.getElementById('approverView').classList.add('hidden');
+
+            // Show requested view
+            document.getElementById(viewId).classList.remove('hidden');
+
+            // Special styling for approver dashboard
+            if (viewId === 'approverView') {
+                document.getElementById('approverView').classList.add('w-full', 'max-w-7xl', 'flex');
+            } else {
+                document.getElementById('approverView').classList.remove('w-full', 'max-w-7xl', 'flex');
+            }
+        }
+
+        function handleLogin() {
+            const username = document.getElementById('usernameInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
+
+            if (!username || !password) return customAlert('Please enter both username and password.');
+
+            const user = userCredentials[username];
+
+            if (user && user.password === password) {
+                // Success
+                currentRoleKey = user.role;
+                // If it's a known user, use the fancy name, otherwise use the username as fallback
+                currentUserName = userDetails[currentRoleKey] || `User: ${username}`;
+
+                document.getElementById('approverRoleDisplay').innerText = `Current Role: ${roleLabels[currentRoleKey]}`;
+                document.getElementById('approverNameDisplay').innerText = `Welcome, ${currentUserName.split('(')[0].trim()}`;
+
+                document.getElementById('initialView').classList.add('hidden');
+                document.getElementById('reviewView').classList.add('hidden');
+
+                renderRequestList();
+
+                showView('approverView');
+
+                populateTimeDropdowns();
+                loadCalendarView();
+
+                // Clear fields
+                document.getElementById('usernameInput').value = '';
+                document.getElementById('passwordInput').value = '';
+
+            } else {
+                customAlert('❌ Invalid Username or Password.\nPlease try again.');
+            }
+        }
+
+        function handleSignup() {
+            const role = document.getElementById('signupRole').value;
+            const username = document.getElementById('signupUsername').value.trim();
+            const password = document.getElementById('signupPassword').value.trim();
+
+            if (!role) return customAlert('Please select a role.');
+            if (!username) return customAlert('Please choose a username.');
+            if (!password) return customAlert('Please create a password.');
+
+            if (userCredentials[username]) {
+                return customAlert('⚠️ Username already exists. Please choose another.');
+            }
+
+            // Register User
+            userCredentials[username] = { role: role, password: password };
+
+            // Provide a display name for the new user if it's one of the standard roles, mostly for demo consistency
+            if (!userDetails[role]) {
+                // Should not happen with fixed select, but good for safety
+                userDetails[role] = `New User (${username})`;
+            }
+
+            customAlert('✅ Account created successfully!\nPlease log in.');
+
+            // Clear fields
+            document.getElementById('signupRole').selectedIndex = 0;
+            document.getElementById('signupUsername').value = '';
+            document.getElementById('signupPassword').value = '';
+
+            showView('landingView');
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebarPanel');
+            sidebar.classList.toggle('hidden-sidebar');
+        }
+
+        // --- CALENDAR LOGIC ---
+
+        function loadCalendarView() {
+            document.getElementById('initialView').classList.add('hidden');
+            document.getElementById('reviewView').classList.add('hidden');
+
+            const calView = document.getElementById('calendarMainView');
+            calView.classList.remove('hidden');
+            calView.classList.add('flex');
+
+            // Removed logic that updated the 'calendarModeBadge' since the element was removed.
+            // Keeping only the edit hint logic.
+            const editHint = document.getElementById('editHint');
+
+            if (currentRoleKey === 'pmgsdDirector') {
+                editHint.classList.remove('hidden');
+            } else {
+                editHint.classList.add('hidden');
+            }
+
+            renderMainCalendar();
+        }
+
+        function changeCalendarMonth(delta) {
+            calendarMonth += delta;
+            if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+            else if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+            renderMainCalendar();
+        }
+
+        function renderMainCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const monthYearDisplay = document.getElementById('calendarMonthYear');
+
+            monthYearDisplay.innerText = `${monthNames[calendarMonth]} ${calendarYear}`;
+            grid.innerHTML = '';
+
+            const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+            const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+
+            // Empty slots
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div class="border-b border-r border-gray-200 bg-gray-50"></div>`;
+            }
+
+            // Days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayEvents = calendarEvents.filter(e => e.date === dateStr);
+                const isEditable = currentRoleKey === 'pmgsdDirector';
+
+                let dayHtml = `<div class="calendar-day border-b border-r border-gray-200 p-2 min-h-[100px] relative ${isEditable ? 'editable-day' : ''}" 
+                                onclick="${isEditable ? `addEvent('${dateStr}')` : ''}">
+                                <span class="font-bold text-gray-700">${day}</span>`;
+
+                dayEvents.forEach(ev => {
+                    const colorClass = ev.status === 'confirmed' ? 'event-confirmed' : 'event-temporary';
+                    // Updated: onclick triggers editEvent if editable, else showEventDetailsFromCalendar
+                    dayHtml += `<div class="calendar-event ${colorClass} mt-1 text-xs p-1 rounded truncate" 
+                                     onclick="event.stopPropagation(); ${isEditable ? `editEvent('${ev.id}')` : `showEventDetailsFromCalendar('${ev.id}')`}">
+                                    ${ev.title}
+                                </div>`;
+                });
+
+                dayHtml += `</div>`;
+                grid.innerHTML += dayHtml;
+            }
+        }
+
+        // ADDED: Shows modal with event details
+        function showEventDetailsFromCalendar(eventId) {
+            const event = calendarEvents.find(e => e.id == eventId);
+            if (!event) return;
+
+            customAlert(`📅 Event Details:\n\n📌 Title: ${event.title}\n📝 Purpose: ${event.description || 'N/A'}\n🕒 Time: ${event.time || 'Not Set'}\n🗓️ Date: ${event.date}`);
+        }
+
+        // --- EVENT PLOTTING & EDITING LOGIC ---
+
+        function populateTimeDropdowns() {
+            const startSelect = document.getElementById('eventStartTime');
+            const endSelect = document.getElementById('eventEndTime');
+            startSelect.innerHTML = '';
+            endSelect.innerHTML = '';
+
+            const times = [];
+            // Generate times from 7:00 AM to 10:00 PM in 30 min intervals
+            let startHour = 7;
+            let endHour = 22; // 10 PM
+
+            for (let h = startHour; h <= endHour; h++) {
+                for (let m = 0; m < 60; m += 30) {
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    const displayH = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+                    const displayM = m === 0 ? '00' : '30';
+                    const timeStr = `${displayH}:${displayM} ${ampm}`;
+                    times.push(timeStr);
+                }
+            }
+
+            times.forEach(t => {
+                startSelect.innerHTML += `<option value="${t}">${t}</option>`;
+                endSelect.innerHTML += `<option value="${t}">${t}</option>`;
+            });
+
+            // Defaults
+            startSelect.value = "8:00 AM";
+            endSelect.value = "5:00 PM";
+        }
+
+        function addEvent(dateStr) {
+            if (currentRoleKey !== 'pmgsdDirector') return;
+
+            // Reset Modal for New Event
+            document.getElementById('eventModalTitle').innerText = "Plot New Event";
+            document.getElementById('eventDateHidden').value = dateStr;
+            document.getElementById('eventDateDisplay').value = dateStr;
+            document.getElementById('eventIdHidden').value = ""; // Clear ID
+            document.getElementById('eventTitleInput').value = '';
+            document.getElementById('eventDescInput').value = '';
+            document.getElementById('eventStatusInput').value = 'confirmed';
+
+            // Hide Delete Button
+            document.getElementById('btnDeleteEvent').classList.add('hidden');
+
+            // Reset Time Defaults
+            document.getElementById('eventStartTime').value = "8:00 AM";
+            document.getElementById('eventEndTime').value = "5:00 PM";
+
+            // Show modal
+            document.getElementById('eventModal').classList.remove('hidden');
+            document.getElementById('eventTitleInput').focus();
+        }
+
+        function editEvent(id) {
+            if (currentRoleKey !== 'pmgsdDirector') return;
+            const event = calendarEvents.find(e => e.id == id);
+            if (!event) return;
+
+            // Populate Modal with Existing Data
+            document.getElementById('eventModalTitle').innerText = "Edit Event";
+            document.getElementById('eventDateHidden').value = event.date;
+            document.getElementById('eventDateDisplay').value = event.date;
+            document.getElementById('eventIdHidden').value = event.id; // Set ID
+
+            document.getElementById('eventTitleInput').value = event.title;
+            document.getElementById('eventDescInput').value = event.description || '';
+            document.getElementById('eventStatusInput').value = event.status;
+
+            // Show Delete Button
+            document.getElementById('btnDeleteEvent').classList.remove('hidden');
+
+            // Parse Time
+            if (event.time && event.time.includes('-')) {
+                const parts = event.time.split('-').map(s => s.trim());
+                if (parts.length === 2) {
+                    // Try to match dropdown values
+                    const startOpt = document.querySelector(`#eventStartTime option[value="${parts[0]}"]`);
+                    const endOpt = document.querySelector(`#eventEndTime option[value="${parts[1]}"]`);
+                    if (startOpt) document.getElementById('eventStartTime').value = parts[0];
+                    if (endOpt) document.getElementById('eventEndTime').value = parts[1];
+                }
+            }
+
+            document.getElementById('eventModal').classList.remove('hidden');
+        }
+
+        function closeEventModal() {
+            document.getElementById('eventModal').classList.add('hidden');
+        }
+
+        function saveEvent() {
+            const id = document.getElementById('eventIdHidden').value;
+            const title = document.getElementById('eventTitleInput').value.trim();
+            const date = document.getElementById('eventDateHidden').value;
+            const desc = document.getElementById('eventDescInput').value.trim();
+            const status = document.getElementById('eventStatusInput').value;
+
+            const start = document.getElementById('eventStartTime').value;
+            const end = document.getElementById('eventEndTime').value;
+            const time = `${start} - ${end}`;
+
+            if (!title) {
+                alert('Please enter an event title.');
+                return;
+            }
+
+            if (id) {
+                // UPDATE Existing
+                const index = calendarEvents.findIndex(e => e.id == id);
+                if (index !== -1) {
+                    calendarEvents[index] = { ...calendarEvents[index], title, date, time, status, description: desc };
+                    customAlert("✅ Event updated successfully!");
+                }
+            } else {
+                // CREATE New
+                calendarEvents.push({
+                    id: Date.now(),
+                    title: title,
+                    date: date,
+                    time: time,
+                    status: status,
+                    description: desc
+                });
+                customAlert("✅ Event successfully plotted!");
+            }
+
+            renderMainCalendar();
+            closeEventModal();
+        }
+
+        function deleteCurrentEvent() {
+            const id = document.getElementById('eventIdHidden').value;
+            if (!id) return;
+
+            if (confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+                const index = calendarEvents.findIndex(e => e.id == id);
+                if (index !== -1) {
+                    calendarEvents.splice(index, 1);
+                    renderMainCalendar();
+                    closeEventModal();
+                    customAlert("🗑 Event deleted.");
+                }
+            }
+        }
+
+        // --- APPOINTMENT MODAL LOGIC ---
+        function openAppointmentModal(requestId) {
+            document.getElementById('apptRequestId').value = requestId;
+            document.getElementById('apptDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('apptReason').value = "Please meet me in the office to discuss the details of your request.";
+            document.getElementById('appointmentModal').classList.remove('hidden');
+        }
+
+        function closeAppointmentModal() {
+            document.getElementById('appointmentModal').classList.add('hidden');
+        }
+
+        function submitAppointment() {
+            const requestId = document.getElementById('apptRequestId').value;
+            const d = document.getElementById('apptDate').value;
+            const t = document.getElementById('apptTime').value;
+            const r = document.getElementById('apptReason').value.trim();
+
+            if (!d || !t || !r) {
+                alert("Please fill in all appointment details.");
+                return;
+            }
+
+            const requestIndex = currentRequests.findIndex(req => req.id === requestId);
+            if (requestIndex === -1) return;
+            const request = currentRequests[requestIndex];
+            const currentStepKey = getCurrentApprovalStep(request);
+
+            if (!currentStepKey) return;
+
+            const details = `Date: ${d}, Time: ${t}, Reason: ${r}`;
+            request.approvals[currentStepKey].name = currentUserName;
+            request.approvals[currentStepKey].status = 'Appointment Set';
+            request.approvals[currentStepKey].remarks = details;
+            request.status = `Appointment Set by ${roleLabels[currentStepKey]}`;
+
+            closeAppointmentModal();
+            customAlert(`📅 Appointment Set.\n${details}\nNotification sent.`);
+
+            renderRequestList();
+            loadRequest(requestId);
+        }
+
+        // --- UTILITY FUNCTIONS ---
+        function getStatusClass(status) {
+            if (status.includes('Approved') || status.includes('Submitted') || status.includes('Verified')) return 'bg-green-100 text-green-800';
+            if (status.includes('Rejected')) return 'bg-red-100 text-red-800';
+            if (status.includes('Appointment')) return 'bg-yellow-200 text-yellow-900 border border-yellow-400';
+            if (status.includes('Pending')) return 'bg-yellow-100 text-yellow-800';
+            return 'bg-gray-100 text-gray-800';
+        }
+
+        function formatApprovalBox(approval, roleKey) {
+            let name = approval ? (approval.name || '---') : '---';
+            let date = (approval && approval.date) ? new Date(approval.date).toLocaleDateString() : '---';
+            let status = approval ? approval.status : 'Pending';
+            let statusClass = getStatusClass(status);
+
+            return `
+                <div class="text-center p-2 rounded ${status === 'Approved' || status === 'Verified' || status === 'Submitted' ? 'bg-green-50' : status === 'Rejected' ? 'bg-red-50' : 'bg-yellow-50'} border border-gray-300">
+                    <p class="text-sm font-semibold">${name}</p>
+                    <p class="text-xs italic">${date}</p>
+                    <span class="inline-block mt-1 px-2 text-xs font-bold rounded-full ${statusClass}">${status}</span>
+                </div>
+            `;
+        }
+
+        function getCurrentApprovalStep(request) {
+            for (const key of approvalOrder) {
+                if (request.approvals[key].status === 'Pending' || request.approvals[key].status === 'Appointment Set') {
+                    return key;
+                }
+            }
+            return null; // All steps completed
+        }
+
+        // --- FORM RENDER FUNCTIONS ---
+
+        function renderForm1Content(request) {
+            const deptHeadApproval = request.approvals.deptHead;
+            const ovpasApproval = request.approvals.ovpas;
+            const oevpApproval = request.approvals.oevp;
+            const oupApproval = request.approvals.oup;
+
+            const logoUrl = 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c8/Pamantasan_ng_Cabuyao_Logo.png/220px-Pamantasan_ng_Cabuyao_Logo.png';
+            const equipmentString = request.equipment.map(e => typeof e === 'object' ? `${e.count} ${e.name}(s)` : e).join(', ');
+
+            function getLetterSignature(title, approval) {
+                return `
+                    <div class="mt-4 mb-2">
+                        <div class="font-bold uppercase text-black">${approval.name}</div>
+                        <div class="text-xs font-semibold text-gray-600">${title}</div>
+                        <div class="text-[10px] text-green-700 font-bold">APPROVED - ${new Date(approval.date).toLocaleDateString()}</div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="bg-white p-8 text-gray-900 font-sans leading-relaxed relative">
+                    <div class="relative mb-10">
+                         <img src="${logoUrl}" alt="PnC Logo" class="w-24 h-24 object-contain absolute left-0">
+                        <div class="text-center relative z-10">
+                            <p class="text-xs font-serif text-gray-700">Republic of the Philippines</p>
+                            <h1 class="text-5xl tracking-wide my-1 text-[#005728]" style="font-family: 'UnifrakturMaguntia', cursive;">University of Cabuyao</h1>
+                            <p class="text-sm font-bold tracking-widest text-gray-700 uppercase font-serif">(PAMANTASAN NG CABUYAO)</p>
+                            <p class="text-sm italic text-gray-700 mt-1 font-serif">Property Management and General Service Department</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5 font-serif">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
+                        </div>
+                    </div>
+                    <div class="mb-8"><p class="text-xs text-gray-500">(${request.id})</p><p class="mt-2 text-sm">${new Date(request.filingDate).toLocaleDateString()}</p></div>
+                    <div class="mb-6"><p class="font-bold text-sm">Dr. Roberto F. Rañola Jr.</p><p class="text-sm">OIC-University President</p></div>
+                    <div class="mb-8 pl-8"><p class="text-sm"><span class="font-bold">Thru: Mr. Colin B. Garcia</span></p><p class="text-sm ml-9">Vice President for Administration and Linkages</p></div>
+                    <div class="text-sm text-justify space-y-4">
+                        <p class="indent-8">I am writing to respectfully request your approval for the activity titled "<span class="font-bold uppercase">${request.activityName}</span>". The purpose is ${request.form1.purpose.toLowerCase()}.</p>
+                        <p class="indent-8">We would like to reserve <span class="font-bold">${request.venue.join(' and ')}</span> on <span class="font-bold">${new Date(request.activityDate).toLocaleDateString()}</span>.</p>
+                        <p class="indent-8">Thank you very much for your favorable response.</p>
+                    </div>
+                    <div class="mt-8"><p class="text-sm mb-4">Respectfully yours,</p><div class="mt-4"><p class="font-bold uppercase">${request.requestedBy}</p><p class="text-sm text-gray-600">Requester / ${request.department}</p></div></div>
+                    <div class="mt-10 pt-4 border-t-2 border-dashed border-gray-200">
+                        <p class="text-xs font-bold text-gray-400 uppercase mb-4">Administrative Action / Signatories</p>
+                        <div class="grid grid-cols-2 gap-y-6 gap-x-8">
+                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Department / Division Head', deptHeadApproval)}</div>
+                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('OVPAS', ovpasApproval)}</div>
+                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Office of the Executive VP', oevpApproval)}</div>
+                            <div><p class="text-xs italic text-gray-500 font-bold">Approved / Disapproved:</p>${getLetterSignature('Office of the University President', oupApproval)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderForm2Content(request) {
+            // Signatories for Form 2
+            const deptHeadApproval = request.approvals.deptHead;
+            const pmOfficer = request.approvals.pmOfficer;
+            const pmgsdDirector = request.approvals.pmgsdDirector;
+
+            // Data Filling
+            const chairData = request.equipment.find(e => typeof e === 'object' && e.name === 'Chair');
+            const tableData = request.equipment.find(e => typeof e === 'object' && e.name === 'Table');
+
+            return `
+                <div class="form-header flex items-center justify-center space-x-4 mb-2">
+                    <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-500">[LOGO]</div>
+                    <div class="text-center">
+                         <p class="text-[10px] text-right w-full mb-2">PNC:AF-FO-15 rev.0 02012023</p>
+                        <h2 class="text-xl font-bold text-black font-sans">Pamantasan ng Cabuyao</h2>
+                        <p class="text-xs font-bold">(University of Cabuyao)</p>
+                        <p class="font-bold text-gray-800 mt-1 text-sm italic">Property Management and General Services Department</p>
+                    </div>
+                </div>
+                <div class="form-title text-black text-center font-bold text-lg mb-4">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
+                <div class="p-0 space-y-4 text-sm text-black">
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div class="flex-1"><label class="font-normal">Transaction Number</label><div class="line-input input-disabled filled-data">${request.id}</div></div>
+                        <div class="flex-1"><label class="font-normal">Date of Filing</label><div class="line-input input-disabled filled-data">${request.filingDate}</div></div>
+                        <div class="flex-1"><label class="font-normal">Department</label><div class="line-input input-disabled filled-data">${request.department}</div></div>
+                    </div>
+                    <div class="flex flex-wrap gap-4">
+                         <div class="flex-1"><label class="font-normal">Activity Date</label><div class="line-input input-disabled filled-data">${request.activityDate}</div></div>
+                         <div class="flex-1"><label class="font-normal">Time</label><div class="line-input input-disabled filled-data">${request.time}</div></div>
+                    </div>
+                     <div><label class="font-normal">Activity Name</label><div class="line-input input-disabled filled-data">${request.activityName}</div></div>
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div class="w-1/3">Participants:</div>
+                        <div class="flex-1 flex items-center"><span class="mr-2">Internal</span><div class="line-input input-disabled w-20 text-center filled-data">${request.internalParticipants}</div></div>
+                        <div class="flex-1 flex items-center"><span class="mr-2">External</span><div class="line-input input-disabled w-20 text-center filled-data">${request.externalParticipants}</div></div>
+                    </div>
+                </div>
+                <div class="form-border form-border-b mt-4 flex">
+                    <div class="w-48 font-bold p-2 form-border-r">Venue Reservation</div>
+                    <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                         ${['Gym Stage / Court', 'Multi-Purpose Hall', 'Library', 'Cafeteria', 'Classroom #', 'Laboratory #', 'Others:'].map(venue =>
+                `<label class="flex items-center space-x-2"><input type="checkbox" disabled ${request.venue.includes(venue) ? 'checked' : ''} class="form-checkbox h-3 w-3 accent-black"> <span class="${request.venue.includes(venue) ? 'font-bold text-black' : ''}">${venue}</span></label>`
+            ).join('')}
+                    </div>
+                </div>
+                 <div class="form-border flex mb-4">
+                    <div class="w-48 font-bold p-2 form-border-r">Equipment</div>
+                    <div class="flex-1 p-2 text-sm">
+                        <p class="flex items-center gap-2">Chair # <span class="border-b border-black w-16 text-center font-bold text-black">${chairData ? chairData.count : ''}</span></p>
+                        <p class="flex items-center gap-2">Table # <span class="border-b border-black w-16 text-center font-bold text-black">${tableData ? tableData.count : ''}</span></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-4 text-center mt-8 text-xs">
+                    <div><p class="font-bold mb-8">Requested by:</p><div class="border-b border-black font-bold uppercase text-black">${request.requestedBy}</div></div>
+                    <div><p class="font-bold mb-8">Reviewed by:</p><div class="border-b border-black font-bold uppercase text-black">${deptHeadApproval.name}</div><p class="mt-1">Dept Head</p></div>
+                    <div><p class="font-bold mb-8">Recommended by:</p>${formatApprovalBox(pmOfficer)}<p class="mt-1">Mr. Colin B. Garcia</p></div>
+                    <div><p class="font-bold mb-8">Approved by:</p>${formatApprovalBox(pmgsdDirector)}<p class="mt-1">Alfredo Glenn H. Beaño</p></div>
+                </div>
+            `;
+        }
+
+        function renderRequestList() {
+            const listEl = document.getElementById('requestList');
+            const pendingCountEl = document.getElementById('pendingCount');
+            listEl.innerHTML = '';
+
+            const currentStepKey = currentRoleKey;
+
+            const myRelevantRequests = currentRequests.filter(r => {
+                const stepKey = getCurrentApprovalStep(r);
+                if (stepKey === null && r.status.includes('Approved')) return true;
+                return stepKey === currentStepKey;
+            });
+
+            const pendingForMe = myRelevantRequests.filter(r => getCurrentApprovalStep(r) === currentStepKey);
+            pendingCountEl.innerText = pendingForMe.length;
+
+            if (myRelevantRequests.length === 0) {
+                listEl.innerHTML = `<p class="text-gray-500 italic p-4">No requests require your action at this time.</p>`;
+            }
+
+            myRelevantRequests.forEach(request => {
+                const stepKey = getCurrentApprovalStep(request);
+                const isActionable = stepKey === currentRoleKey;
+                const actionableClass = isActionable ? 'bg-white hover:border-[#15803d] border border-gray-200' : 'bg-gray-100 opacity-80';
+                let statusText = request.status.includes('Appointment') ? '📅 Appointment Set' : `Review Logistics`;
+
+                listEl.innerHTML += `
+                    <div class="request-item p-3 rounded-lg shadow-sm ${actionableClass} transition active:ring-2 ring-green-500"
+                         onclick="loadRequest('${request.id}')">
+                        <p class="text-base font-bold text-gray-800">${request.activityName}</p>
+                        <p class="text-xs text-gray-500">Date: ${request.activityDate}</p>
+                        <div class="mt-2 flex justify-between items-center">
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${getStatusClass(request.status)}">${isActionable ? statusText : request.status}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function loadRequest(requestId) {
+            activeRequest = currentRequests.find(r => r.id === requestId);
+            if (!activeRequest) return;
+
+            document.getElementById('initialView').classList.add('hidden');
+            document.getElementById('reviewView').classList.remove('hidden');
+            document.getElementById('calendarMainView').classList.add('hidden');
+
+            document.getElementById('activityTitleHeader').innerText = `Activity: ${activeRequest.activityName}`;
+            document.getElementById('currentStatusTag').innerText = `Status: ${activeRequest.status}`;
+            document.getElementById('currentStatusTag').className = `px-3 py-1 text-sm font-semibold rounded-full ${getStatusClass(activeRequest.status)}`;
+
+            // Supporting Doc Trigger Logic
+            const stepKey = getCurrentApprovalStep(activeRequest);
+            if (['pmOfficer', 'pmgsdDirector'].includes(stepKey)) {
+                document.getElementById('supportingDocTrigger').classList.remove('hidden');
+            } else {
+                document.getElementById('supportingDocTrigger').classList.add('hidden');
+            }
+
+            renderReadOnlyForm(activeRequest);
+            renderApprovalActions(activeRequest);
+        }
+
+        function renderReadOnlyForm(request) {
+            const container = document.getElementById('readOnlyFormContainer').querySelector('.form-container');
+            container.innerHTML = renderForm2Content(request);
+        }
+
+        function renderApprovalActions(request) {
+            const container = document.getElementById('approvalActionsContainer');
+            const currentStepKey = getCurrentApprovalStep(request);
+            const isMyTurn = currentRoleKey === currentStepKey;
+
+            container.innerHTML = '';
+
+            if (isMyTurn) {
+                const approveText = currentStepKey === 'pmgsdDirector' ? 'Final Approval & Deployment' : 'Verify & Forward';
+                let actionTitle = `${roleLabels[currentStepKey]}'s Review`;
+
+                container.innerHTML = `
+                    <div id="approvalActions" class="p-4 bg-green-50 rounded-lg border-2 border-green-200 mb-6">
+                        <p class="font-bold text-[#15803d] mb-2">${actionTitle}</p>
+                        <div class="flex space-x-3">
+                            <button id="approveBtn" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-sm">${approveText}</button>
+                            <button id="rejectBtn" class="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition shadow-sm">Reject</button>
+                            <button id="appointmentBtn" class="px-6 py-3 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition shadow-sm">📅 Set Appointment</button>
+                            <input type="text" id="approverRemarks" placeholder="Add optional remarks..." class="flex-grow p-2 border rounded-lg focus:ring-green-500 focus:border-green-500 outline-none">
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('approveBtn').onclick = () => processApproval(request.id, 'Approved');
+                document.getElementById('rejectBtn').onclick = () => processApproval(request.id, 'Rejected');
+                document.getElementById('appointmentBtn').onclick = () => processApproval(request.id, 'Appointment Set');
+            } else if (currentStepKey === null || request.status.includes('Rejected')) {
+                container.innerHTML = `<div class="p-4 bg-gray-100 border-2 mb-6 font-semibold">Request status: ${request.status}</div>`;
+            } else {
+                container.innerHTML = `<div class="p-4 bg-gray-100 border-2 border-gray-300 rounded-lg mb-6 text-gray-700">Awaiting approval from ${roleLabels[currentStepKey]}.</div>`;
+            }
+        }
+
+        function processApproval(requestId, action) {
+            const requestIndex = currentRequests.findIndex(r => r.id === requestId);
+            const request = currentRequests[requestIndex];
+            const currentStepKey = getCurrentApprovalStep(request);
+            const remarks = document.getElementById('approverRemarks').value.trim();
+
+            // 1. Validation checks (Keep these)
+            if (currentStepKey !== currentRoleKey) return customAlert('Not your turn.');
+            if (action === 'Rejected' && !remarks) return customAlert("⚠️ Please provide a reason for rejection.");
+
+            // 2. Determine the NEW status string (Keep existing logic)
+            let newGlobalStatus = request.status;
+            if (action === 'Rejected') {
+                newGlobalStatus = 'Rejected';
+            } else if (action === 'Appointment Set') {
+                // Handled by modal, but safety fallback
+                newGlobalStatus = `Appointment Set by ${roleLabels[currentStepKey]}`;
+            } else {
+                // If Approved, check if there is a next step
+                const nextIndex = approvalOrder.indexOf(currentStepKey) + 1;
+                if (nextIndex < approvalOrder.length) {
+                    newGlobalStatus = `Pending ${roleLabels[approvalOrder[nextIndex]]}`;
+                } else {
+                    newGlobalStatus = 'Approved (Completed)';
+                }
+            }
+
+            // 3. PREPARE FIREBASE UPDATES [This is the new part from the image]
+            const updates = {};
+            const basePath = `requests/${requestId}`;
+
+            // Update the main status
+            updates[`${basePath}/status`] = newGlobalStatus;
+
+            // Update the specific approver's details (Name, Date, Status, Remarks)
+            updates[`${basePath}/approvals/${currentStepKey}/status`] = action;
+            updates[`${basePath}/approvals/${currentStepKey}/name`] = currentUserName;
+            updates[`${basePath}/approvals/${currentStepKey}/remarks`] = remarks;
+            updates[`${basePath}/approvals/${currentStepKey}/date`] = new Date().toISOString().split('T')[0];
+
+            // 4. SEND TO CLOUD
+            window.update(window.ref(window.db), updates)
+                .then(() => {
+                    customAlert(`Request ${action} and saved to cloud!`);
+                    // The listener (onValue) will automatically refresh the list, so we don't need to call renderRequestList() manually here.
+                })
+                .catch((err) => {
+                    customAlert("Error saving to cloud: " + err.message);
+                });
+        }
+
+        function openForm1Modal() {
+            if (!activeRequest) return;
+            document.getElementById('form1ModalContent').innerHTML = renderForm1Content(activeRequest);
+            document.getElementById('form1Modal').classList.remove('hidden');
+        }
+        function closeForm1Modal() { document.getElementById('form1Modal').classList.add('hidden'); }
+
+        function customAlert(message) {
+            const container = document.body;
+            let modal = document.getElementById('customAlert');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'customAlert';
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                modal.innerHTML = `
+                    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full text-center">
+                        <p id="alertMessage" class="text-gray-800 mb-4 font-semibold whitespace-pre-line"></p>
+                        <button id="alertCloseBtn" class="px-4 py-2 bg-[#15803d] text-white rounded hover:bg-green-800">OK</button>
+                    </div>
+                `;
+                container.appendChild(modal);
+                document.getElementById('alertCloseBtn').onclick = () => modal.classList.add('hidden');
+            }
+            document.getElementById('alertMessage').innerText = message;
+            modal.classList.remove('hidden');
+        }
+
+        // NEW CODE (After)
+        window.onload = () => {
+            showView('landingView');
+
+            // 1. Create a reference to the 'requests' folder in your Cloud Database
+            const requestRef = window.ref(window.db, 'requests');
+
+            // 2. Turn on the Listener (onValue)
+            // This runs automatically EVERY time data changes in the cloud
+            window.onValue(requestRef, (snapshot) => {
+                const data = snapshot.val();
+                currentRequests = []; // Clear the old list
+
+                if (data) {
+                    // Convert the cloud data (Object) into a list (Array) we can use
+                    Object.keys(data).forEach(key => {
+                        currentRequests.push(data[key]);
+                    });
+                }
+
+                // 3. Update the screen immediately
+                renderRequestList();
+                console.log("Dashboard updated with real data:", currentRequests);
+            });
+        };
+        // --- FIREBASE DEBUGGER ---
+        // Add this to ALL THREE PAGES (kioskkiosk.html, adminnn.html, moniweb.html)
+
+        function debugFirebase() {
+            console.log("=== FIREBASE DATA CHECK ===");
+
+            // Check if Firebase is properly set up
+            if (!window.db || !window.ref || !window.get) {
+                console.error("❌ Firebase not initialized properly!");
+                console.log("Available:", {
+                    db: !!window.db,
+                    ref: !!window.ref,
+                    get: !!window.get
+                });
+                return;
+            }
+
+            // Get all requests from Firebase
+            const requestsRef = window.ref(window.db, 'requests');
+            window.get(requestsRef).then((snapshot) => {
+                const data = snapshot.val();
+
+                if (!data) {
+                    console.log("📭 Firebase 'requests' folder is EMPTY");
+                    console.log("No reservations have been submitted yet.");
+                    return;
+                }
+
+                console.log(`📊 Found ${Object.keys(data).length} reservation(s):`);
+                console.log("IDs:", Object.keys(data));
+
+                // Show structure of first request (as example)
+                const firstId = Object.keys(data)[0];
+                console.log("---");
+                console.log(`📄 Example structure of: ${firstId}`);
+                console.log(JSON.stringify(data[firstId], null, 2));
+
+                // Check what each website expects vs what exists
+                console.log("---");
+                console.log("🔍 Data Structure Check:");
+
+                const example = data[firstId];
+                const checks = {
+                    "Has 'id' field": !!example.id,
+                    "Has 'status' field": !!example.status,
+                    "Has 'approvals' object": !!example.approvals,
+                    "Has 'activityName'": !!example.activityName,
+                    "Has 'requestedBy'": !!example.requestedBy,
+                };
+
+                Object.entries(checks).forEach(([check, exists]) => {
+                    console.log(`${exists ? '✅' : '❌'} ${check}`);
+                });
+
+            }).catch((error) => {
+                console.error("🔥 Firebase error:", error);
+            });
+        }
+
+        // Make it available in browser console
+        window.debugFirebase = debugFirebase;
+        console.log("📢 Debug tool ready! Type 'debugFirebase()' in console.");
+    </script>
+</body>
+
+</html>
