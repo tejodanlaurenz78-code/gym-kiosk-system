@@ -5,7 +5,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         // FIXED LINE BELOW: Added 'update' and 'onValue'
-        import { getDatabase, ref, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
@@ -25,6 +25,7 @@
         window.ref = ref;
         window.update = update;
         window.onValue = onValue; 
+        window.remove = remove;
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -878,57 +879,62 @@
         }
 
         function saveEvent() {
-            const id = document.getElementById('eventIdHidden').value;
+            // Get values from form
+            let id = document.getElementById('eventIdHidden').value;
             const title = document.getElementById('eventTitleInput').value.trim();
             const date = document.getElementById('eventDateHidden').value;
             const desc = document.getElementById('eventDescInput').value.trim();
             const status = document.getElementById('eventStatusInput').value;
-
+        
             const start = document.getElementById('eventStartTime').value;
             const end = document.getElementById('eventEndTime').value;
             const time = `${start} - ${end}`;
-
+        
             if (!title) {
                 alert('Please enter an event title.');
                 return;
             }
-
-            if (id) {
-                // UPDATE Existing
-                const index = calendarEvents.findIndex(e => e.id == id);
-                if (index !== -1) {
-                    calendarEvents[index] = { ...calendarEvents[index], title, date, time, status, description: desc };
-                    customAlert("✅ Event updated successfully!");
-                }
-            } else {
-                // CREATE New
-                calendarEvents.push({
-                    id: Date.now(),
-                    title: title,
-                    date: date,
-                    time: time,
-                    status: status,
-                    description: desc
-                });
-                customAlert("✅ Event successfully plotted!");
+        
+            // If no ID exists (New Event), generate one
+            if (!id) {
+                id = "EVT-" + Date.now();
             }
-
-            renderMainCalendar();
-            closeEventModal();
+        
+            const eventData = {
+                id: id,
+                title: title,
+                date: date,
+                time: time,
+                status: status,
+                description: desc
+            };
+        
+            // SAVE TO FIREBASE
+            window.set(window.ref(window.db, 'events/' + id), eventData)
+                .then(() => {
+                    customAlert("✅ Event saved to cloud!");
+                    closeEventModal();
+                    // renderMainCalendar() will happen automatically via the onValue listener
+                })
+                .catch((err) => {
+                    alert("Error saving event: " + err.message);
+                });
         }
-
+        
         function deleteCurrentEvent() {
             const id = document.getElementById('eventIdHidden').value;
             if (!id) return;
-
+        
             if (confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
-                const index = calendarEvents.findIndex(e => e.id == id);
-                if (index !== -1) {
-                    calendarEvents.splice(index, 1);
-                    renderMainCalendar();
-                    closeEventModal();
-                    customAlert("🗑 Event deleted.");
-                }
+                // DELETE FROM FIREBASE
+                window.remove(window.ref(window.db, 'events/' + id))
+                    .then(() => {
+                        customAlert("🗑 Event deleted from cloud.");
+                        closeEventModal();
+                    })
+                    .catch((err) => {
+                        alert("Error deleting: " + err.message);
+                    });
             }
         }
 
@@ -1391,7 +1397,22 @@
         // Make it available in browser console
         window.debugFirebase = debugFirebase;
         console.log("📢 Debug tool ready! Type 'debugFirebase()' in console.");
+      
+        const eventsRef = window.ref(window.db, 'events');
+        window.onValue(eventsRef, (snapshot) => {
+            const data = snapshot.val();
+            calendarEvents = []; // Clear local list
+        
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    calendarEvents.push(data[key]);
+                });
+            }
+            
+            // Refresh the calendar view if it's visible
+            renderMainCalendar();
+            console.log("📅 Calendar synced:", calendarEvents.length, "events");
+        });
     </script>
 </body>
-
 </html>
