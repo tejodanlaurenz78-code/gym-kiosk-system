@@ -922,26 +922,46 @@
         }
 
        function renderForm2Content(request) {
-            // 1. Data Setup & Helper Functions
-            const deptHead = request.approvals.deptHead || {};
-            const pmOfficer = request.approvals.pmOfficer || {};
-            const pmgsdDirector = request.approvals.pmgsdDirector || {};
+            // 1. Data Setup
+            const deptHead = request.approvals?.deptHead || {};
+            const pmOfficer = request.approvals?.pmOfficer || {};
+            const pmgsdDirector = request.approvals?.pmgsdDirector || {};
 
             // Helper to check venues safely
+            // Note: Kiosk sends venue as an array like ["Gym Stage / Court", "Cafeteria"]
             const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
             
-            // Helper to get text values safely (avoids "undefined")
+            // Helper to get text values safely
             const val = (v) => v || '';
 
-            // Helper to get Equipment Data (Chair/Table counts and types)
+            // Helper to get Equipment Data
+            // Note: Kiosk sends equipment as an array of objects: [{name: "Chair", count: "5", type: "Monobloc"}]
             const getEquip = (name, field) => {
                 if (!request.equipment) return '';
-                // Checks if equipment is stored as object { name: "Chair", count: 50, type: "Monobloc" }
-                const item = request.equipment.find(e => typeof e === 'object' && e.name === name);
+                const item = request.equipment.find(e => e.name === name);
                 return item ? item[field] : '';
             };
 
-            // 2. Return the Exact Kiosk HTML Template
+            // Helper to get specific equipment details (like Microphone count)
+            const getEquipDetail = (name, detailField) => {
+                if (!request.equipment) return '';
+                const item = request.equipment.find(e => e.name === name);
+                // Sometimes detail is stored directly or needs parsing. 
+                // For simplicity, we assume your Kiosk saves it in the object
+                return item ? item[detailField] : '';
+            };
+
+            // Helper to check if a generic item exists in the equipment list
+            const isEquipChecked = (name) => {
+                if (!request.equipment) return '';
+                return request.equipment.some(e => e.name === name) ? 'checked' : '';
+            };
+
+            // Helper for Manpower (assuming Kiosk saves this in 'manpower' object or array)
+            // If your Kiosk saves it differently, we default to empty.
+            const manpower = request.manpower || {};
+
+            // 2. HTML Template
             return `
                 <div class="form-header flex items-center justify-center space-x-4 mb-6">
                     <img src="pnc-logo.png" onerror="this.style.display='none'" alt="PnC Seal" class="w-20 h-20 object-contain">
@@ -1005,23 +1025,39 @@
                     <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(request.venue, 'Gym Stage / Court')} class="accent-black"> <span class="${isChecked(request.venue, 'Gym Stage / Court') ? 'font-bold' : ''}">Gym Stage / Court</span></label>
                         <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(request.venue, 'Multi-Purpose Hall')} class="accent-black"> <span class="${isChecked(request.venue, 'Multi-Purpose Hall') ? 'font-bold' : ''}">Multi-Purpose Hall</span></label>
-                        <div class="flex items-center space-x-2"><input type="checkbox" disabled> <span>Classroom #</span> <div class="read-only-field w-16"></div></div>
-                        <div class="flex items-center space-x-2"><input type="checkbox" disabled> <span>Laboratory #</span> <div class="read-only-field w-16"></div></div>
+                        
+                        <div class="flex items-center space-x-2">
+                             <input type="checkbox" disabled ${request.venue && request.venue.some(v => v.includes('Classroom')) ? 'checked' : ''}> 
+                             <span>Classroom #</span> 
+                             <div class="read-only-field w-16 text-center">${request.venue ? (request.venue.find(v => v.includes('Classroom')) || '').replace('Classroom', '').trim() : ''}</div>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                             <input type="checkbox" disabled ${request.venue && request.venue.some(v => v.includes('Laboratory')) ? 'checked' : ''}> 
+                             <span>Laboratory #</span> 
+                             <div class="read-only-field w-16 text-center">${request.venue ? (request.venue.find(v => v.includes('Laboratory')) || '').replace('Laboratory', '').trim() : ''}</div>
+                        </div>
+
                         <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(request.venue, 'Library')} class="accent-black"> <span class="${isChecked(request.venue, 'Library') ? 'font-bold' : ''}">Library</span></label>
                         <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(request.venue, 'Cafeteria')} class="accent-black"> <span class="${isChecked(request.venue, 'Cafeteria') ? 'font-bold' : ''}">Cafeteria</span></label>
-                        <div class="col-span-2 flex items-center space-x-2"><input type="checkbox" disabled> <span>Others:</span> <div class="read-only-field flex-1"></div></div>
+                        
+                        <div class="col-span-2 flex items-center space-x-2">
+                            <input type="checkbox" disabled ${request.venue && request.venue.some(v => v.includes('Others:')) ? 'checked' : ''}> 
+                            <span>Others:</span> 
+                            <div class="read-only-field flex-1">${request.venue ? (request.venue.find(v => v.includes('Others:')) || '').replace('Others:', '').trim() : ''}</div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="border border-black border-t-0 flex text-black">
                     <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">
                         <p>Equipment Reservation</p>
-                        <p class="mt-4 text-xs font-bold">Set-up</p>
+                        <p class="mt-4 text-xs font-bold">Set-up Details:</p>
                         <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
-                            <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block"></span></p>
-                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block"></span></p>
-                            <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block"></span></p>
-                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block"></span></p>
+                            <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressDate)}</span></p>
+                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressTime)}</span></p>
+                            <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressDate)}</span></p>
+                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressTime)}</span></p>
                         </div>
                     </div>
                     <div class="flex-1 p-2 text-sm">
@@ -1029,28 +1065,39 @@
                             <div class="flex items-center space-x-2">
                                 <input type="checkbox" disabled ${getEquip('Chair', 'count') ? 'checked' : ''} class="accent-black"> 
                                 <span class="${getEquip('Chair', 'count') ? 'font-bold' : ''}">Chair #</span> 
-                                <div class="read-only-field w-16 text-center">${getEquip('Chair', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1">${getEquip('Chair', 'type')}</div>
+                                <div class="read-only-field w-16 text-center font-bold">${getEquip('Chair', 'count')}</div>
+                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquip('Chair', 'type')}</div>
                             </div>
                             <div class="flex items-center space-x-2">
                                 <input type="checkbox" disabled ${getEquip('Table', 'count') ? 'checked' : ''} class="accent-black"> 
                                 <span class="${getEquip('Table', 'count') ? 'font-bold' : ''}">Table #</span> 
-                                <div class="read-only-field w-16 text-center">${getEquip('Table', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1">${getEquip('Table', 'type')}</div>
+                                <div class="read-only-field w-16 text-center font-bold">${getEquip('Table', 'count')}</div>
+                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquip('Table', 'type')}</div>
                             </div>
                         </div>
                         
                         <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Podium/Rostrum</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Sound System</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Electric fans</span></label>
-                            <div class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Microphone #</span> <div class="read-only-field w-12 text-center"></div></div>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Extension Cord</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Panel/White Board</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Philippine Flag</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>PnC Flag</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Projector</span></label>
-                            <div class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Others:</span> <div class="read-only-field w-full"></div></div>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Podium/Rostrum')} class="accent-black"> <span class="${isEquipChecked('Podium/Rostrum') ? 'font-bold' : ''}">Podium/Rostrum</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Sound System')} class="accent-black"> <span class="${isEquipChecked('Sound System') ? 'font-bold' : ''}">Sound System</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Electric fans')} class="accent-black"> <span class="${isEquipChecked('Electric fans') ? 'font-bold' : ''}">Electric fans</span></label>
+                            
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" disabled ${getEquip('Microphone', 'count') ? 'checked' : ''} class="accent-black"> 
+                                <span>Microphone #</span> 
+                                <div class="read-only-field w-12 text-center font-bold">${getEquip('Microphone', 'count')}</div>
+                            </div>
+
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Extension Cord')} class="accent-black"> <span class="${isEquipChecked('Extension Cord') ? 'font-bold' : ''}">Extension Cord</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Panel Board / White Board')} class="accent-black"> <span class="${isEquipChecked('Panel Board / White Board') ? 'font-bold' : ''}">Panel/White Board</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Philippine Flag')} class="accent-black"> <span class="${isEquipChecked('Philippine Flag') ? 'font-bold' : ''}">Philippine Flag</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Pamantasan ng Cabuyao Flag')} class="accent-black"> <span class="${isEquipChecked('Pamantasan ng Cabuyao Flag') ? 'font-bold' : ''}">PnC Flag</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Multi-media Projector')} class="accent-black"> <span class="${isEquipChecked('Multi-media Projector') ? 'font-bold' : ''}">Projector</span></label>
+                            
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" disabled ${request.equipment && request.equipment.some(e => e.name.includes('Others:')) ? 'checked' : ''}> 
+                                <span>Others:</span> 
+                                <div class="read-only-field w-full font-bold">${request.equipment ? (request.equipment.find(e => e.name.includes('Others:'))?.name || '').replace('Others:', '').trim() : ''}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1058,8 +1105,16 @@
                 <div class="border border-black border-t-0 flex text-black">
                     <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Manpower Requirement</div>
                     <div class="flex-1 p-2 grid grid-cols-2 gap-4 text-sm">
-                        <div class="flex items-center space-x-2"><input type="checkbox" disabled> <span>Technical</span> <div class="read-only-field flex-1"></div></div>
-                        <div class="flex items-center space-x-2"><input type="checkbox" disabled> <span>Housekeeping</span> <div class="read-only-field flex-1"></div></div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" disabled ${manpower.technical ? 'checked' : ''}> 
+                            <span>Technical</span> 
+                            <div class="read-only-field flex-1 font-bold">${val(manpower.technical)}</div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" disabled ${manpower.housekeeping ? 'checked' : ''}> 
+                            <span>Housekeeping</span> 
+                            <div class="read-only-field flex-1 font-bold">${val(manpower.housekeeping)}</div>
+                        </div>
                     </div>
                 </div>
 
@@ -1078,7 +1133,7 @@
                     
                     <div class="opacity-90">
                         <p class="font-bold mb-8 text-gray-700">Reviewed by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || ''}</div>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || '---'}</div>
                         <p class="mt-1">Department/Division Head</p>
                         <div class="text-[10px] font-bold ${getStatusClass(deptHead.status)} rounded-full inline-block px-2 mt-1">${deptHead.status}</div>
                     </div>
@@ -1226,6 +1281,7 @@
     </script>
 </body>
 </html>
+
 
 
 
