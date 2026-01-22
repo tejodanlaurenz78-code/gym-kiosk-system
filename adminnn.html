@@ -16,6 +16,33 @@
             font-family: 'Inter', sans-serif; 
             background-color: #f3f4f6; 
         }
+
+        /* --- ADD THIS TO YOUR CSS --- */
+        .form-container {
+            color: black;
+            border: 1px solid black;
+        }
+        .form-title {
+            background-color: #D1D5DB; /* Gray background */
+            font-weight: bold;
+            text-align: center;
+            padding: 0.25rem;
+            text-transform: uppercase;
+            font-size: 1.1rem;
+            margin-bottom: 0;
+            border: 1px solid black;
+            border-bottom: none;
+        }
+        .read-only-field {
+            border-bottom: 1px solid black;
+            width: 100%;
+            padding-left: 0.25rem;
+            font-weight: bold;
+            min-height: 24px;
+            display: inline-block;
+        }
+        .border-black { border-color: black; }
+        .accent-black { accent-color: black; }
         
         /* Form Template Styles */
         .form-container {
@@ -921,44 +948,24 @@
             document.querySelector('#readOnlyFormContainer .form-container').innerHTML = renderForm2Content(request);
         }
 
-       function renderForm2Content(request) {
+      function renderForm2Content(request) {
             // 1. Data Setup
             const deptHead = request.approvals?.deptHead || {};
             const pmOfficer = request.approvals?.pmOfficer || {};
             const pmgsdDirector = request.approvals?.pmgsdDirector || {};
-
-            // Helper to check venues safely
-            // Note: Kiosk sends venue as an array like ["Gym Stage / Court", "Cafeteria"]
-            const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
             
-            // Helper to get text values safely
+            // Helpers
             const val = (v) => v || '';
-
-            // Helper to get Equipment Data
-            // Note: Kiosk sends equipment as an array of objects: [{name: "Chair", count: "5", type: "Monobloc"}]
+            const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
             const getEquip = (name, field) => {
                 if (!request.equipment) return '';
                 const item = request.equipment.find(e => e.name === name);
                 return item ? item[field] : '';
             };
-
-            // Helper to get specific equipment details (like Microphone count)
-            const getEquipDetail = (name, detailField) => {
-                if (!request.equipment) return '';
-                const item = request.equipment.find(e => e.name === name);
-                // Sometimes detail is stored directly or needs parsing. 
-                // For simplicity, we assume your Kiosk saves it in the object
-                return item ? item[detailField] : '';
-            };
-
-            // Helper to check if a generic item exists in the equipment list
             const isEquipChecked = (name) => {
                 if (!request.equipment) return '';
                 return request.equipment.some(e => e.name === name) ? 'checked' : '';
             };
-
-            // Helper for Manpower (assuming Kiosk saves this in 'manpower' object or array)
-            // If your Kiosk saves it differently, we default to empty.
             const manpower = request.manpower || {};
 
             // 2. HTML Template
@@ -1133,7 +1140,7 @@
                     
                     <div class="opacity-90">
                         <p class="font-bold mb-8 text-gray-700">Reviewed by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || '---'}</div>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || ''}</div>
                         <p class="mt-1">Department/Division Head</p>
                         <div class="text-[10px] font-bold ${getStatusClass(deptHead.status)} rounded-full inline-block px-2 mt-1">${deptHead.status}</div>
                     </div>
@@ -1281,6 +1288,7 @@
     </script>
 </body>
 </html>
+
 
 
 
