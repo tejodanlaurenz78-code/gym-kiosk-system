@@ -5,7 +5,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         // FIXED LINE BELOW: Added 'update' and 'onValue'
-        import { getDatabase, ref, set, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, update, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
@@ -26,6 +26,7 @@
         window.update = update;
         window.onValue = onValue; 
         window.remove = remove;
+        window.get = get;
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -900,7 +901,14 @@
                 alert('Please enter an event title.');
                 return;
             }
-        
+            const startTimeIndex = document.getElementById('eventStartTime').selectedIndex;
+            const endTimeIndex = document.getElementById('eventEndTime').selectedIndex;
+            
+            if (endTimeIndex <= startTimeIndex) {
+                alert("End time must be after start time.");
+                return;
+            }
+            
             // 3. ID Generation
             if (!id) {
                 id = "EVT-" + Date.now();
@@ -938,18 +946,6 @@
                 });
         }
         
-            // SAVE TO FIREBASE
-            window.set(window.ref(window.db, 'events/' + id), eventData)
-                .then(() => {
-                    customAlert("✅ Event saved to cloud!");
-                    closeEventModal();
-                    // renderMainCalendar() will happen automatically via the onValue listener
-                })
-                .catch((err) => {
-                    alert("Error saving event: " + err.message);
-                });
-        }
-        
         function deleteCurrentEvent() {
             const id = document.getElementById('eventIdHidden').value;
             if (!id) return;
@@ -984,30 +980,43 @@
             const d = document.getElementById('apptDate').value;
             const t = document.getElementById('apptTime').value;
             const r = document.getElementById('apptReason').value.trim();
-
+            
+            // 1. Validation (KEEP THIS)
             if (!d || !t || !r) {
                 alert("Please fill in all appointment details.");
                 return;
             }
-
+        
+            // 2. Identification (KEEP/RE-ADD THIS)
             const requestIndex = currentRequests.findIndex(req => req.id === requestId);
-            if (requestIndex === -1) return;
+            if (requestIndex === -1) return; // Safety check
             const request = currentRequests[requestIndex];
             const currentStepKey = getCurrentApprovalStep(request);
-
-            if (!currentStepKey) return;
-
-            const details = `Date: ${d}, Time: ${t}, Reason: ${r}`;
-            request.approvals[currentStepKey].name = currentUserName;
-            request.approvals[currentStepKey].status = 'Appointment Set';
-            request.approvals[currentStepKey].remarks = details;
-            request.status = `Appointment Set by ${roleLabels[currentStepKey]}`;
-
-            closeAppointmentModal();
-            customAlert(`📅 Appointment Set.\n${details}\nNotification sent.`);
-
-            renderRequestList();
-            loadRequest(requestId);
+            if (!currentStepKey) return; // Safety check
+        
+            // 3. Firebase Update (THE NEW CODE FROM YOUR IMAGE)
+            const updates = {};
+            const basePath = `requests/${requestId}`;
+            
+            // Update Status
+            updates[`${basePath}/status`] = `Appointment Set by ${roleLabels[currentStepKey]}`;
+            
+            // Update Approval Details
+            const appointmentDetails = `Date: ${d}, Time: ${t}\nReason: ${r}`;
+            updates[`${basePath}/approvals/${currentStepKey}/status`] = 'Appointment Set';
+            updates[`${basePath}/approvals/${currentStepKey}/name`] = currentUserName;
+            updates[`${basePath}/approvals/${currentStepKey}/remarks`] = appointmentDetails;
+            updates[`${basePath}/approvals/${currentStepKey}/date`] = new Date().toISOString().split('T')[0];
+        
+            // Send to Firebase
+            window.update(window.ref(window.db), updates)
+                .then(() => {
+                    closeAppointmentModal();
+                    customAlert(`📅 Appointment Set.\n${appointmentDetails}`);
+                })
+                .catch((err) => {
+                    alert("Error saving appointment: " + err.message);
+                });
         }
 
         // --- UTILITY FUNCTIONS ---
@@ -1253,7 +1262,7 @@
 
                 document.getElementById('approveBtn').onclick = () => processApproval(request.id, 'Approved');
                 document.getElementById('rejectBtn').onclick = () => processApproval(request.id, 'Rejected');
-                document.getElementById('appointmentBtn').onclick = () => processApproval(request.id, 'Appointment Set');
+                document.getElementById('appointmentBtn').onclick = () => openAppointmentModal(request.id);
             } else if (currentStepKey === null || request.status.includes('Rejected')) {
                 container.innerHTML = `<div class="p-4 bg-gray-100 border-2 mb-6 font-semibold">Request status: ${request.status}</div>`;
             } else {
@@ -1445,4 +1454,5 @@
     </script>
 </body>
 </html>
+
 
