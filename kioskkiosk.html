@@ -5,7 +5,7 @@
     <script type="module">
         // KEEP THESE LINES (Do not copy the import lines from your screenshot)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         // PASTE YOUR CONFIG FROM THE IMAGE HERE:
         const firebaseConfig = {
@@ -27,6 +27,8 @@
         window.set = set;
         window.ref = ref;
         window.get = get;
+        window.onValue = onValue;
+        
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -904,23 +906,13 @@
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-        // --- MOCK EVENT DATA ---
-        // EDITED: Added more events for plotting
-        const mockEvents = {
-            getEventDate: function (daysToAdd) {
-                const d = new Date();
-                d.setDate(d.getDate() + daysToAdd);
-                return d.toISOString().split('T')[0];
-            },
-            events: []
-        };
-        // Populate events for demonstration
-        mockEvents.events = [
-            { date: mockEvents.getEventDate(1), title: 'Basketball Practice', time: '1:00 PM - 4:00 PM', department: 'Athletics', participants: '20' },
-            { date: mockEvents.getEventDate(3), title: 'Volleyball Training', time: '8:00 AM - 12:00 PM', department: 'Athletics', participants: '25' },
-            { date: mockEvents.getEventDate(10), title: 'General Assembly', time: '8:00 AM - 5:00 PM', department: 'Student Council', participants: '500+' },
-            { date: mockEvents.getEventDate(45), title: 'College Intramurals', time: '8:00 AM - 5:00 PM', department: 'SAO', participants: '500+' }
-        ];
+        // --- EVENT DATA ---
+        let globalEvents = []; // This empty list will eventually hold the real data from Firebase
+        
+        // Helper to check if a date has an event
+        function getEventForDate(dateString) {
+            return globalEvents.find(e => e.date === dateString);
+        }
 
         const personnelData = {
             'Office of the Vice President for Administration & Finance (OVPAF)': ['Barundia, Arnold F.', 'Bondoc, Christian Stephen D.', 'Garcia, Colin B.', 'Mafabo, Renelina D.'],
@@ -1061,10 +1053,13 @@
         // Helper to find event object for click handler (used by both calendars)
         // ADDED: Defined before usage to fix ReferenceError
         function showEventDetailsFromCalendar(dateString) {
-            const event = mockEvents.events.find(e => e.date === dateString);
-            if (event) showEventDetails(event);
+            const event = globalEvents.find(e => e.date === dateString);
+            
+            if (event) {
+                // Simple alert for Kiosk view
+                alert(`📅 OCCUPIED\n\nEvent: ${event.title}\nTime: ${event.time}\nStatus: ${event.status.toUpperCase()}`);
+            }
         }
-
         function setReservationDateAndShowUpload(dateString) {
             selectedReservationDate = dateString;
             const filingDateInput = document.getElementById('filingDateInput');
@@ -1096,7 +1091,7 @@
                 const dayDate = new Date(currentYear, currentMonth, i);
                 dayDate.setHours(0, 0, 0, 0);
                 const dateString = dayDate.toISOString().split('T')[0];
-                const event = mockEvents.events.find(e => e.date === dateString);
+                const event = globalEvents.find(e => e.date === dateString);
                 const isCurrentDay = (i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear());
 
                 // Base styling for Read-Only
@@ -1137,7 +1132,7 @@
                 const dayDate = new Date(currentYear, currentMonth, i);
                 dayDate.setHours(0, 0, 0, 0);
                 const dateString = dayDate.toISOString().split('T')[0];
-                const event = mockEvents.events.find(e => e.date === dateString);
+                const event = globalEvents.find(e => e.date === dateString);
                 const isEligible = dayDate >= minReservationDate;
                 const isCurrentDay = (i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear());
 
@@ -1307,7 +1302,27 @@
             showView('landingView');
             renderReadOnlyCalendar(); // Render initial read-only calendar
         };
+        
+        // ADD THIS INSIDE window.onload
+        const eventsRef = window.ref(window.db, 'events');
+        window.onValue(eventsRef, (snapshot) => {
+            const data = snapshot.val();
+            globalEvents = []; // Clear list
+        
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    globalEvents.push(data[key]);
+                });
+            }
+        
+            console.log("📅 Kiosk Calendar synced:", globalEvents.length, "events");
+        
+            // Re-render both calendars to show new red/occupied dates
+            renderCalendar();
+            renderReadOnlyCalendar();
+        });
 
+        
         // --- FIREBASE DEBUGGER ---
         // Add this to ALL THREE PAGES (kioskkiosk.html, adminnn.html, moniweb.html)
 
@@ -1375,4 +1390,5 @@
 
 
 </html>
+
 
