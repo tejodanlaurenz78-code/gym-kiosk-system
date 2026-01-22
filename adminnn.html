@@ -922,65 +922,155 @@
         }
 
         function renderForm2Content(request) {
-            const deptHeadApproval = request.approvals.deptHead;
-            const pmOfficer = request.approvals.pmOfficer;
-            const pmgsdDirector = request.approvals.pmgsdDirector;
-            
-            const chairData = request.equipment ? request.equipment.find(e => typeof e === 'object' && e.name === 'Chair') : null;
-            const tableData = request.equipment ? request.equipment.find(e => typeof e === 'object' && e.name === 'Table') : null;
-            
+            // 1. Setup Data & Helpers for the template
+            const deptHead = request.approvals.deptHead || {};
+            const pmOfficer = request.approvals.pmOfficer || {};
+            const pmgsdDirector = request.approvals.pmgsdDirector || {};
+
+            // Helper to check venues/equipment and visually mark checkboxes
+            const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
+
+            // Helper to extract specific equipment data if it exists (e.g., "Chair", "Table")
+            const getEquipData = (name, key) => {
+                if (!request.equipment) return '';
+                // Assuming equipment might be stored as objects: { name: "Chair", count: 50, type: "Monobloc" }
+                const item = request.equipment.find(e => typeof e === 'object' && e.name === name);
+                return item ? item[key] : '';
+            };
+
+            // 2. Return the Kiosk-style HTML Template
             return `
-                <div class="form-header flex items-center justify-center space-x-4 mb-2">
-                    <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-500">[LOGO]</div>
+                <div class="form-header flex items-center justify-center space-x-4 mb-6">
+                    <div style="width: 80px; height: 80px; background-color: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666;">[LOGO]</div>
+                    
                     <div class="text-center">
-                         <p class="text-[10px] text-right w-full mb-2">PNC:AF-FO-15 rev.0 02012023</p>
-                        <h2 class="text-xl font-bold text-black font-sans">Pamantasan ng Cabuyao</h2>
-                        <p class="text-xs font-bold">(University of Cabuyao)</p>
-                        <p class="font-bold text-gray-800 mt-1 text-sm italic">Property Management and General Services Department</p>
+                        <p class="text-sm">Republic of the Philippines</p>
+                        <h2 class="text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
+                        <p class="text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
+                        <p class="text-sm italic">Administration and Finance Division</p>
+                        <p class="font-bold text-gray-700 mt-1">Property Management and General Services Department</p>
+                        <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
                     </div>
                 </div>
-                <div class="form-title text-black text-center font-bold text-lg mb-4">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
-                <div class="p-0 space-y-4 text-sm text-black">
-                    <div class="flex flex-wrap gap-4 items-end">
-                        <div class="flex-1"><label class="font-normal">Transaction Number</label><div class="line-input input-disabled filled-data">${request.id}</div></div>
-                        <div class="flex-1"><label class="font-normal">Date of Filing</label><div class="line-input input-disabled filled-data">${request.filingDate}</div></div>
-                        <div class="flex-1"><label class="font-normal">Department</label><div class="line-input input-disabled filled-data">${request.department}</div></div>
+
+                <div class="form-title text-black bg-gray-300 border border-black border-b-0">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
+
+                <div class="border border-black p-4 space-y-4 text-sm text-black">
+                    <div class="flex flex-wrap gap-4">
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600">Transaction Number:</label>
+                            <div class="read-only-field">${request.id}</div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600">Date of Filing:</label>
+                            <div class="read-only-field">${request.filingDate || '--'}</div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600">Department:</label>
+                            <div class="read-only-field">${request.department || '--'}</div>
+                        </div>
                     </div>
                     <div class="flex flex-wrap gap-4">
-                         <div class="flex-1"><label class="font-normal">Activity Date</label><div class="line-input input-disabled filled-data">${request.activityDate}</div></div>
-                         <div class="flex-1"><label class="font-normal">Time</label><div class="line-input input-disabled filled-data">${request.time}</div></div>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600">Activity Date:</label>
+                            <div class="read-only-field">${request.activityDate || '--'}</div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600">Time:</label>
+                            <div class="read-only-field">${request.time || '--'}</div>
+                        </div>
                     </div>
-                     <div><label class="font-normal">Activity Name</label><div class="line-input input-disabled filled-data">${request.activityName}</div></div>
+                    <div>
+                        <label class="font-normal text-gray-600">Activity Name/Title/Purpose:</label>
+                        <div class="read-only-field">${request.activityName || '--'}</div>
+                    </div>
                     <div class="flex flex-wrap gap-4 items-end">
-                        <div class="w-1/3">Participants:</div>
-                        <div class="flex-1 flex items-center"><span class="mr-2">Internal</span><div class="line-input input-disabled w-20 text-center filled-data">${request.internalParticipants || 0}</div></div>
-                        <div class="flex-1 flex items-center"><span class="mr-2">External</span><div class="line-input input-disabled w-20 text-center filled-data">${request.externalParticipants || 0}</div></div>
+                        <div class="w-1/3 font-normal text-gray-600">Expected # of Participants:</div>
+                        <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span>
+                            <div class="read-only-field w-20 text-center">${request.internalParticipants || '0'}</div>
+                        </div>
+                        <div class="flex-1 flex items-center"><span class="mr-2">External:</span>
+                            <div class="read-only-field w-20 text-center">${request.externalParticipants || '0'}</div>
+                        </div>
                     </div>
                 </div>
-                <div class="form-border form-border-b mt-4 flex">
-                    <div class="w-48 font-bold p-2 form-border-r">Venue Reservation</div>
-                    <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                         ${['Gym Stage / Court', 'Multi-Purpose Hall', 'Library', 'Cafeteria', 'Classroom #', 'Laboratory #', 'Others:'].map(venue => 
-                            `<label class="flex items-center space-x-2"><input type="checkbox" disabled ${request.venue && request.venue.includes(venue) ? 'checked' : ''} class="form-checkbox h-3 w-3 accent-black"> <span class="${request.venue && request.venue.includes(venue) ? 'font-bold text-black' : ''}">${venue}</span></label>`
-                        ).join('')}
+
+                <div class="border border-black border-t-0 flex text-black">
+                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Venue Reservation</div>
+                    <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(request.venue, 'Gym Stage / Court')} class="accent-black"> <span class="${isChecked(request.venue, 'Gym Stage / Court') ? 'font-bold' : ''}">Gym Stage / Court</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(request.venue, 'Multi-Purpose Hall')} class="accent-black"> <span class="${isChecked(request.venue, 'Multi-Purpose Hall') ? 'font-bold' : ''}">Multi-Purpose Hall</span></label>
+                        <div class="flex items-center space-x-2"><input type="checkbox" disabled> <span>Classroom #</span> <div class="read-only-field w-16"></div></div>
+                        <div class="flex items-center space-x-2"><input type="checkbox" disabled> <span>Laboratory #</span> <div class="read-only-field w-16"></div></div>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(request.venue, 'Library')} class="accent-black"> <span class="${isChecked(request.venue, 'Library') ? 'font-bold' : ''}">Library</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(request.venue, 'Cafeteria')} class="accent-black"> <span class="${isChecked(request.venue, 'Cafeteria') ? 'font-bold' : ''}">Cafeteria</span></label>
+                        <div class="col-span-2 flex items-center space-x-2"><input type="checkbox" disabled> <span>Others:</span> <div class="read-only-field flex-1"></div></div>
                     </div>
                 </div>
-                 <div class="form-border flex mb-4">
-                    <div class="w-48 font-bold p-2 form-border-r">Equipment</div>
+
+                <div class="border border-black border-t-0 flex text-black">
+                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">
+                        <p>Equipment Reservation</p><p class="mt-4 text-xs">Set-up Details (If applicable):</p>
+                        <div class="mt-1 text-xs font-normal space-y-1 text-gray-500 italic">
+                            <p>Ingress Date/Time: --</p>
+                            <p>Egress Date/Time: --</p>
+                        </div>
+                    </div>
                     <div class="flex-1 p-2 text-sm">
-                        <p class="flex items-center gap-2">Chair # <span class="border-b border-black w-16 text-center font-bold text-black">${chairData ? chairData.count : ''}</span></p>
-                        <p class="flex items-center gap-2">Table # <span class="border-b border-black w-16 text-center font-bold text-black">${tableData ? tableData.count : ''}</span></p>
+                        <div class="grid grid-cols-1 gap-2 mb-2">
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" disabled ${getEquipData('Chair', 'count') ? 'checked' : ''} class="accent-black"> 
+                                <span class="${getEquipData('Chair', 'count') ? 'font-bold' : ''}">Chair #</span> 
+                                <div class="read-only-field w-16 text-center">${getEquipData('Chair', 'count')}</div>
+                                <span>Type:</span> <div class="read-only-field flex-1">${getEquipData('Chair', 'type')}</div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" disabled ${getEquipData('Table', 'count') ? 'checked' : ''} class="accent-black"> 
+                                <span class="${getEquipData('Table', 'count') ? 'font-bold' : ''}">Table #</span> 
+                                <div class="read-only-field w-16 text-center">${getEquipData('Table', 'count')}</div>
+                                <span>Type:</span> <div class="read-only-field flex-1">${getEquipData('Table', 'type')}</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Podium/Rostrum</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Sound System</span></label>
+                            <div class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Microphone #</span> <div class="read-only-field w-12 text-center"></div></div>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Multi-media Projector</span></label>
+                            </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-4 gap-4 text-center mt-8 text-xs">
-                    <div><p class="font-bold mb-8">Requested by:</p><div class="border-b border-black font-bold uppercase text-black">${request.requestedBy}</div></div>
-                    <div><p class="font-bold mb-8">Reviewed by:</p><div class="border-b border-black font-bold uppercase text-black">${deptHeadApproval.name}</div><p class="mt-1">Dept Head</p></div>
-                    <div><p class="font-bold mb-8">Recommended by:</p>${formatApprovalBox(pmOfficer)}<p class="mt-1">Mr. Colin B. Garcia</p></div>
-                    <div><p class="font-bold mb-8">Approved by:</p>${formatApprovalBox(pmgsdDirector)}<p class="mt-1">Alfredo Glenn H. Beaño</p></div>
+
+                <div class="grid grid-cols-4 gap-4 text-center mt-8 text-black">
+                    <div>
+                        <p class="font-bold text-sm mb-8 text-gray-700">Requested by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">${request.requestedBy}</div>
+                        <p class="text-xs mt-1 pt-1">Signature over Printed Name/Date</p>
+                    </div>
+                    
+                    <div class="opacity-90">
+                        <p class="font-bold text-sm mb-8 text-gray-700">Reviewed by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || '---'}</div>
+                        <p class="text-xs mt-1 pt-1">Department/Division Head</p>
+                        <div class="text-[10px] font-bold ${getStatusClass(deptHead.status)} rounded-full inline-block px-2 mt-1">${deptHead.status}</div>
+                    </div>
+
+                    <div class="opacity-90">
+                        <p class="font-bold text-sm mb-8 text-gray-700">Recommended by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">Mr. Colin B. Garcia</div>
+                        <p class="text-xs mt-1 pt-1">PM Officer</p>
+                        <div class="text-[10px] font-bold ${getStatusClass(pmOfficer.status)} rounded-full inline-block px-2 mt-1">${pmOfficer.status}</div>
+                    </div>
+
+                    <div class="opacity-90">
+                        <p class="font-bold text-sm mb-8 text-gray-700">Approved by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">Alfredo Glenn H. Beaño</div>
+                        <p class="text-xs mt-1 pt-1">PMGSD Director</p>
+                        <div class="text-[10px] font-bold ${getStatusClass(pmgsdDirector.status)} rounded-full inline-block px-2 mt-1">${pmgsdDirector.status}</div>
+                    </div>
                 </div>
             `;
         }
-
+        
         function renderForm1Content(request) {
             const deptHeadApproval = request.approvals.deptHead;
             const ovpasApproval = request.approvals.ovpas || {name: '---', date: '', status: 'Pending'};
@@ -1107,6 +1197,7 @@
     </script>
 </body>
 </html>
+
 
 
 
