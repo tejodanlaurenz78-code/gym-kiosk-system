@@ -696,6 +696,12 @@
                     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
                     document.getElementById('trackingIdDisplay').innerText = trackingId;
                     document.getElementById('qrCodeImage').src = qrUrl;
+                    const offices = Object.keys(globalSelectedPersonnel).join(', ');
+                    document.getElementById('submittedToDisplay').innerText = offices || "No specific office selected";
+    
+                    const personnelList = [];
+                    Object.values(globalSelectedPersonnel).forEach(arr => personnelList.push(...arr));
+                    document.getElementById('submittedPersonnelDisplay').innerText = personnelList.join(', ') || "None";
                     window.showView('trackingView');
                 })
                 .catch((error) => {
@@ -731,5 +737,6 @@
     </script>
 </body>
 </html>
+
 
 
