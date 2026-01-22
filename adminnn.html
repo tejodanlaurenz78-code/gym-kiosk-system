@@ -921,28 +921,30 @@
             document.querySelector('#readOnlyFormContainer .form-container').innerHTML = renderForm2Content(request);
         }
 
-        function renderForm2Content(request) {
-            // 1. Setup Data & Helpers for the template
+       function renderForm2Content(request) {
+            // 1. Data Setup & Helper Functions
             const deptHead = request.approvals.deptHead || {};
             const pmOfficer = request.approvals.pmOfficer || {};
             const pmgsdDirector = request.approvals.pmgsdDirector || {};
 
-            // Helper to check venues/equipment and visually mark checkboxes
+            // Helper to check venues safely
             const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
+            
+            // Helper to get text values safely (avoids "undefined")
+            const val = (v) => v || '';
 
-            // Helper to extract specific equipment data if it exists (e.g., "Chair", "Table")
-            const getEquipData = (name, key) => {
+            // Helper to get Equipment Data (Chair/Table counts and types)
+            const getEquip = (name, field) => {
                 if (!request.equipment) return '';
-                // Assuming equipment might be stored as objects: { name: "Chair", count: 50, type: "Monobloc" }
+                // Checks if equipment is stored as object { name: "Chair", count: 50, type: "Monobloc" }
                 const item = request.equipment.find(e => typeof e === 'object' && e.name === name);
-                return item ? item[key] : '';
+                return item ? item[field] : '';
             };
 
-            // 2. Return the Kiosk-style HTML Template
+            // 2. Return the Exact Kiosk HTML Template
             return `
                 <div class="form-header flex items-center justify-center space-x-4 mb-6">
-                    <div style="width: 80px; height: 80px; background-color: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666;">[LOGO]</div>
-                    
+                    <img src="pnc-logo.png" onerror="this.style.display='none'" alt="PnC Seal" class="w-20 h-20 object-contain">
                     <div class="text-center">
                         <p class="text-sm">Republic of the Philippines</p>
                         <h2 class="text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
@@ -959,38 +961,41 @@
                     <div class="flex flex-wrap gap-4">
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Transaction Number:</label>
-                            <div class="read-only-field">${request.id}</div>
+                            <div class="read-only-field">${val(request.id)}</div>
                         </div>
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Date of Filing:</label>
-                            <div class="read-only-field">${request.filingDate || '--'}</div>
+                            <div class="read-only-field">${val(request.filingDate)}</div>
                         </div>
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Department:</label>
-                            <div class="read-only-field">${request.department || '--'}</div>
+                            <div class="read-only-field">${val(request.department)}</div>
                         </div>
                     </div>
+                    
                     <div class="flex flex-wrap gap-4">
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Activity Date:</label>
-                            <div class="read-only-field">${request.activityDate || '--'}</div>
+                            <div class="read-only-field">${val(request.activityDate)}</div>
                         </div>
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Time:</label>
-                            <div class="read-only-field">${request.time || '--'}</div>
+                            <div class="read-only-field">${val(request.time)}</div>
                         </div>
                     </div>
+
                     <div>
                         <label class="font-normal text-gray-600">Activity Name/Title/Purpose:</label>
-                        <div class="read-only-field">${request.activityName || '--'}</div>
+                        <div class="read-only-field">${val(request.activityName)}</div>
                     </div>
+
                     <div class="flex flex-wrap gap-4 items-end">
                         <div class="w-1/3 font-normal text-gray-600">Expected # of Participants:</div>
                         <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span>
-                            <div class="read-only-field w-20 text-center">${request.internalParticipants || '0'}</div>
+                            <div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div>
                         </div>
                         <div class="flex-1 flex items-center"><span class="mr-2">External:</span>
-                            <div class="read-only-field w-20 text-center">${request.externalParticipants || '0'}</div>
+                            <div class="read-only-field w-20 text-center">${val(request.externalParticipants)}</div>
                         </div>
                     </div>
                 </div>
@@ -1010,61 +1015,85 @@
 
                 <div class="border border-black border-t-0 flex text-black">
                     <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">
-                        <p>Equipment Reservation</p><p class="mt-4 text-xs">Set-up Details (If applicable):</p>
-                        <div class="mt-1 text-xs font-normal space-y-1 text-gray-500 italic">
-                            <p>Ingress Date/Time: --</p>
-                            <p>Egress Date/Time: --</p>
+                        <p>Equipment Reservation</p>
+                        <p class="mt-4 text-xs font-bold">Set-up</p>
+                        <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
+                            <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block"></span></p>
+                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block"></span></p>
+                            <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block"></span></p>
+                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block"></span></p>
                         </div>
                     </div>
                     <div class="flex-1 p-2 text-sm">
                         <div class="grid grid-cols-1 gap-2 mb-2">
                             <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${getEquipData('Chair', 'count') ? 'checked' : ''} class="accent-black"> 
-                                <span class="${getEquipData('Chair', 'count') ? 'font-bold' : ''}">Chair #</span> 
-                                <div class="read-only-field w-16 text-center">${getEquipData('Chair', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1">${getEquipData('Chair', 'type')}</div>
+                                <input type="checkbox" disabled ${getEquip('Chair', 'count') ? 'checked' : ''} class="accent-black"> 
+                                <span class="${getEquip('Chair', 'count') ? 'font-bold' : ''}">Chair #</span> 
+                                <div class="read-only-field w-16 text-center">${getEquip('Chair', 'count')}</div>
+                                <span>Type:</span> <div class="read-only-field flex-1">${getEquip('Chair', 'type')}</div>
                             </div>
                             <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${getEquipData('Table', 'count') ? 'checked' : ''} class="accent-black"> 
-                                <span class="${getEquipData('Table', 'count') ? 'font-bold' : ''}">Table #</span> 
-                                <div class="read-only-field w-16 text-center">${getEquipData('Table', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1">${getEquipData('Table', 'type')}</div>
+                                <input type="checkbox" disabled ${getEquip('Table', 'count') ? 'checked' : ''} class="accent-black"> 
+                                <span class="${getEquip('Table', 'count') ? 'font-bold' : ''}">Table #</span> 
+                                <div class="read-only-field w-16 text-center">${getEquip('Table', 'count')}</div>
+                                <span>Type:</span> <div class="read-only-field flex-1">${getEquip('Table', 'type')}</div>
                             </div>
                         </div>
+                        
                         <div class="grid grid-cols-2 gap-x-4 gap-y-2">
                             <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Podium/Rostrum</span></label>
                             <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Sound System</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Electric fans</span></label>
                             <div class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Microphone #</span> <div class="read-only-field w-12 text-center"></div></div>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Multi-media Projector</span></label>
-                            </div>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Extension Cord</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Panel/White Board</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Philippine Flag</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>PnC Flag</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Projector</span></label>
+                            <div class="flex items-center space-x-2"><input type="checkbox" disabled class="accent-black"> <span>Others:</span> <div class="read-only-field w-full"></div></div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-4 gap-4 text-center mt-8 text-black">
+                <div class="border border-black border-t-0 flex text-black">
+                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Manpower Requirement</div>
+                    <div class="flex-1 p-2 grid grid-cols-2 gap-4 text-sm">
+                        <div class="flex items-center space-x-2"><input type="checkbox" disabled> <span>Technical</span> <div class="read-only-field flex-1"></div></div>
+                        <div class="flex items-center space-x-2"><input type="checkbox" disabled> <span>Housekeeping</span> <div class="read-only-field flex-1"></div></div>
+                    </div>
+                </div>
+
+                <div class="text-xs text-gray-600 mt-2 mb-6 space-y-1 italic p-2">
+                    <p>• Request must be submitted at least a week before the activity.</p>
+                    <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required.</p>
+                    <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
+                </div>
+
+                <div class="grid grid-cols-4 gap-4 text-center mt-4 text-black text-xs">
                     <div>
-                        <p class="font-bold text-sm mb-8 text-gray-700">Requested by:</p>
+                        <p class="font-bold mb-8 text-gray-700">Requested by:</p>
                         <div class="border-b border-black font-bold uppercase text-black pb-1">${request.requestedBy}</div>
-                        <p class="text-xs mt-1 pt-1">Signature over Printed Name/Date</p>
+                        <p class="mt-1">Signature over Printed Name/Date</p>
                     </div>
                     
                     <div class="opacity-90">
-                        <p class="font-bold text-sm mb-8 text-gray-700">Reviewed by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || '---'}</div>
-                        <p class="text-xs mt-1 pt-1">Department/Division Head</p>
+                        <p class="font-bold mb-8 text-gray-700">Reviewed by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || ''}</div>
+                        <p class="mt-1">Department/Division Head</p>
                         <div class="text-[10px] font-bold ${getStatusClass(deptHead.status)} rounded-full inline-block px-2 mt-1">${deptHead.status}</div>
                     </div>
 
                     <div class="opacity-90">
-                        <p class="font-bold text-sm mb-8 text-gray-700">Recommended by:</p>
+                        <p class="font-bold mb-8 text-gray-700">Recommended by:</p>
                         <div class="border-b border-black font-bold uppercase text-black pb-1">Mr. Colin B. Garcia</div>
-                        <p class="text-xs mt-1 pt-1">PM Officer</p>
+                        <p class="mt-1">PM Officer</p>
                         <div class="text-[10px] font-bold ${getStatusClass(pmOfficer.status)} rounded-full inline-block px-2 mt-1">${pmOfficer.status}</div>
                     </div>
 
                     <div class="opacity-90">
-                        <p class="font-bold text-sm mb-8 text-gray-700">Approved by:</p>
+                        <p class="font-bold mb-8 text-gray-700">Approved by:</p>
                         <div class="border-b border-black font-bold uppercase text-black pb-1">Alfredo Glenn H. Beaño</div>
-                        <p class="text-xs mt-1 pt-1">PMGSD Director</p>
+                        <p class="mt-1">PMGSD Director</p>
                         <div class="text-[10px] font-bold ${getStatusClass(pmgsdDirector.status)} rounded-full inline-block px-2 mt-1">${pmgsdDirector.status}</div>
                     </div>
                 </div>
@@ -1197,6 +1226,7 @@
     </script>
 </body>
 </html>
+
 
 
 
