@@ -343,4 +343,390 @@
                 <div class="w-24 h-1 bg-[#15803d] mx-auto mb-10"></div>
                 <div class="flex flex-col lg:flex-row gap-8">
                     <div class="flex-1 text-left">
-                        <div class="flex
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold text-[#15803d]" id="selectedDepartmentName">--</h3>
+                            <button class="text-sm text-gray-500 hover:text-gray-800 underline" onclick="showView('submissionChoiceView')">Change Department</button>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 h-96 overflow-y-auto" id="personnelChecklistContainer"></div>
+                    </div>
+                    <div class="w-full lg:w-1/3 bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex flex-col h-full relative">
+                        <h3 class="text-xl font-bold text-gray-700 mb-4 text-center border-b pb-4">Selected Personnel</h3>
+                        <div id="finalSelectedList_sub" class="flex-1 overflow-y-auto space-y-4 mb-4 text-left text-sm text-gray-600">
+                            <p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <button class="w-full py-3 bg-[#15803d] text-white font-bold rounded-lg hover:bg-green-800 transition shadow-lg text-lg" onclick="submitFinalSelection()">Submit Survey</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="trackingView" class="view-panel hidden text-center p-8">
+                <div class="bg-green-50 border-l-4 border-green-400 p-6 rounded-lg text-left w-full shadow-lg mb-8 max-w-4xl mx-auto">
+                    <h3 class="text-2xl font-bold text-[#15803d] mb-2">Reservation Submitted Successfully!</h3>
+                    <p class="text-sm text-gray-600">Sent to: <span id="submittedToDisplay" class="font-bold">--</span></p>
+                    <p class="text-sm text-gray-600 mt-2">Selected Personnel:</p>
+                    <div id="submittedPersonnelDisplay" class="font-bold text-sm text-gray-800 mt-1 max-h-32 overflow-y-auto">--</div>
+                </div>
+                <div class="bg-gray-100 p-6 rounded-xl shadow-inner inline-block mb-8">
+                    <p class="text-sm font-semibold text-gray-600 mb-1">Your Tracking ID:</p>
+                    <p id="trackingIdDisplay" class="text-4xl font-extrabold text-gray-800 tracking-wider font-mono">--</p>
+                    <div class="mt-4 bg-white border mx-auto flex items-center justify-center p-2 rounded">
+                        <img id="qrCodeImage" src="" alt="Tracking QR Code" class="w-32 h-32 object-contain">
+                    </div>
+                </div>
+                <div class="pt-6 space-y-3">
+                    <button class="kiosk-btn !bg-green-600 hover:!bg-green-700" onclick="showView('landingView')">Start New Request</button>
+                </div>
+            </div>
+
+        </main>
+        <div id="flashMessage" class="hidden"><h4 class="text-xl font-bold mb-2" id="flashTitle"></h4><p id="flashBody" class="text-sm"></p></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
+            authDomain: "group4-ee960.firebaseapp.com",
+            projectId: "group4-ee960",
+            storageBucket: "group4-ee960.firebasestorage.app",
+            messagingSenderId: "453765398844",
+            appId: "1:453765398844:web:219433f771cfd33b311e39",
+            measurementId: "G-41DZ3175NX"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        
+        window.db = db;
+        window.set = set;
+        window.ref = ref;
+        window.get = get;
+        window.onValue = onValue;
+
+        // --- GLOBAL STATE ---
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const minAdvanceDays = 7;
+        const minReservationDate = new Date();
+        minReservationDate.setDate(minReservationDate.getDate() + minAdvanceDays);
+        minReservationDate.setHours(0, 0, 0, 0);
+
+        let currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
+        let selectedReservationDate = null;
+        let globalEvents = [];
+        let globalSelectedPersonnel = {};
+        let stampingStep = 0;
+
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const personnelData = {
+            'Office of the Vice President for Administration & Finance (OVPAF)': ['Barundia, Arnold F.', 'Bondoc, Christian Stephen D.', 'Garcia, Colin B.', 'Mafabo, Renelina D.'],
+            'Property Management & General Services Department (PMGSD)': ['Aragon, Ferdinand G.', 'Aragon, Marcelo N.', 'Beaño, Alfredo Glenn H.', 'Dalisay, Marilyn D.', 'Garcia, Colin B.', 'Teves, Jomar P.']
+        };
+
+        // --- FUNCTIONS (Attached to Window for HTML access) ---
+
+        window.getDaysInMonth = function(year, month) { return new Date(year, month + 1, 0).getDate(); };
+
+        window.showView = function(id) {
+            document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            const homeButton = document.getElementById('homeButton');
+            if (id === 'landingView') {
+                homeButton.innerText = 'Start Screen';
+                homeButton.onclick = () => window.showView('landingView');
+            } else {
+                homeButton.innerText = 'Back to Start Screen';
+                homeButton.onclick = () => window.showView('landingView');
+            }
+            if (id === 'calendarView') window.renderCalendar();
+            if (id === 'landingView') window.renderReadOnlyCalendar();
+        };
+
+        window.verifyReservationCode = function() {
+            const code = document.getElementById('verificationCodeInput').value.trim();
+            const btnText = document.getElementById('verifyBtnText');
+            const spinner = document.getElementById('verifySpinner');
+            if (!code) return alert("Please enter a code.");
+            
+            btnText.innerText = "Checking Form 1 & Form 2 Approval...";
+            spinner.classList.remove('hidden');
+            
+            const requestRef = window.ref(window.db, 'requests/' + code);
+            window.get(requestRef).then((snapshot) => {
+                setTimeout(() => {
+                    btnText.innerText = "Check Status";
+                    spinner.classList.add('hidden');
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        document.getElementById('displayVerifiedCode').innerText = code;
+                        const isForm1Approved = data.approvals?.oup?.status === "Approved";
+                        const isForm2Approved = data.approvals?.pmgsdDirector?.status === "Approved";
+                        if (isForm1Approved && isForm2Approved) {
+                            stampingStep = 1;
+                            window.updateStampingUI();
+                            window.showView('stampingActionView');
+                        } else {
+                            alert("❌ Forms are not fully approved yet.\nForm 1: " + (isForm1Approved ? "✅" : "❌") + "\nForm 2: " + (isForm2Approved ? "✅" : "❌"));
+                            window.showView('verificationView');
+                        }
+                    } else {
+                        alert("❌ No reservation found with code: " + code);
+                        window.showView('verificationView');
+                    }
+                }, 1500);
+            }).catch((error) => {
+                console.error("Error checking status:", error);
+                alert("Network error. Please try again.");
+                btnText.innerText = "Check Status";
+                spinner.classList.add('hidden');
+            });
+        };
+
+        window.updateStampingUI = function() {
+            const title = document.getElementById('stampingTitle');
+            const desc = document.getElementById('stampingDesc');
+            const btn = document.getElementById('stampingBtn');
+            if (stampingStep === 1) {
+                title.innerText = "Step 1: Insert Request Letter";
+                desc.innerHTML = "Please insert your <strong>Form 1 (Request Letter)</strong> into the document slot.";
+                btn.innerText = "Insert Letter & Stamp";
+                btn.onclick = () => window.processStamping(1);
+            } else if (stampingStep === 2) {
+                title.innerText = "Step 2: Insert Request Form";
+                desc.innerHTML = "Please insert your <strong>Form 2 (Request Form)</strong> into the document slot.";
+                btn.innerText = "Insert Form & Stamp";
+                btn.onclick = () => window.processStamping(2);
+            }
+        };
+
+        window.processStamping = function(step) {
+            const btn = document.getElementById('stampingBtn');
+            btn.innerText = "Stamping...";
+            btn.disabled = true;
+            setTimeout(() => {
+                if (step === 1) {
+                    stampingStep = 2;
+                    window.updateStampingUI();
+                    btn.disabled = false;
+                } else {
+                    window.simulateStampingProcess();
+                }
+            }, 2000);
+        };
+
+        window.simulateStampingProcess = function() {
+            document.getElementById('stampDate').innerText = new Date().toLocaleDateString();
+            window.showView('stampingSuccessView');
+        };
+
+        window.showEventDetailsFromCalendar = function(dateString) {
+            const event = globalEvents.find(e => e.date === dateString);
+            if (event) alert(`📅 OCCUPIED\n\nEvent: ${event.title}\nTime: ${event.time}\nStatus: ${event.status.toUpperCase()}`);
+        };
+
+        window.setReservationDateAndShowUpload = function(dateString) {
+            selectedReservationDate = dateString;
+            const filingDateInput = document.getElementById('filingDateInput');
+            if (filingDateInput) filingDateInput.value = today.toISOString().split('T')[0];
+            const actDate = document.getElementById('activityDateInput');
+            if (actDate) actDate.value = dateString;
+            window.showView('uploadView');
+        };
+
+        window.renderReadOnlyCalendar = function() {
+            const grid = document.getElementById('landingCalendarGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            dayNames.forEach(d => grid.innerHTML += `<div class="font-bold bg-gray-200 py-2">${d}</div>`);
+            const monthDisplay = document.getElementById('landingMonthDisplay');
+            if (monthDisplay) monthDisplay.innerText = `${monthNames[currentMonth]} ${currentYear}`;
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+            const firstDay = firstDayOfMonth.getDay();
+            const daysInMonth = window.getDaysInMonth(currentYear, currentMonth);
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayDate = new Date(currentYear, currentMonth, i);
+                dayDate.setHours(0, 0, 0, 0);
+                const dateString = dayDate.toISOString().split('T')[0];
+                const event = globalEvents.find(e => e.date === dateString);
+                const isCurrentDay = (i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear());
+                let dayClass = 'readonly-day border border-gray-200';
+                let statusText = 'Available';
+                if (event) { dayClass += ' occupied'; statusText = 'OCCUPIED'; } 
+                else if (isCurrentDay) { dayClass = 'bg-green-200 border-green-400 text-gray-800'; statusText = 'TODAY'; }
+                grid.innerHTML += `<div class="p-2 h-16 flex flex-col items-center justify-center font-bold relative text-xs ${dayClass}"><span>${i}</span>${statusText === 'OCCUPIED' ? '<span class="text-[9px] font-bold text-red-800 mt-1">OCCUPIED</span>' : ''}</div>`;
+            }
+        };
+
+        window.renderCalendar = function() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            dayNames.forEach(d => grid.innerHTML += `<div class="font-bold bg-gray-200 py-2">${d}</div>`);
+            document.getElementById('monthDisplay').innerText = `${monthNames[currentMonth]} ${currentYear}`;
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+            const firstDay = firstDayOfMonth.getDay();
+            const daysInMonth = window.getDaysInMonth(currentYear, currentMonth);
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayDate = new Date(currentYear, currentMonth, i);
+                dayDate.setHours(0, 0, 0, 0);
+                const dateString = dayDate.toISOString().split('T')[0];
+                const event = globalEvents.find(e => e.date === dateString);
+                const isEligible = dayDate >= minReservationDate;
+                const isCurrentDay = (i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear());
+                let dayClass = 'bg-white border hover:bg-green-50';
+                let clickHandler = '';
+                let statusText = 'Available';
+                if (event) { 
+                    dayClass = 'occupied cursor-not-allowed border-2'; statusText = 'OCCUPIED'; 
+                    clickHandler = `onclick="window.showEventDetailsFromCalendar('${dateString}')"`;
+                } else if (!isEligible) { 
+                    dayClass = 'too-soon border'; statusText = isCurrentDay ? 'Today' : 'Too Soon'; 
+                } else { 
+                    dayClass += ' clickable calendar-day'; 
+                    clickHandler = `onclick="window.setReservationDateAndShowUpload('${dateString}')"`;
+                }
+                if (isCurrentDay && isEligible && !event) { dayClass = 'bg-green-200 border-green-400 clickable calendar-day hover:bg-green-300'; statusText = 'TODAY'; }
+                grid.innerHTML += `<div ${clickHandler} class="p-2 h-20 flex items-center justify-center font-bold relative text-sm ${dayClass}">${i}<span class="absolute bottom-1 right-2 text-[10px] font-medium text-gray-500">${statusText}</span></div>`;
+            }
+        };
+
+        window.changeMonth = function(delta) {
+            const newDate = new Date(currentYear, currentMonth + delta, 1);
+            currentMonth = newDate.getMonth();
+            currentYear = newDate.getFullYear();
+            window.renderCalendar();
+            window.renderReadOnlyCalendar();
+        };
+
+        window.updateFileName = function(input) {
+            const label = input.parentElement;
+            if (input.files.length > 0) {
+                label.innerHTML = 'Selected: ' + input.files[0].name;
+                label.classList.add('bg-green-100');
+            }
+        };
+
+        window.proceedToSubmissionChoice = function() { window.showView('submissionChoiceView'); };
+
+        window.selectOffice = function(officeName) {
+            document.getElementById('selectedDepartmentName').innerText = officeName;
+            const container = document.getElementById('personnelChecklistContainer');
+            container.innerHTML = '';
+            const staffList = personnelData[officeName] || [];
+            staffList.forEach(name => {
+                const wrapper = document.createElement('div');
+                wrapper.className = "flex items-center space-x-3 mb-2 p-2 hover:bg-green-50 rounded cursor-pointer";
+                const isChecked = globalSelectedPersonnel[officeName] && globalSelectedPersonnel[officeName].includes(name);
+                wrapper.innerHTML = `<input type="checkbox" id="${name}" value="${name}" class="form-checkbox h-5 w-5 text-[#15803d] rounded focus:ring-green-500 border-gray-300" onchange="window.togglePersonSelection('${officeName}', '${name}', this.checked)" ${isChecked ? 'checked' : ''}><label for="${name}" class="text-gray-700 cursor-pointer flex-1 select-none">${name}</label>`;
+                container.appendChild(wrapper);
+            });
+            window.showView('personnelView');
+        };
+
+        window.togglePersonSelection = function(office, name, isChecked) {
+            if (!globalSelectedPersonnel[office]) globalSelectedPersonnel[office] = [];
+            if (isChecked) {
+                if (!globalSelectedPersonnel[office].includes(name)) globalSelectedPersonnel[office].push(name);
+            } else {
+                globalSelectedPersonnel[office] = globalSelectedPersonnel[office].filter(p => p !== name);
+                if (globalSelectedPersonnel[office].length === 0) delete globalSelectedPersonnel[office];
+            }
+            window.updateSelectedDisplay();
+        };
+
+        window.updateSelectedDisplay = function() {
+            const containers = [document.getElementById('finalSelectedList_main'), document.getElementById('finalSelectedList_sub')];
+            const offices = Object.keys(globalSelectedPersonnel);
+            const content = (offices.length === 0) ? '<p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>' : offices.map(office => {
+                const lis = globalSelectedPersonnel[office].map(person => `<li>${person}</li>`).join('');
+                return `<div class="mb-4"><div class="font-bold text-xs text-[#15803d] uppercase tracking-wide mb-1">${office}</div><ul class="list-disc list-inside pl-1 text-gray-700">${lis}</ul></div>`;
+            }).join('');
+            containers.forEach(c => { if (c) c.innerHTML = content; });
+        };
+
+        window.submitFinalSelection = function() {
+            const formView = document.getElementById('formView');
+            const activityName = formView.querySelector('input[placeholder="Activity Name/Title/Purpose"]')?.value || "Gym Reservation";
+            const department = formView.querySelector('input[placeholder="Department"]')?.value || "";
+            const activityDate = formView.querySelector('#activityDateInput')?.value || selectedReservationDate;
+            const time = formView.querySelector('input[type="time"]')?.value || "09:00";
+            const internalParticipants = formView.querySelector('input[placeholder="Internal"]')?.value || "0";
+            const externalParticipants = formView.querySelector('input[placeholder="External"]')?.value || "0";
+            const requestedBy = formView.querySelector('input[placeholder="[Enter Your Name]"]')?.value || "Anonymous";
+            const trackingId = "RES-" + Math.floor(100000 + Math.random() * 900000);
+            
+            const formData = {
+                id: trackingId,
+                timestamp: new Date().toISOString(),
+                filingDate: new Date().toISOString().split('T')[0],
+                activityDate: activityDate,
+                time: time,
+                department: department,
+                activityName: activityName,
+                internalParticipants: internalParticipants,
+                externalParticipants: externalParticipants,
+                venue: ["Gym Stage / Court"],
+                equipment: [],
+                requestedBy: requestedBy,
+                status: "Pending VP Admin",
+                personnel: globalSelectedPersonnel,
+                approvals: {
+                    deptHead: { name: "", date: "", status: "Pending" },
+                    ovpas: { name: "", date: "", status: "Pending" },
+                    oevp: { name: "", date: "", status: "Pending" },
+                    oup: { name: "", date: "", status: "Pending" },
+                    pmOfficer: { name: "", date: "", status: "Pending" },
+                    pmgsdDirector: { name: "", date: "", status: "Pending" }
+                },
+                form1: { purpose: "Regular gym reservation for university activity." }
+            };
+
+            window.set(window.ref(window.db, 'requests/' + trackingId), formData)
+                .then(() => {
+                    const moniwebUrl = `${window.location.origin}/moniweb.html`;
+                    const qrData = `${moniwebUrl}?id=${trackingId}`;
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+                    document.getElementById('trackingIdDisplay').innerText = trackingId;
+                    document.getElementById('qrCodeImage').src = qrUrl;
+                    window.showView('trackingView');
+                })
+                .catch((error) => {
+                    alert("Error sending request: " + error.message);
+                });
+        };
+
+        window.onload = () => {
+            window.showView('landingView');
+            window.renderReadOnlyCalendar();
+            
+            const eventsRef = window.ref(window.db, 'events');
+            window.onValue(eventsRef, (snapshot) => {
+                const data = snapshot.val();
+                globalEvents = [];
+                if (data) {
+                    Object.keys(data).forEach(key => { globalEvents.push(data[key]); });
+                }
+                console.log("📅 Kiosk Calendar synced:", globalEvents.length, "events");
+                window.renderCalendar();
+                window.renderReadOnlyCalendar();
+            });
+        };
+        
+        window.debugFirebase = function() {
+            console.log("=== FIREBASE DATA CHECK ===");
+            const requestsRef = window.ref(window.db, 'requests');
+            window.get(requestsRef).then((snapshot) => {
+                const data = snapshot.val();
+                console.log("Data:", data);
+            });
+        };
+    </script>
+</body>
+</html>
