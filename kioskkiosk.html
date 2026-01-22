@@ -1,619 +1,259 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <script type="module">
-        // KEEP THESE LINES (Do not copy the import lines from your screenshot)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        // PASTE YOUR CONFIG FROM THE IMAGE HERE:
-        const firebaseConfig = {
-            apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
-            authDomain: "group4-ee960.firebaseapp.com",
-            projectId: "group4-ee960",
-            storageBucket: "group4-ee960.firebasestorage.app",
-            messagingSenderId: "453765398844",
-            appId: "1:453765398844:web:219433f771cfd33b311e39",
-            measurementId: "G-41DZ3175NX"
-        };
-
-        // Initialize
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // Make db available globally
-        window.db = db;
-        window.set = set;
-        window.ref = ref;
-        window.get = get;
-        window.onValue = onValue;
-        
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PnC Gymnasium Kiosk System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <!-- Added UnifrakturMaguntia for the University Header style -->
     <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            /* EDITED: Lighter Green to match dashboard header (#15803d) */
             --pnc-blue: #15803d;
             --pnc-yellow: #FCD34D;
             --pnc-green-dark: #15803d;
             --pnc-green-light: #dcfce7;
         }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
-
-        .font-gothic {
-            font-family: 'UnifrakturMaguntia', serif;
-            letter-spacing: 1px;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .font-gothic { font-family: 'UnifrakturMaguntia', serif; letter-spacing: 1px; }
 
         /* Form Template Styles */
-        .form-container {
-            background: white;
-            border: 1px solid #000;
-            padding: 2rem;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .form-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-title {
-            background-color: #D1D5DB;
-            font-weight: bold;
-            text-align: center;
-            padding: 0.25rem;
-            /* EDITED: Removed border as requested */
-            text-transform: uppercase;
-        }
-
-        .line-input {
-            border-bottom: 1px solid #000;
-            width: 100%;
-            outline: none;
-            background: transparent;
-            padding-left: 0.25rem;
-        }
-
+        .form-container { background: white; border: 1px solid #000; padding: 2rem; max-width: 1000px; margin: 0 auto; }
+        .form-header { text-align: center; margin-bottom: 1.5rem; }
+        .form-title { background-color: #D1D5DB; font-weight: bold; text-align: center; padding: 0.25rem; text-transform: uppercase; }
+        .line-input { border-bottom: 1px solid #000; width: 100%; outline: none; background: transparent; padding-left: 0.25rem; }
+        
         /* Kiosk specific buttons */
-        .kiosk-btn {
-            background-color: var(--pnc-blue);
-            color: white;
-            padding: 1rem 2rem;
-            font-size: 1.25rem;
-            border-radius: 0.5rem;
-            transition: all 0.2s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        /* EDITED: Hover state adjusted for new lighter green */
-        .kiosk-btn:hover {
-            background-color: #166534;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .kiosk-btn:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+        .kiosk-btn { background-color: var(--pnc-blue); color: white; padding: 1rem 2rem; font-size: 1.25rem; border-radius: 0.5rem; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .kiosk-btn:hover { background-color: #166534; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
+        .kiosk-btn:active { transform: translateY(0); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
 
         /* Calendar specific */
-        .calendar-day {
-            transition: background-color 0.2s;
-        }
-
-        .calendar-day.clickable:active {
-            background-color: #bbf7d0;
-            /* Green-200 */
-        }
-
-        .calendar-day.clickable {
-            cursor: pointer;
-        }
-
-        .calendar-day.event {
-            background-color: #FEF3C7;
-            /* Yellow-100 */
-            border-color: var(--pnc-yellow);
-            cursor: pointer;
-        }
-
-        .calendar-day.event:hover {
-            background-color: #FCD34D;
-            /* Yellow-300 */
-        }
-
-        /* Disabled inputs for Approvers and Read-Only fields */
-        .input-disabled {
-            background-color: #E5E7EB;
-            cursor: not-allowed;
-            color: #6B7280;
-            font-style: italic;
-        }
-
-        .calendar-day.too-soon {
-            background-color: #FEE2E2 !important;
-            /* Red-100 */
-            color: #B91C1C !important;
-            /* Red-700 */
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        /* Event styling on calendar */
-        .calendar-day.occupied {
-            background-color: #fee2e2;
-            /* Red-100 */
-            border-color: #ef4444;
-            /* Red-500 */
-            color: #991b1b;
-        }
-
-        .calendar-day.occupied:hover {
-            background-color: #fecaca;
-            /* Red-200 */
-        }
+        .calendar-day { transition: background-color 0.2s; }
+        .calendar-day.clickable:active { background-color: #bbf7d0; }
+        .calendar-day.clickable { cursor: pointer; }
+        .calendar-day.event { background-color: #FEF3C7; border-color: var(--pnc-yellow); cursor: pointer; }
+        .calendar-day.event:hover { background-color: #FCD34D; }
+        .calendar-day.too-soon { background-color: #FEE2E2 !important; color: #B91C1C !important; cursor: not-allowed; opacity: 0.7; }
+        .calendar-day.occupied { background-color: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .calendar-day.occupied:hover { background-color: #fecaca; }
+        
+        .input-disabled { background-color: #E5E7EB; cursor: not-allowed; color: #6B7280; font-style: italic; }
 
         /* Read Only Calendar Styling */
-        .readonly-day {
-            background-color: #f3f4f6;
-            color: #9ca3af;
-        }
-
-        .readonly-day.occupied {
-            background-color: #fee2e2;
-            /* Red-100 */
-            color: #991b1b;
-            border: 1px solid #ef4444;
-            cursor: help;
-        }
+        .readonly-day { background-color: #f3f4f6; color: #9ca3af; }
+        .readonly-day.occupied { background-color: #fee2e2; color: #991b1b; border: 1px solid #ef4444; cursor: help; }
 
         /* Choice Card Styles */
-        .choice-card {
-            border: 2px solid #e5e7eb;
-            /* Gray-200 default */
-            transition: all 0.2s;
-        }
-
-        .choice-card:hover {
-            border-color: var(--pnc-blue);
-            transform: translateY(-2px);
-            background-color: #f0fdf4;
-            /* green-50 */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
+        .choice-card { border: 2px solid #e5e7eb; transition: all 0.2s; }
+        .choice-card:hover { border-color: var(--pnc-blue); transform: translateY(-2px); background-color: #f0fdf4; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
 
         /* Flash Message Styling */
-        #flashMessage {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-55%, -50%);
-            /* EDITED: Background color to new green */
-            background-color: rgba(21, 128, 61, 0.95);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            z-index: 100;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-            max-width: 90%;
-            text-align: center;
-        }
-
-        #flashMessage.show {
-            opacity: 1;
-        }
+        #flashMessage { position: fixed; top: 50%; left: 50%; transform: translate(-55%, -50%); background-color: rgba(21, 128, 61, 0.95); color: white; padding: 20px 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); z-index: 100; opacity: 0; transition: opacity 0.3s ease-in-out; max-width: 90%; text-align: center; }
+        #flashMessage.show { opacity: 1; }
 
         /* Stamping Animation */
-        @keyframes stamp {
-            0% {
-                transform: scale(2);
-                opacity: 0;
-            }
-
-            50% {
-                transform: scale(1);
-                opacity: 1;
-            }
-
-            70% {
-                transform: scale(1.1);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        .stamp-animate {
-            animation: stamp 0.5s ease-in-out forwards;
-        }
+        @keyframes stamp { 0% { transform: scale(2); opacity: 0; } 50% { transform: scale(1); opacity: 1; } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .stamp-animate { animation: stamp 0.5s ease-in-out forwards; }
     </style>
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-4">
 
-    <div id="kiosk-app"
-        class="w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden min-h-[800px] flex flex-col">
+    <div id="kiosk-app" class="w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden min-h-[800px] flex flex-col">
 
-        <!-- EDITED: Header Background changed to lighter Green #15803d -->
-        <header
-            class="bg-[#15803d] p-4 border-b-4 border-green-600 flex justify-between items-center sticky top-0 z-20 shadow-md">
+        <header class="bg-[#15803d] p-4 border-b-4 border-green-600 flex justify-between items-center sticky top-0 z-20 shadow-md">
             <div class="flex items-center space-x-3">
-                <!-- Logo box colors inverted for Green header -->
                 <div class="bg-white text-[#15803d] p-2 rounded font-bold text-lg">PnC</div>
                 <h1 class="text-2xl font-extrabold text-white">Gym Reservation Kiosk</h1>
             </div>
-
-            <button id="homeButton" class="text-green-100 font-semibold hover:text-white transition"
-                onclick="showView('landingView')">Start Screen</button>
+            <button id="homeButton" class="text-green-100 font-semibold hover:text-white transition" onclick="showView('landingView')">Start Screen</button>
         </header>
 
         <main class="flex-grow overflow-y-auto p-6">
 
-            <div id="landingView"
-                class="view-panel text-center flex flex-col items-center justify-center h-full pt-6 pb-20">
-
-                <!-- 1. University Header Section -->
+            <div id="landingView" class="view-panel text-center flex flex-col items-center justify-center h-full pt-6 pb-20">
                 <div class="w-full flex items-center justify-center mb-6 space-x-4">
-                    <img src="pnc-logo.png"
-                        onerror="this.onerror=null; this.src='https://placehold.co/150x150?text=PnC+Logo';"
-                        alt="PnC Seal" class="w-24 h-24 shadow-md object-contain">
-
+                    <img src="pnc-logo.png" onerror="this.onerror=null; this.src='https://placehold.co/150x150?text=PnC+Logo';" alt="PnC Seal" class="w-24 h-24 shadow-md object-contain">
                     <div class="text-left">
-                        <!-- EDITED: Text color to lighter green -->
                         <h1 class="text-4xl md:text-5xl text-[#15803d] font-gothic">University of Cabuyao</h1>
-                        <h2 class="text-base md:text-lg text-gray-700 font-serif font-semibold tracking-[0.2em] mt-1">
-                            (PAMANTASAN NG CABUYAO)</h2>
+                        <h2 class="text-base md:text-lg text-gray-700 font-serif font-semibold tracking-[0.2em] mt-1">(PAMANTASAN NG CABUYAO)</h2>
                     </div>
                 </div>
 
-                <!-- 2. Green Banner Section -->
-                <div
-                    class="w-full max-w-5xl bg-[#dcfce7] rounded-md py-8 px-4 mb-8 border border-green-200 shadow-sm relative overflow-hidden mx-auto">
+                <div class="w-full max-w-5xl bg-[#dcfce7] rounded-md py-8 px-4 mb-8 border border-green-200 shadow-sm relative overflow-hidden mx-auto">
                     <div class="relative z-10">
-                        <!-- EDITED: Text color to lighter green -->
                         <h3 class="text-2xl text-[#15803d] mb-1 font-normal">Welcome to</h3>
-
                         <div class="text-5xl md:text-6xl font-bold mb-3 flex items-center justify-center gap-1">
                             <span class="text-[#15803d]">Gym</span>
                             <span class="text-gray-800">Kiosk</span>
                         </div>
-
-                        <p class="text-lg text-[#15803d] font-medium tracking-wide">University of Cabuyao Reservation
-                            System</p>
+                        <p class="text-lg text-[#15803d] font-medium tracking-wide">University of Cabuyao Reservation System</p>
                     </div>
                 </div>
 
                 <div class="bg-white p-6 max-w-5xl mx-auto text-center">
                     <p class="text-base text-gray-600 mb-8 max-w-2xl mx-auto">
-                        Use this kiosk to book the Gymnasium. <br>
-                        All reservations require <span class="font-bold text-[#15803d]">1 week advance notice</span> and
-                        a signed <span class="font-bold text-[#15803d]">Request Letter</span>.
+                        Use this kiosk to book the Gymnasium.<br>
+                        All reservations require <span class="font-bold text-[#15803d]">1 week advance notice</span> and a signed <span class="font-bold text-[#15803d]">Request Letter</span>.
                     </p>
 
-                    <!-- EDITED: Added Two Buttons with IDENTICAL COLORS -->
                     <div class="flex flex-col md:flex-row justify-center gap-6 mb-12">
-                        <button class="kiosk-btn w-64 shadow-xl" onclick="showView('calendarView')">
-                            Start Reservation &rarr;
-                        </button>
-
-                        <!-- UPDATED: Identical style to the first button -->
-                        <button class="kiosk-btn w-64 shadow-xl" onclick="showView('verificationView')">
-                            Approved Letter for Stamping &rarr;
-                        </button>
+                        <button class="kiosk-btn w-64 shadow-xl" onclick="showView('calendarView')">Start Reservation &rarr;</button>
+                        <button class="kiosk-btn w-64 shadow-xl" onclick="showView('verificationView')">Approved Letter for Stamping &rarr;</button>
                     </div>
 
-                    <!-- NEW: Read-Only Calendar for Schedule Checking -->
                     <div class="border-t pt-8">
                         <h3 class="text-xl font-bold text-gray-700 mb-4">Check Schedule Availability</h3>
-                        <p class="text-sm text-gray-500 mb-4">Please check the calendar below for conflicting schedules
-                            before creating your Request Letter.</p>
-
-                        <!-- Container for the Read-Only Calendar -->
+                        <p class="text-sm text-gray-500 mb-4">Please check the calendar below for conflicting schedules before creating your Request Letter.</p>
                         <div class="max-w-4xl mx-auto bg-gray-50 p-4 rounded-lg border border-gray-200">
                             <div class="flex justify-between items-center mb-4">
                                 <div class="text-2xl font-extrabold text-[#15803d]" id="landingMonthDisplay"></div>
-                                <!-- Optional: Add nav controls if needed, simplified here for view only -->
                             </div>
-                            <div id="landingCalendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm">
-                                <!-- Calendar rendered here by JS -->
-                            </div>
-                            <!-- Legend -->
+                            <div id="landingCalendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
                             <div class="pt-4 flex justify-center gap-4 text-xs">
-                                <div class="flex items-center gap-1">
-                                    <div class="w-4 h-4 bg-white border border-gray-300"></div> Available
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    <div class="w-4 h-4 bg-red-100 border border-red-500"></div> Occupied (Conflict)
-                                </div>
+                                <div class="flex items-center gap-1"><div class="w-4 h-4 bg-white border border-gray-300"></div> Available</div>
+                                <div class="flex items-center gap-1"><div class="w-4 h-4 bg-red-100 border border-red-500"></div> Occupied (Conflict)</div>
                             </div>
                         </div>
                     </div>
-
                 </div>
-
             </div>
 
-            <!-- NEW: Verification View -->
-            <div id="verificationView"
-                class="view-panel hidden text-center flex flex-col items-center justify-center h-full pt-20">
+            <div id="verificationView" class="view-panel hidden text-center flex flex-col items-center justify-center h-full pt-20">
                 <h2 class="text-3xl font-bold text-[#15803d] mb-2">Reservation Status</h2>
                 <p class="text-gray-500 mb-8">Verify if your request letter and form are approved.</p>
-
                 <div class="max-w-md w-full bg-white p-8 rounded-xl shadow-lg border border-gray-200">
                     <div class="mb-6">
                         <label class="block text-left text-gray-700 font-bold mb-2">Enter Request Letter Code</label>
-                        <input type="text" id="verificationCodeInput" placeholder="e.g. RL-2025-001"
-                            class="w-full p-4 border border-gray-300 rounded text-xl text-center tracking-widest font-mono focus:outline-none focus:border-[#15803d] focus:ring-2 focus:ring-green-200">
+                        <input type="text" id="verificationCodeInput" placeholder="e.g. RES-123456" class="w-full p-4 border border-gray-300 rounded text-xl text-center tracking-widest font-mono focus:outline-none focus:border-[#15803d] focus:ring-2 focus:ring-green-200">
                     </div>
-
-                    <button
-                        class="w-full bg-[#15803d] text-white p-4 rounded-lg font-bold text-lg hover:bg-green-800 transition flex justify-center items-center"
-                        onclick="verifyReservationCode()">
+                    <button class="w-full bg-[#15803d] text-white p-4 rounded-lg font-bold text-lg hover:bg-green-800 transition flex justify-center items-center" onclick="verifyReservationCode()">
                         <span id="verifyBtnText">Check Status</span>
-                        <!-- Loading Spinner (Hidden by default) -->
-                        <svg id="verifySpinner" class="animate-spin ml-2 h-5 w-5 text-white hidden"
-                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                            </circle>
-                            <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                            </path>
+                        <svg id="verifySpinner" class="animate-spin ml-2 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </button>
-
-                    <button class="mt-6 text-gray-500 underline hover:text-gray-800"
-                        onclick="showView('landingView')">Cancel</button>
+                    <button class="mt-6 text-gray-500 underline hover:text-gray-800" onclick="showView('landingView')">Cancel</button>
                 </div>
             </div>
 
-            <!-- NEW: Stamping Action View (Feed Paper) -->
             <div id="stampingActionView" class="view-panel hidden text-center h-full pt-10">
                 <div class="max-w-3xl mx-auto bg-green-50 border-2 border-green-500 p-8 rounded-2xl shadow-xl">
                     <div class="flex items-center justify-center space-x-3 mb-4">
                         <div class="bg-green-600 text-white rounded-full p-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7" />
-                            </svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                         </div>
                         <h2 class="text-3xl font-bold text-green-800">Status: APPROVED</h2>
                     </div>
-
-                    <p class="text-lg text-gray-700 mb-8">
-                        The reservation for Letter Code <span class="font-mono font-bold"
-                            id="displayVerifiedCode">--</span> is fully approved.
-                    </p>
-
+                    <p class="text-lg text-gray-700 mb-8">The reservation for Letter Code <span class="font-mono font-bold" id="displayVerifiedCode">--</span> is fully approved.</p>
                     <div class="bg-white p-10 rounded-xl border-2 border-dashed border-gray-400 mb-8">
                         <div class="mb-4">
-                            <!-- Printer/Paper Icon -->
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto text-gray-400" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                         </div>
-                        <!-- EDITED: Dynamic Instructions -->
                         <h3 id="stampingTitle" class="text-2xl font-bold text-gray-800 mb-2">Ready for Stamping</h3>
                         <p id="stampingDesc" class="text-gray-600">Please insert your documents into the slot below.</p>
                     </div>
-
-                    <!-- EDITED: Dynamic Button -->
-                    <button id="stampingBtn" class="kiosk-btn w-72 animate-pulse" onclick="startStampingSequence()">
-                        Start Stamping Process
-                    </button>
+                    <button id="stampingBtn" class="kiosk-btn w-72 animate-pulse">Start Stamping Process</button>
                 </div>
             </div>
 
-            <!-- NEW: Stamping Success View -->
-            <div id="stampingSuccessView"
-                class="view-panel hidden text-center flex flex-col items-center justify-center h-full pt-20">
-                <div
-                    class="stamp-animate mb-6 border-4 border-red-700 p-4 rounded inline-block transform -rotate-6 mask-image">
+            <div id="stampingSuccessView" class="view-panel hidden text-center flex flex-col items-center justify-center h-full pt-20">
+                <div class="stamp-animate mb-6 border-4 border-red-700 p-4 rounded inline-block transform -rotate-6 mask-image">
                     <h2 class="text-5xl font-black text-red-700 uppercase tracking-widest">APPROVED</h2>
                     <p class="text-red-700 font-bold text-sm mt-1">PMGSD • DATE: <span id="stampDate"></span></p>
                 </div>
-
                 <h3 class="text-3xl font-bold text-gray-800 mb-4">Documents Stamped Successfully!</h3>
-                <p class="text-lg text-gray-600 mb-10 max-w-md">Please retrieve your stamped documents from the tray.
-                    You may now proceed with your event.</p>
-
-                <button class="kiosk-btn !bg-gray-600 hover:!bg-gray-700" onclick="showView('landingView')">
-                    Return to Start Screen
-                </button>
+                <p class="text-lg text-gray-600 mb-10 max-w-md">Please retrieve your stamped documents from the tray. You may now proceed with your event.</p>
+                <button class="kiosk-btn !bg-gray-600 hover:!bg-gray-700" onclick="showView('landingView')">Return to Start Screen</button>
             </div>
 
             <div id="calendarView" class="view-panel hidden space-y-6">
-                <h2 class="text-2xl font-bold text-gray-700 border-b pb-2">Schedule Overview (1-Week Minimum Advance)
-                </h2>
-
+                <h2 class="text-2xl font-bold text-gray-700 border-b pb-2">Schedule Overview (1-Week Minimum Advance)</h2>
                 <div class="flex justify-between items-center">
-                    <!-- EDITED: Title color to lighter green -->
                     <div class="text-3xl font-extrabold text-[#15803d]" id="monthDisplay"></div>
                     <div class="space-x-2">
-                        <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 active:bg-gray-400 transition"
-                            onclick="changeMonth(-1)">Prev</button>
-                        <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 active:bg-gray-400 transition"
-                            onclick="changeMonth(1)">Next</button>
+                        <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 active:bg-gray-400 transition" onclick="changeMonth(-1)">Prev</button>
+                        <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 active:bg-gray-400 transition" onclick="changeMonth(1)">Next</button>
                     </div>
                 </div>
-
-                <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm">
-                    <!-- Calendar days will be rendered here -->
-                </div>
-
-                <!-- EDITED: Added Legend for clarity -->
+                <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
                 <div class="pt-6 flex justify-center gap-4 border-t border-gray-200 text-xs">
-                    <div class="flex items-center gap-1">
-                        <div class="w-4 h-4 bg-white border border-gray-300"></div> Available
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <div class="w-4 h-4 bg-red-100 border border-red-500"></div> Occupied/Event
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <div class="w-4 h-4 bg-green-200 border border-green-400"></div> Selected/Today
-                    </div>
+                    <div class="flex items-center gap-1"><div class="w-4 h-4 bg-white border border-gray-300"></div> Available</div>
+                    <div class="flex items-center gap-1"><div class="w-4 h-4 bg-red-100 border border-red-500"></div> Occupied/Event</div>
+                    <div class="flex items-center gap-1"><div class="w-4 h-4 bg-green-200 border border-green-400"></div> Selected/Today</div>
                 </div>
             </div>
 
             <div id="uploadView" class="view-panel hidden text-center max-w-3xl mx-auto pt-10">
                 <h2 class="text-3xl font-bold text-gray-700 mb-8">Step 1: Request Letter</h2>
-
                 <div class="bg-green-50 p-10 rounded-xl border-2 border-dashed border-green-400 mb-8">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-green-600 mb-4" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-green-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     <p class="text-xl font-semibold text-gray-800 mb-2">Scan or Upload Request Letter</p>
-                    <p class="text-sm text-gray-600 mb-6">Please upload the formal request letter signed by your
-                        organization head.</p>
-
-                    <!-- EDITED: Border and Text color to lighter green -->
-                    <label id="fileInputLabel"
-                        class="kiosk-btn bg-white !text-[#15803d] border-2 border-[#15803d] cursor-pointer inline-block hover:bg-green-50">
+                    <p class="text-sm text-gray-600 mb-6">Please upload the formal request letter signed by your organization head.</p>
+                    <label id="fileInputLabel" class="kiosk-btn bg-white !text-[#15803d] border-2 border-[#15803d] cursor-pointer inline-block hover:bg-green-50">
                         Browse / Scan
                         <input type="file" id="requestLetterFile" class="hidden" onchange="updateFileName(this)">
                     </label>
                 </div>
-
-                <button id="fileNextBtn" class="kiosk-btn" onclick="showView('formView')">
-                    Next: Fill Reservation Form &rarr;
-                </button>
+                <button id="fileNextBtn" class="kiosk-btn" onclick="showView('formView')">Next: Fill Reservation Form &rarr;</button>
             </div>
 
             <div id="formView" class="view-panel hidden">
-
                 <div class="flex justify-between items-start mb-4 px-4">
-                    <button class="text-gray-500 hover:text-gray-800" onclick="showView('uploadView')">&larr;
-                        Back</button>
+                    <button class="text-gray-500 hover:text-gray-800" onclick="showView('uploadView')">&larr; Back</button>
                     <p class="text-sm text-gray-400">PNC:AF-FO-15 rev.0 02012023<br>PMGSD Copy</p>
                 </div>
-
                 <div class="form-container shadow-lg">
-
                     <div class="form-header flex items-center justify-center space-x-4 mb-6">
-                        <img src="pnc-logo.png"
-                            onerror="this.onerror=null; this.src='https://placehold.co/100x100?text=PnC+Seal';"
-                            alt="PnC Seal" class="w-20 h-20 object-contain">
-
+                        <img src="pnc-logo.png" onerror="this.onerror=null; this.src='https://placehold.co/100x100?text=PnC+Seal';" alt="PnC Seal" class="w-20 h-20 object-contain">
                         <div class="text-center">
                             <p class="text-sm">Republic of the Philippines</p>
                             <h2 class="text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
                             <p class="text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
                             <p class="text-sm italic">Administration and Finance Division</p>
-                            <p class="font-bold text-gray-700 mt-1">Property Management and General Services Department
-                            </p>
-                            <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao,
-                                Laguna 4025</p>
+                            <p class="font-bold text-gray-700 mt-1">Property Management and General Services Department</p>
+                            <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
                         </div>
                     </div>
-
-                    <!-- EDITED: Changed Title Bar to Gray background and Black text -->
-                    <div class="form-title text-black bg-gray-300">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT
-                        FORM</div>
-
-                    <!-- EDITED: Keep 'border-b border-black' to allow the inputs to feel open on sides but separated from the table below -->
+                    <div class="form-title text-black bg-gray-300">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
                     <div class="border-b border-black p-4 space-y-4 text-sm">
-
                         <div class="flex flex-wrap gap-4">
-                            <div class="flex-1">
-                                <label>Transaction Number:</label>
-                                <input type="text" class="line-input" placeholder="(Auto-Generated)" readonly>
-                            </div>
-                            <div class="flex-1">
-                                <label>Date of Filing:</label>
-                                <input type="date" id="filingDateInput" class="line-input input-disabled" readonly>
-                            </div>
-                            <div class="flex-1">
-                                <label>Department:</label>
-                                <input type="text" class="line-input">
-                            </div>
+                            <div class="flex-1"><label>Transaction Number:</label><input type="text" class="line-input" placeholder="(Auto-Generated)" readonly></div>
+                            <div class="flex-1"><label>Date of Filing:</label><input type="date" id="filingDateInput" class="line-input input-disabled" readonly></div>
+                            <div class="flex-1"><label>Department:</label><input type="text" class="line-input" placeholder="Department"></div>
                         </div>
-
                         <div class="flex flex-wrap gap-4">
-                            <div class="flex-1">
-                                <label>Activity Date (Pre-selected):</label>
-                                <input type="date" id="activityDateInput" class="line-input input-disabled" readonly>
-                            </div>
-                            <div class="flex-1">
-                                <label>Time:</label>
-                                <input type="time" class="line-input">
-                            </div>
+                            <div class="flex-1"><label>Activity Date (Pre-selected):</label><input type="date" id="activityDateInput" class="line-input input-disabled" readonly></div>
+                            <div class="flex-1"><label>Time:</label><input type="time" class="line-input"></div>
                         </div>
-
                         <div>
-                            <label>Activity Name/Title/Purpose:</label>
-                            <input type="text" class="line-input">
-                            <p class="text-xs italic mt-1">Note: Please attach proof of approval of the activity (Upload
-                                Step 1)</p>
+                            <label>Activity Name/Title/Purpose:</label><input type="text" class="line-input" placeholder="Activity Name/Title/Purpose">
+                            <p class="text-xs italic mt-1">Note: Please attach proof of approval of the activity (Upload Step 1)</p>
                         </div>
-
                         <div class="flex flex-wrap gap-4 items-end">
-                            <div class="w-1/3">
-                                <label>Expected # of Participants:</label>
-                            </div>
-                            <div class="flex-1 flex items-center">
-                                <span class="mr-2">Internal:</span>
-                                <input type="number" class="line-input w-20">
-                            </div>
-                            <div class="flex-1 flex items-center">
-                                <span class="mr-2">External:</span>
-                                <input type="number" class="line-input w-20">
-                            </div>
+                            <div class="w-1/3"><label>Expected # of Participants:</label></div>
+                            <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span><input type="number" class="line-input w-20" placeholder="Internal"></div>
+                            <div class="flex-1 flex items-center"><span class="mr-2">External:</span><input type="number" class="line-input w-20" placeholder="External"></div>
                         </div>
                     </div>
-
-                    <!-- EDITED: Restored FULL border for this section (grid look), removing 'border-b' -->
                     <div class="border border-black border-t-0 flex">
                         <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">Venue Reservation</div>
                         <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-2">
-                            <label class="flex items-center space-x-2"><input type="checkbox" checked> <span>Gym Stage /
-                                    Court</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox"> <span>Multi-Purpose
-                                    Hall</span></label>
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox"> <span>Classroom #</span> <input type="text"
-                                    class="line-input w-16">
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox"> <span>Laboratory #</span> <input type="text"
-                                    class="line-input w-16">
-                            </div>
-                            <label class="flex items-center space-x-2"><input type="checkbox">
-                                <span>Library</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox">
-                                <span>Cafeteria</span></label>
-                            <div class="col-span-2 flex items-center space-x-2">
-                                <input type="checkbox"> <span>Others:</span> <input type="text" class="line-input">
-                            </div>
+                            <label class="flex items-center space-x-2"><input type="checkbox" checked> <span>Gym Stage / Court</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox"> <span>Multi-Purpose Hall</span></label>
+                            <div class="flex items-center space-x-2"><input type="checkbox"> <span>Classroom #</span> <input type="text" class="line-input w-16"></div>
+                            <div class="flex items-center space-x-2"><input type="checkbox"> <span>Laboratory #</span> <input type="text" class="line-input w-16"></div>
+                            <label class="flex items-center space-x-2"><input type="checkbox"> <span>Library</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox"> <span>Cafeteria</span></label>
+                            <div class="col-span-2 flex items-center space-x-2"><input type="checkbox"> <span>Others:</span> <input type="text" class="line-input"></div>
                         </div>
                     </div>
-
-                    <!-- EDITED: Restored FULL border for this section -->
                     <div class="border border-black border-t-0 flex">
                         <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">
-                            <p>Equipment Reservation</p>
-                            <p class="mt-4">Set-up</p>
+                            <p>Equipment Reservation</p><p class="mt-4">Set-up</p>
                             <div class="mt-2 text-xs font-normal space-y-1">
                                 <p>Ingress Date: <input type="date" class="line-input w-24"></p>
                                 <p>Time: <input type="time" class="line-input w-24"></p>
@@ -623,772 +263,84 @@
                         </div>
                         <div class="flex-1 p-2">
                             <div class="grid grid-cols-1 gap-2 mb-2">
-                                <div class="flex items-center space-x-2">
-                                    <input type="checkbox"> <span>Chair #</span> <input type="text"
-                                        class="line-input w-16">
-                                    <span>Type:</span> <input type="text" class="line-input flex-1">
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <input type="checkbox"> <span>Table #</span> <input type="text"
-                                        class="line-input w-16">
-                                    <span>Type:</span> <input type="text" class="line-input flex-1">
-                                </div>
+                                <div class="flex items-center space-x-2"><input type="checkbox"> <span>Chair #</span> <input type="text" class="line-input w-16"><span>Type:</span> <input type="text" class="line-input flex-1"></div>
+                                <div class="flex items-center space-x-2"><input type="checkbox"> <span>Table #</span> <input type="text" class="line-input w-16"><span>Type:</span> <input type="text" class="line-input flex-1"></div>
                             </div>
                             <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                                <label class="flex items-center space-x-2"><input type="checkbox">
-                                    <span>Podium/Rostrum</span></label>
-                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Sound
-                                        System</span></label>
-                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Electric
-                                        fans</span></label>
-                                <div class="flex items-center space-x-2">
-                                    <input type="checkbox"> <span>Microphone #</span> <input type="number"
-                                        class="line-input w-12">
-                                </div>
-                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Extension
-                                        Cord</span></label>
-                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Panel Board /
-                                        White Board</span></label>
-                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Philippine
-                                        Flag</span></label>
-                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Pamantasan ng
-                                        Cabuyao Flag</span></label>
-                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Multi-media
-                                        Projector</span></label>
-                                <div class="flex items-center space-x-2">
-                                    <input type="checkbox"> <span>Others:</span> <input type="text"
-                                        class="line-input w-full">
-                                </div>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Podium/Rostrum</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Sound System</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Electric fans</span></label>
+                                <div class="flex items-center space-x-2"><input type="checkbox"> <span>Microphone #</span> <input type="number" class="line-input w-12"></div>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Extension Cord</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Panel Board / White Board</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Philippine Flag</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Pamantasan ng Cabuyao Flag</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Multi-media Projector</span></label>
+                                <div class="flex items-center space-x-2"><input type="checkbox"> <span>Others:</span> <input type="text" class="line-input w-full"></div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- EDITED: Restored FULL border for this section -->
                     <div class="border border-black border-t-0 flex">
                         <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">Manpower Requirement</div>
                         <div class="flex-1 p-2 grid grid-cols-2 gap-4">
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox"> <span>Technical</span> <input type="text"
-                                    class="line-input flex-1">
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox"> <span>Housekeeping</span> <input type="text"
-                                    class="line-input flex-1">
-                            </div>
+                            <div class="flex items-center space-x-2"><input type="checkbox"> <span>Technical</span> <input type="text" class="line-input flex-1"></div>
+                            <div class="flex items-center space-x-2"><input type="checkbox"> <span>Housekeeping</span> <input type="text" class="line-input flex-1"></div>
                         </div>
                     </div>
-
                     <div class="text-xs text-gray-600 mt-2 mb-6 space-y-1 italic">
-                        <p>• Request must be ted at least a week before the activity. (Note: System enforces
-                            **7-day minimum booking** from calendar selection).</p>
-                        <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required.
-                            HRMD will compute overtime costs.</p>
-                        <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.
-                        </p>
+                        <p>• Request must be submitted at least a week before the activity. (Note: System enforces **7-day minimum booking** from calendar selection).</p>
+                        <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required. HRMD will compute overtime costs.</p>
+                        <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
                     </div>
-
                     <div class="grid grid-cols-4 gap-4 text-center mt-8">
-
-                        <div>
-                            <p class="font-bold text-sm mb-8">Requested by:</p>
-                            <!-- EDITED: Text color to lighter green -->
-                            <input type="text" class="line-input text-center font-bold text-[#15803d]"
-                                placeholder="[Enter Your Name]">
-                            <p class="text-xs border-t border-black mt-1 pt-1">Signature over Printed Name/Date</p>
-                        </div>
-
-                        <div class="opacity-70">
-                            <p class="font-bold text-sm mb-8">Reviewed by:</p>
-                            <input type="text" class="line-input input-disabled text-center" value="" disabled>
-                            <p class="text-xs border-t border-black mt-1 pt-1">Department/Division Head</p>
-                        </div>
-
-                        <div class="opacity-70">
-                            <p class="font-bold text-sm mb-8">Recommended by:</p>
-                            <input type="text" class="line-input input-disabled text-center" value="" disabled>
-                            <p class="text-xs border-t border-black mt-1 pt-1">PM Officer</p>
-                        </div>
-
-                        <div class="opacity-70">
-                            <p class="font-bold text-sm mb-8">Approved by:</p>
-                            <input type="text" class="line-input input-disabled text-center" value="" disabled>
-                            <p class="text-xs border-t border-black mt-1 pt-1">PMGSD Director</p>
-                        </div>
+                        <div><p class="font-bold text-sm mb-8">Requested by:</p><input type="text" class="line-input text-center font-bold text-[#15803d]" placeholder="[Enter Your Name]"><p class="text-xs border-t border-black mt-1 pt-1">Signature over Printed Name/Date</p></div>
+                        <div class="opacity-70"><p class="font-bold text-sm mb-8">Reviewed by:</p><input type="text" class="line-input input-disabled text-center" value="" disabled><p class="text-xs border-t border-black mt-1 pt-1">Department/Division Head</p></div>
+                        <div class="opacity-70"><p class="font-bold text-sm mb-8">Recommended by:</p><input type="text" class="line-input input-disabled text-center" value="" disabled><p class="text-xs border-t border-black mt-1 pt-1">PM Officer</p></div>
+                        <div class="opacity-70"><p class="font-bold text-sm mb-8">Approved by:</p><input type="text" class="line-input input-disabled text-center" value="" disabled><p class="text-xs border-t border-black mt-1 pt-1">PMGSD Director</p></div>
                     </div>
-
                 </div>
-
                 <div class="max-w-4xl mx-auto mt-8 flex justify-end space-x-4 pb-10">
-                    <button class="px-6 py-3 bg-gray-400 text-white rounded hover:bg-gray-500"
-                        onclick="showView('uploadView')">Cancel</button>
-                    <!-- UPDATED: Point to new flow -->
-                    <button class="kiosk-btn" onclick="proceedToSubmissionChoice()"> FORM &rarr;</button>
+                    <button class="px-6 py-3 bg-gray-400 text-white rounded hover:bg-gray-500" onclick="showView('uploadView')">Cancel</button>
+                    <button class="kiosk-btn" onclick="proceedToSubmissionChoice()">SUBMIT FORM &rarr;</button>
                 </div>
             </div>
 
-            <!-- NEW VIEW: Submission Choice (CARD GRID) -->
             <div id="submissionChoiceView" class="view-panel hidden text-center max-w-7xl mx-auto pt-10 px-4">
                 <h2 class="text-3xl font-bold text-[#15803d] mb-4">DEPARTMENTS</h2>
                 <p class="text-gray-600 mb-10">Choose from the following departments for your survey.</p>
-
                 <div class="flex flex-col lg:flex-row gap-8 items-start">
-                    <!-- Left: Grid container -->
-                    <!-- EDITED: Grid logic simplified for 2 remaining items -->
                     <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-
-                        <!-- REMOVED: OUP, OEVP, OVPAS -->
-
-                        <!-- 1. VP Admin & Linkages -->
-                        <button
-                            onclick="selectOffice('Office of the Vice President for Administration & Finance (OVPAF)')"
-                            class="choice-card bg-white p-6 rounded-xl shadow flex flex-col items-center justify-center space-y-4 min-h-[200px]">
+                        <button onclick="selectOffice('Office of the Vice President for Administration & Finance (OVPAF)')" class="choice-card bg-white p-6 rounded-xl shadow flex flex-col items-center justify-center space-y-4 min-h-[200px]">
                             <div class="w-16 h-16 rounded-full flex items-center justify-center bg-pink-100">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-pink-600" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </div>
-                            <div class="text-center">
-                                <div class="font-bold text-gray-800 text-lg">Office of the Vice President for
-                                    Administration & Finance (OVPAF)</div>
-                            </div>
+                            <div class="text-center"><div class="font-bold text-gray-800 text-lg">Office of the Vice President for Administration & Finance (OVPAF)</div></div>
                         </button>
-
-                        <!-- 2. PMGSD -->
-                        <button onclick="selectOffice('Property Management & General Services Department (PMGSD)')"
-                            class="choice-card bg-white p-6 rounded-xl shadow flex flex-col items-center justify-center space-y-4 min-h-[200px]">
+                        <button onclick="selectOffice('Property Management & General Services Department (PMGSD)')" class="choice-card bg-white p-6 rounded-xl shadow flex flex-col items-center justify-center space-y-4 min-h-[200px]">
                             <div class="w-16 h-16 rounded-full flex items-center justify-center bg-blue-100">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                             </div>
-                            <div class="text-center">
-                                <div class="font-bold text-gray-800 text-lg">Property Management & General Services
-                                    Department (PMGSD)</div>
-                            </div>
+                            <div class="text-center"><div class="font-bold text-gray-800 text-lg">Property Management & General Services Department (PMGSD)</div></div>
                         </button>
-
                     </div>
-
-                    <!-- Right: Selected Personnel Card -->
-                    <!-- EDITED: Styled as a clean white card matching the image -->
-                    <div
-                        class="w-full lg:w-1/3 bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex flex-col relative self-start sticky top-4">
-                        <h3 class="text-xl font-bold text-gray-700 mb-4 text-center border-b pb-4">Selected Personnel
-                        </h3>
-
-                        <div id="finalSelectedList_main"
-                            class="flex-1 overflow-y-auto space-y-4 mb-4 text-left text-sm text-gray-600 max-h-[500px]">
+                    <div class="w-full lg:w-1/3 bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex flex-col relative self-start sticky top-4">
+                        <h3 class="text-xl font-bold text-gray-700 mb-4 text-center border-b pb-4">Selected Personnel</h3>
+                        <div id="finalSelectedList_main" class="flex-1 overflow-y-auto space-y-4 mb-4 text-left text-sm text-gray-600 max-h-[500px]">
                             <p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>
                         </div>
-
                         <div class="mt-4 pt-4 border-t border-gray-100">
-                            <button
-                                class="w-full py-3 bg-[#15803d] text-white font-bold rounded-lg hover:bg-green-800 transition shadow-lg text-lg"
-                                onclick="FinalSelection()">
-                                Submit Reservation
-                            </button>
+                            <button class="w-full py-3 bg-[#15803d] text-white font-bold rounded-lg hover:bg-green-800 transition shadow-lg text-lg" onclick="submitFinalSelection()">Submit Survey</button>
                         </div>
                     </div>
                 </div>
-
                 <div class="mt-12">
-                    <button class="text-gray-500 hover:text-gray-800 underline" onclick="showView('formView')">&larr;
-                        Back to Form</button>
+                    <button class="text-gray-500 hover:text-gray-800 underline" onclick="showView('formView')">&larr; Back to Form</button>
                 </div>
             </div>
 
-            <!-- NEW VIEW: Personnel Selection (UPDATED for Cross-Office Checklist) -->
             <div id="personnelView" class="view-panel hidden text-center max-w-6xl mx-auto pt-10 px-4">
                 <h2 class="text-4xl font-bold text-gray-800 mb-2">PERSONNEL AND SERVICES</h2>
                 <div class="w-24 h-1 bg-[#15803d] mx-auto mb-10"></div>
-
                 <div class="flex flex-col lg:flex-row gap-8">
-                    <!-- Left Column: Selection Area -->
                     <div class="flex-1 text-left">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-bold text-[#15803d]" id="selectedDepartmentName">--</h3>
-                            <button class="text-sm text-gray-500 hover:text-gray-800 underline"
-                                onclick="showView('submissionChoiceView')">Change Department</button>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 h-96 overflow-y-auto"
-                            id="personnelChecklistContainer">
-                            <!-- Checkboxes populated here -->
-                        </div>
-                    </div>
-
-                    <!-- Right Column: Selected List (UPDATED DESIGN) -->
-                    <div
-                        class="w-full lg:w-1/3 bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex flex-col h-full relative">
-                        <h3 class="text-xl font-bold text-gray-700 mb-4 text-center border-b pb-4">Selected Personnel
-                        </h3>
-
-                        <div id="finalSelectedList_sub"
-                            class="flex-1 overflow-y-auto space-y-4 mb-4 text-left text-sm text-gray-600">
-                            <p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>
-                        </div>
-
-                        <div class="mt-4 pt-4 border-t border-gray-100">
-                            <button
-                                class="w-full py-3 bg-[#15803d] text-white font-bold rounded-lg hover:bg-green-800 transition shadow-lg text-lg"
-                                onclick="submitFinalSelection()">
-                                Submit Reservation
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            <div id="trackingView" class="view-panel hidden text-center p-8">
-
-                <div
-                    class="bg-green-50 border-l-4 border-green-400 p-6 rounded-lg text-left w-full shadow-lg mb-8 max-w-4xl mx-auto">
-                    <!-- EDITED: Text color to lighter green -->
-                    <h3 class="text-2xl font-bold text-[#15803d] mb-2">Reservation Submitted Successfully!</h3>
-
-                    <!-- Restore this line -->
-                    <p class="text-sm text-gray-600">Sent to: <span id="submittedToDisplay" class="font-bold">--</span>
-                    </p>
-
-                    <!-- Added Display for Selected Office -->
-                    <p class="text-sm text-gray-600 mt-2">Selected Personnel:</p>
-                    <div id="submittedPersonnelDisplay"
-                        class="font-bold text-sm text-gray-800 mt-1 max-h-32 overflow-y-auto">--</div>
-                </div>
-
-                <div class="bg-gray-100 p-6 rounded-xl shadow-inner inline-block mb-8">
-                    <p class="text-sm font-semibold text-gray-600 mb-1">Your Tracking ID:</p>
-                    <p id="trackingIdDisplay" class="text-4xl font-extrabold text-gray-800 tracking-wider font-mono">--
-                    </p>
-
-                    <!-- EDITED: Added Real QR Code Generation -->
-                    <div class="mt-4 bg-white border mx-auto flex items-center justify-center p-2 rounded">
-                        <img id="qrCodeImage" src="" alt="Tracking QR Code" class="w-32 h-32 object-contain">
-                    </div>
-                </div>
-
-                <div class="pt-6 space-y-3">
-                    <button class="kiosk-btn !bg-green-600 hover:!bg-green-700" onclick="showView('landingView')">Start
-                        New Request</button>
-                </div>
-            </div>
-
-        </main>
-
-        <!-- Flash Message Element -->
-        <div id="flashMessage" class="hidden">
-            <h4 class="text-xl font-bold mb-2" id="flashTitle"></h4>
-            <p id="flashBody" class="text-sm"></p>
-        </div>
-    </div>
-
-    <script>
-        // --- CALENDAR STATE & LOGIC ---
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        // UPDATED: Minimum advance days is now 7 (1 Week)
-        const minAdvanceDays = 7;
-        const minReservationDate = new Date();
-        minReservationDate.setDate(minReservationDate.getDate() + minAdvanceDays);
-        minReservationDate.setHours(0, 0, 0, 0);
-
-        let currentMonth = today.getMonth();
-        let currentYear = today.getFullYear();
-        let selectedReservationDate = null;
-
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-        // --- EVENT DATA ---
-        let globalEvents = []; // This empty list will eventually hold the real data from Firebase
-        
-        // Helper to check if a date has an event
-        function getEventForDate(dateString) {
-            return globalEvents.find(e => e.date === dateString);
-        }
-
-        const personnelData = {
-            'Office of the Vice President for Administration & Finance (OVPAF)': ['Barundia, Arnold F.', 'Bondoc, Christian Stephen D.', 'Garcia, Colin B.', 'Mafabo, Renelina D.'],
-            'Property Management & General Services Department (PMGSD)': ['Aragon, Ferdinand G.', 'Aragon, Marcelo N.', 'Beaño, Alfredo Glenn H.', 'Dalisay, Marilyn D.', 'Garcia, Colin B.', 'Teves, Jomar P.']
-        };
-
-        // Stores all selected people: { "Office Name": ["Person A", "Person B"] }
-        let globalSelectedPersonnel = {};
-        let stampingStep = 0; // ADDED: Global variable for stamping step
-
-        // --- CORE FUNCTIONS ---
-
-        function getDaysInMonth(year, month) {
-            return new Date(year, month + 1, 0).getDate();
-        }
-
-        function showView(id) {
-            document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-
-            const homeButton = document.getElementById('homeButton');
-            if (id === 'landingView') {
-                homeButton.innerText = 'Start Screen';
-                homeButton.onclick = () => showView('landingView');
-            } else {
-                homeButton.innerText = 'Back to Start Screen';
-                homeButton.onclick = () => showView('landingView');
-            }
-
-            if (id === 'calendarView') renderCalendar();
-
-            // ADDED: Re-render Read-Only Calendar when returning to Landing View
-            if (id === 'landingView') renderReadOnlyCalendar();
-        }
-
-        // --- NEW: VERIFICATION LOGIC ---
-
-        function verifyReservationCode() {
-            const code = document.getElementById('verificationCodeInput').value.trim();
-            const btnText = document.getElementById('verifyBtnText');
-            const spinner = document.getElementById('verifySpinner');
-
-            if (!code) {
-                alert("Please enter a code.");
-                return;
-            }
-
-            // Show loading
-            btnText.innerText = "Checking Form 1 & Form 2 Approval...";
-            spinner.classList.remove('hidden');
-
-            // Check Firebase for the code
-            const requestRef = window.ref(window.db, 'requests/' + code);
-
-            window.get(requestRef).then((snapshot) => {
-                setTimeout(() => {
-                    btnText.innerText = "Check Status";
-                    spinner.classList.add('hidden');
-
-                    if (snapshot.exists()) {
-                        const data = snapshot.val();
-
-                        // Show tracking code
-                        document.getElementById('displayVerifiedCode').innerText = code;
-
-                        // Check if both forms are approved
-                        const isForm1Approved = data.approvals?.oup?.status === "Approved";
-                        const isForm2Approved = data.approvals?.pmgsdDirector?.status === "Approved";
-
-                        if (isForm1Approved && isForm2Approved) {
-                            // Ready for stamping
-                            stampingStep = 1;
-                            updateStampingUI();
-                            showView('stampingActionView');
-                        } else {
-                            alert("❌ Forms are not fully approved yet.\nForm 1: " + (isForm1Approved ? "✅" : "❌") +
-                                "\nForm 2: " + (isForm2Approved ? "✅" : "❌"));
-                            showView('verificationView');
-                        }
-                    } else {
-                        alert("❌ No reservation found with code: " + code);
-                        showView('verificationView');
-                    }
-                }, 1500);
-            }).catch((error) => {
-                console.error("Error checking status:", error);
-                alert("Network error. Please try again.");
-                btnText.innerText = "Check Status";
-                spinner.classList.add('hidden');
-            });
-        }
-
-        function updateStampingUI() {
-            const title = document.getElementById('stampingTitle');
-            const desc = document.getElementById('stampingDesc');
-            const btn = document.getElementById('stampingBtn');
-
-            if (stampingStep === 1) {
-                title.innerText = "Step 1: Insert Request Letter";
-                desc.innerHTML = "Please insert your <strong>Form 1 (Request Letter)</strong> into the document slot.";
-                btn.innerText = "Insert Letter & Stamp";
-                btn.onclick = () => processStamping(1);
-            } else if (stampingStep === 2) {
-                title.innerText = "Step 2: Insert Request Form";
-                desc.innerHTML = "Please insert your <strong>Form 2 (Request Form)</strong> into the document slot.";
-                btn.innerText = "Insert Form & Stamp";
-                btn.onclick = () => processStamping(2);
-            }
-        }
-
-        function processStamping(step) {
-            const btn = document.getElementById('stampingBtn');
-            const originalText = btn.innerText;
-            btn.innerText = "Stamping...";
-            btn.disabled = true;
-
-            setTimeout(() => {
-                if (step === 1) {
-                    stampingStep = 2;
-                    updateStampingUI();
-                    btn.disabled = false;
-                } else {
-                    simulateStampingProcess(); // Done
-                }
-            }, 2000);
-        }
-
-        function simulateStampingProcess() {
-            // Show stamping Success
-            // Set current date for stamp
-            const date = new Date();
-            document.getElementById('stampDate').innerText = date.toLocaleDateString();
-            showView('stampingSuccessView');
-        }
-
-        // --- CALENDAR LOGIC ---
-
-        // Helper to find event object for click handler (used by both calendars)
-        // ADDED: Defined before usage to fix ReferenceError
-        function showEventDetailsFromCalendar(dateString) {
-            const event = globalEvents.find(e => e.date === dateString);
-            
-            if (event) {
-                // Simple alert for Kiosk view
-                alert(`📅 OCCUPIED\n\nEvent: ${event.title}\nTime: ${event.time}\nStatus: ${event.status.toUpperCase()}`);
-            }
-        }
-        function setReservationDateAndShowUpload(dateString) {
-            selectedReservationDate = dateString;
-            const filingDateInput = document.getElementById('filingDateInput');
-            if (filingDateInput) filingDateInput.value = today.toISOString().split('T')[0];
-            const actDate = document.getElementById('activityDateInput');
-            if (actDate) actDate.value = dateString;
-
-            showView('uploadView');
-        }
-
-        // ADDED: Function for Read-Only Calendar on Landing Page
-        function renderReadOnlyCalendar() {
-            const grid = document.getElementById('landingCalendarGrid');
-            if (!grid) return;
-
-            grid.innerHTML = '';
-            dayNames.forEach(d => grid.innerHTML += `<div class="font-bold bg-gray-200 py-2">${d}</div>`);
-
-            const monthDisplay = document.getElementById('landingMonthDisplay');
-            if (monthDisplay) monthDisplay.innerText = `${monthNames[currentMonth]} ${currentYear}`;
-
-            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-            const firstDay = firstDayOfMonth.getDay();
-            const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-
-            for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
-
-            for (let i = 1; i <= daysInMonth; i++) {
-                const dayDate = new Date(currentYear, currentMonth, i);
-                dayDate.setHours(0, 0, 0, 0);
-                const dateString = dayDate.toISOString().split('T')[0];
-                const event = globalEvents.find(e => e.date === dateString);
-                const isCurrentDay = (i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear());
-
-                // Base styling for Read-Only
-                let dayClass = 'readonly-day border border-gray-200';
-                let statusText = '';
-
-                if (event) {
-                    dayClass += ' occupied'; // Red style
-                    statusText = 'OCCUPIED';
-                } else if (isCurrentDay) {
-                    dayClass = 'bg-green-200 border-green-400 text-gray-800'; // Today style
-                    statusText = 'TODAY';
-                } else {
-                    statusText = 'Available';
-                }
-
-                grid.innerHTML += `
-                    <div class="p-2 h-16 flex flex-col items-center justify-center font-bold relative text-xs ${dayClass}">
-                        <span>${i}</span>
-                        ${statusText === 'OCCUPIED' ? '<span class="text-[9px] font-bold text-red-800 mt-1">OCCUPIED</span>' : ''}
-                    </div>`;
-            }
-        }
-
-        function renderCalendar() {
-            const grid = document.getElementById('calendarGrid');
-            grid.innerHTML = '';
-            dayNames.forEach(d => grid.innerHTML += `<div class="font-bold bg-gray-200 py-2">${d}</div>`);
-            document.getElementById('monthDisplay').innerText = `${monthNames[currentMonth]} ${currentYear}`;
-
-            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-            const firstDay = firstDayOfMonth.getDay();
-            const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-
-            for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
-
-            for (let i = 1; i <= daysInMonth; i++) {
-                const dayDate = new Date(currentYear, currentMonth, i);
-                dayDate.setHours(0, 0, 0, 0);
-                const dateString = dayDate.toISOString().split('T')[0];
-                const event = globalEvents.find(e => e.date === dateString);
-                const isEligible = dayDate >= minReservationDate;
-                const isCurrentDay = (i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear());
-
-                let dayClass = 'bg-white border hover:bg-green-50';
-                let clickHandler = '';
-                let statusText = 'Available';
-
-                // EDITED: Logic for Plotted Events
-                if (event) {
-                    dayClass = 'occupied cursor-not-allowed border-2'; // Uses the new .occupied class
-                    statusText = 'OCCUPIED';
-                    clickHandler = `onclick="showEventDetailsFromCalendar('${dateString}')"`;
-                } else if (!isEligible) {
-                    dayClass = 'too-soon border';
-                    statusText = isCurrentDay ? 'Today' : 'Too Soon';
-                } else {
-                    dayClass += ' clickable calendar-day';
-                    clickHandler = `onclick="setReservationDateAndShowUpload('${dateString}')"`;
-                }
-
-                if (isCurrentDay && isEligible && !event) {
-                    dayClass = 'bg-green-200 border-green-400 clickable calendar-day hover:bg-green-300';
-                    statusText = 'TODAY';
-                }
-
-                grid.innerHTML += `
-                    <div ${clickHandler} class="p-2 h-20 flex items-center justify-center font-bold relative text-sm ${dayClass}">
-                        ${i}
-                        <span class="absolute bottom-1 right-2 text-[10px] font-medium text-gray-500">${statusText}</span>
-                    </div>`;
-            }
-        }
-
-        function changeMonth(delta) {
-            const newDate = new Date(currentYear, currentMonth + delta, 1);
-            currentMonth = newDate.getMonth();
-            currentYear = newDate.getFullYear();
-            renderCalendar();
-            renderReadOnlyCalendar(); // Update landing page calendar too
-        }
-
-        // --- SUBMISSION FLOW ---
-
-        function updateFileName(input) {
-            const label = input.parentElement;
-            if (input.files.length > 0) {
-                label.innerHTML = 'Selected: ' + input.files[0].name;
-                label.classList.add('bg-green-100');
-            }
-        }
-
-        function proceedToSubmissionChoice() {
-            showView('submissionChoiceView');
-        }
-
-        function selectOffice(officeName) {
-            document.getElementById('selectedDepartmentName').innerText = officeName;
-            const container = document.getElementById('personnelChecklistContainer');
-            container.innerHTML = '';
-
-            const staffList = personnelData[officeName] || [];
-
-            staffList.forEach(name => {
-                const wrapper = document.createElement('div');
-                wrapper.className = "flex items-center space-x-3 mb-2 p-2 hover:bg-green-50 rounded cursor-pointer";
-                const isChecked = globalSelectedPersonnel[officeName] && globalSelectedPersonnel[officeName].includes(name);
-
-                wrapper.innerHTML = `
-                    <input type="checkbox" id="${name}" value="${name}" class="form-checkbox h-5 w-5 text-[#15803d] rounded focus:ring-green-500 border-gray-300" 
-                        onchange="togglePersonSelection('${officeName}', '${name}', this.checked)" ${isChecked ? 'checked' : ''}>
-                    <label for="${name}" class="text-gray-700 cursor-pointer flex-1 select-none">${name}</label>
-                `;
-                container.appendChild(wrapper);
-            });
-            showView('personnelView');
-        }
-
-        function togglePersonSelection(office, name, isChecked) {
-            if (!globalSelectedPersonnel[office]) globalSelectedPersonnel[office] = [];
-            if (isChecked) {
-                if (!globalSelectedPersonnel[office].includes(name)) globalSelectedPersonnel[office].push(name);
-            } else {
-                globalSelectedPersonnel[office] = globalSelectedPersonnel[office].filter(p => p !== name);
-                if (globalSelectedPersonnel[office].length === 0) delete globalSelectedPersonnel[office];
-            }
-            updateSelectedDisplay();
-        }
-
-        function updateSelectedDisplay() {
-            const containers = [document.getElementById('finalSelectedList_main'), document.getElementById('finalSelectedList_sub')];
-            const offices = Object.keys(globalSelectedPersonnel);
-
-            const content = (offices.length === 0)
-                ? '<p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>'
-                : offices.map(office => {
-                    const lis = globalSelectedPersonnel[office].map(person => `<li>${person}</li>`).join('');
-                    return `<div class="mb-4"><div class="font-bold text-xs text-[#15803d] uppercase tracking-wide mb-1">${office}</div><ul class="list-disc list-inside pl-1 text-gray-700">${lis}</ul></div>`;
-                }).join('');
-
-            containers.forEach(c => { if (c) c.innerHTML = content; });
-        }
-
-        function submitFinalSelection() {
-            // Collect form data
-            const formView = document.getElementById('formView');
-            const activityName = formView.querySelector('input[placeholder="Activity Name/Title/Purpose"]')?.value || "Gym Reservation";
-            const department = formView.querySelector('input[placeholder="Department"]')?.value || "";
-            const activityDate = formView.querySelector('#activityDateInput')?.value || selectedReservationDate;
-            const time = formView.querySelector('input[type="time"]')?.value || "09:00";
-            const internalParticipants = formView.querySelector('input[placeholder="Internal"]')?.value || "0";
-            const externalParticipants = formView.querySelector('input[placeholder="External"]')?.value || "0";
-            const requestedBy = formView.querySelector('input[placeholder="[Enter Your Name]"]')?.value || "Anonymous";
-
-            // Generate ID
-            const trackingId = "RES-" + Math.floor(100000 + Math.random() * 900000);
-
-            // Prepare COMPLETE data structure
-            const formData = {
-                id: trackingId,
-                timestamp: new Date().toISOString(),
-                filingDate: new Date().toISOString().split('T')[0],
-                activityDate: activityDate,
-                time: time,
-                department: department,
-                activityName: activityName,
-                internalParticipants: internalParticipants,
-                externalParticipants: externalParticipants,
-                venue: ["Gym Stage / Court"], // Default
-                equipment: [], // Default empty
-                requestedBy: requestedBy,
-                status: "Pending VP Admin",
-                personnel: globalSelectedPersonnel,
-                approvals: {
-                    deptHead: { name: "", date: "", status: "Pending" },
-                    ovpas: { name: "", date: "", status: "Pending" },
-                    oevp: { name: "", date: "", status: "Pending" },
-                    oup: { name: "", date: "", status: "Pending" },
-                    pmOfficer: { name: "", date: "", status: "Pending" },
-                    pmgsdDirector: { name: "", date: "", status: "Pending" }
-                },
-                form1: {
-                    purpose: "Regular gym reservation for university activity."
-                }
-            };
-
-            // Send to Firebase
-            window.set(window.ref(window.db, 'requests/' + trackingId), formData)
-                .then(() => {
-                    console.log("Data sent to cloud!");
-
-                    // Generate QR Code
-                    const moniwebUrl = `${window.location.origin}/moniweb.html`; // Dynamic URL
-                    const qrData = `${moniwebUrl}?id=${trackingId}`;
-                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
-
-                    // Update UI
-                    document.getElementById('trackingIdDisplay').innerText = trackingId;
-                    document.getElementById('qrCodeImage').src = qrUrl;
-                    showView('trackingView');
-                })
-                .catch((error) => {
-                    alert("Error sending request: " + error.message);
-                });
-        }
-
-        window.onload = () => {
-            showView('landingView');
-            renderReadOnlyCalendar(); // Render initial read-only calendar
-        };
-        
-        // ADD THIS INSIDE window.onload
-        const eventsRef = window.ref(window.db, 'events');
-        window.onValue(eventsRef, (snapshot) => {
-            const data = snapshot.val();
-            globalEvents = []; // Clear list
-        
-            if (data) {
-                Object.keys(data).forEach(key => {
-                    globalEvents.push(data[key]);
-                });
-            }
-        
-            console.log("📅 Kiosk Calendar synced:", globalEvents.length, "events");
-        
-            // Re-render both calendars to show new red/occupied dates
-            renderCalendar();
-            renderReadOnlyCalendar();
-        });
-
-        
-        // --- FIREBASE DEBUGGER ---
-        // Add this to ALL THREE PAGES (kioskkiosk.html, adminnn.html, moniweb.html)
-
-        function debugFirebase() {
-            console.log("=== FIREBASE DATA CHECK ===");
-
-            // Check if Firebase is properly set up
-            if (!window.db || !window.ref || !window.get) {
-                console.error("❌ Firebase not initialized properly!");
-                console.log("Available:", {
-                    db: !!window.db,
-                    ref: !!window.ref,
-                    get: !!window.get
-                });
-                return;
-            }
-
-            // Get all requests from Firebase
-            const requestsRef = window.ref(window.db, 'requests');
-            window.get(requestsRef).then((snapshot) => {
-                const data = snapshot.val();
-
-                if (!data) {
-                    console.log("📭 Firebase 'requests' folder is EMPTY");
-                    console.log("No reservations have been submitted yet.");
-                    return;
-                }
-
-                console.log(`📊 Found ${Object.keys(data).length} reservation(s):`);
-                console.log("IDs:", Object.keys(data));
-
-                // Show structure of first request (as example)
-                const firstId = Object.keys(data)[0];
-                console.log("---");
-                console.log(`📄 Example structure of: ${firstId}`);
-                console.log(JSON.stringify(data[firstId], null, 2));
-
-                // Check what each website expects vs what exists
-                console.log("---");
-                console.log("🔍 Data Structure Check:");
-
-                const example = data[firstId];
-                const checks = {
-                    "Has 'id' field": !!example.id,
-                    "Has 'status' field": !!example.status,
-                    "Has 'approvals' object": !!example.approvals,
-                    "Has 'activityName'": !!example.activityName,
-                    "Has 'requestedBy'": !!example.requestedBy,
-                };
-
-                Object.entries(checks).forEach(([check, exists]) => {
-                    console.log(`${exists ? '✅' : '❌'} ${check}`);
-                });
-
-            }).catch((error) => {
-                console.error("🔥 Firebase error:", error);
-            });
-        }
-
-        // Make it available in browser console
-        window.debugFirebase = debugFirebase;
-        console.log("📢 Debug tool ready! Type 'debugFirebase()' in console.");
-    </script>
-</body>
-
-
-</html>
-
-
+                        <div class="flex
