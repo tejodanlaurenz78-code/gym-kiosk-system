@@ -879,27 +879,35 @@
         }
 
         function saveEvent() {
-            // Get values from form
+            console.log("👉 Save Button Clicked!"); // Debug 1
+        
+            // 1. Get values
             let id = document.getElementById('eventIdHidden').value;
             const title = document.getElementById('eventTitleInput').value.trim();
             const date = document.getElementById('eventDateHidden').value;
             const desc = document.getElementById('eventDescInput').value.trim();
             const status = document.getElementById('eventStatusInput').value;
-        
+            
+            // Time logic
             const start = document.getElementById('eventStartTime').value;
             const end = document.getElementById('eventEndTime').value;
             const time = `${start} - ${end}`;
         
+            console.log("📝 Form Data:", { title, date, time }); // Debug 2
+        
+            // 2. Validation
             if (!title) {
                 alert('Please enter an event title.');
                 return;
             }
         
-            // If no ID exists (New Event), generate one
+            // 3. ID Generation
             if (!id) {
                 id = "EVT-" + Date.now();
+                console.log("🆕 Generated New ID:", id);
             }
         
+            // 4. Data Object
             const eventData = {
                 id: id,
                 title: title,
@@ -908,6 +916,27 @@
                 status: status,
                 description: desc
             };
+        
+            // 5. Firebase Save
+            if (!window.set || !window.ref || !window.db) {
+                console.error("❌ Firebase tools are missing! Check your imports.");
+                alert("System Error: Database connection missing. Check console (F12).");
+                return;
+            }
+        
+            console.log("☁️ Sending to Firebase..."); // Debug 3
+        
+            window.set(window.ref(window.db, 'events/' + id), eventData)
+                .then(() => {
+                    console.log("✅ Success!"); 
+                    customAlert("✅ Event saved to cloud!");
+                    closeEventModal();
+                })
+                .catch((err) => {
+                    console.error("🔥 Save Failed:", err);
+                    alert("Error saving: " + err.message);
+                });
+        }
         
             // SAVE TO FIREBASE
             window.set(window.ref(window.db, 'events/' + id), eventData)
@@ -1416,3 +1445,4 @@
     </script>
 </body>
 </html>
+
