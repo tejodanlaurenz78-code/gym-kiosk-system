@@ -654,6 +654,8 @@
 
         window.submitFinalSelection = function() {
             const formView = document.getElementById('formView');
+            
+            // --- 1. Scrape Basic Info ---
             const activityName = formView.querySelector('input[placeholder="Activity Name/Title/Purpose"]')?.value || "Gym Reservation";
             const department = formView.querySelector('input[placeholder="Department"]')?.value || "";
             const activityDate = formView.querySelector('#activityDateInput')?.value || selectedReservationDate;
@@ -661,6 +663,73 @@
             const internalParticipants = formView.querySelector('input[placeholder="Internal"]')?.value || "0";
             const externalParticipants = formView.querySelector('input[placeholder="External"]')?.value || "0";
             const requestedBy = formView.querySelector('input[placeholder="[Enter Your Name]"]')?.value || "Anonymous";
+
+            // --- 2. Scrape Venue ---
+            // The venue section is the first section with border-t-0
+            const venueSection = formView.querySelectorAll('.border-t-0')[0];
+            const venueCheckboxes = venueSection.querySelectorAll('input[type="checkbox"]:checked');
+            let venueList = [];
+            venueCheckboxes.forEach(cb => {
+                let parent = cb.parentElement;
+                let text = parent.querySelector('span')?.innerText.trim() || "";
+                // Check if there is a text input next to it (e.g. Classroom # [101])
+                let inputDetail = parent.querySelector('input[type="text"]');
+                if (inputDetail && inputDetail.value) {
+                    venueList.push(`${text} ${inputDetail.value}`);
+                } else {
+                    venueList.push(text);
+                }
+            });
+
+            // --- 3. Scrape Equipment & Setup ---
+            const equipSection = formView.querySelectorAll('.border-t-0')[1];
+            
+            // Setup Details (Ingress/Egress) - found in the left column
+            const setupContainer = equipSection.querySelector('.w-40');
+            const setupInputs = setupContainer.querySelectorAll('input');
+            const ingressDate = setupInputs[0]?.value || "";
+            const ingressTime = setupInputs[1]?.value || "";
+            const egressDate = setupInputs[2]?.value || "";
+            const egressTime = setupInputs[3]?.value || "";
+
+            // Equipment List - found in the right column
+            const equipCheckboxes = equipSection.querySelectorAll('.flex-1 input[type="checkbox"]:checked');
+            let equipmentList = [];
+            equipCheckboxes.forEach(cb => {
+                let parent = cb.parentElement;
+                let nameSpan = parent.querySelector('span');
+                let name = nameSpan ? nameSpan.innerText.trim() : "Unknown";
+
+                if (name.includes("Chair") || name.includes("Table")) {
+                    // Structure: input(cb) span(name) input(count) span(Type:) input(type)
+                    const inputs = parent.querySelectorAll('input[type="text"]');
+                    let count = inputs[0]?.value || "0";
+                    let type = inputs[1]?.value || "Standard";
+                    equipmentList.push({ name: name.replace('#', '').trim(), count: count, type: type });
+                } else if (name.includes("Microphone")) {
+                     let countInput = parent.querySelector('input[type="number"]');
+                     let count = countInput?.value || "1";
+                     equipmentList.push({ name: "Microphone", count: count });
+                } else if (name.includes("Others")) {
+                     let val = parent.querySelector('input[type="text"]')?.value || "";
+                     equipmentList.push({ name: `Others: ${val}` });
+                } else {
+                     equipmentList.push({ name: name });
+                }
+            });
+
+            // --- 4. Scrape Manpower ---
+            const manpowerSection = formView.querySelectorAll('.border-t-0')[2];
+            const manpowerCheckboxes = manpowerSection.querySelectorAll('input[type="checkbox"]:checked');
+            let manpowerData = {};
+            manpowerCheckboxes.forEach(cb => {
+                let parent = cb.parentElement;
+                let name = parent.querySelector('span').innerText.trim().toLowerCase(); 
+                let detail = parent.querySelector('input[type="text"]')?.value || "Requested";
+                manpowerData[name] = detail;
+            });
+
+            // --- 5. Prepare Payload ---
             const trackingId = "RES-" + Math.floor(100000 + Math.random() * 900000);
             
             const formData = {
@@ -673,8 +742,13 @@
                 activityName: activityName,
                 internalParticipants: internalParticipants,
                 externalParticipants: externalParticipants,
-                venue: ["Gym Stage / Court"],
-                equipment: [],
+                venue: venueList,
+                equipment: equipmentList,
+                ingressDate: ingressDate,
+                ingressTime: ingressTime,
+                egressDate: egressDate,
+                egressTime: egressTime,
+                manpower: manpowerData,
                 requestedBy: requestedBy,
                 status: "Pending VP Admin",
                 personnel: globalSelectedPersonnel,
@@ -689,19 +763,24 @@
                 form1: { purpose: "Regular gym reservation for university activity." }
             };
 
+            // --- 6. Send to Firebase ---
             window.set(window.ref(window.db, 'requests/' + trackingId), formData)
                 .then(() => {
                     const moniwebUrl = `${window.location.origin}/moniweb.html`;
                     const qrData = `${moniwebUrl}?id=${trackingId}`;
                     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+                    
                     document.getElementById('trackingIdDisplay').innerText = trackingId;
                     document.getElementById('qrCodeImage').src = qrUrl;
+                    
+                    // Receipt update
                     const offices = Object.keys(globalSelectedPersonnel).join(', ');
                     document.getElementById('submittedToDisplay').innerText = offices || "No specific office selected";
-    
+
                     const personnelList = [];
                     Object.values(globalSelectedPersonnel).forEach(arr => personnelList.push(...arr));
                     document.getElementById('submittedPersonnelDisplay').innerText = personnelList.join(', ') || "None";
+                    
                     window.showView('trackingView');
                 })
                 .catch((error) => {
@@ -737,6 +816,7 @@
     </script>
 </body>
 </html>
+
 
 
 
