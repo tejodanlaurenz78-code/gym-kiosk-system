@@ -8,76 +8,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Great+Vibes&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
     <style>
         :root {
-            --pnc-primary: #15803d; /* Green */
+            --pnc-primary: #15803d;
             --pnc-yellow: #FCD34D;
         }
         body { 
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', sans-serif; 
             background-color: #f3f4f6; 
         }
 
-        /* --- SIDEBAR TRANSITION (Pinnacle Style) --- */
-        #sidebarPanel {
-            transition: transform 0.3s ease-in-out;
-            transform: translateX(-100%); /* Hidden by default on mobile */
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            z-index: 50;
-            width: 280px; /* Fixed width sidebar */
-            background-color: white;
-            box-shadow: 4px 0 15px rgba(0,0,0,0.1);
-        }
-        #sidebarPanel.open {
-            transform: translateX(0); /* Slide in */
-        }
-        
-        /* Backdrop for mobile menu */
-        #mobileBackdrop {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 40;
-        }
-        #mobileBackdrop.open {
-            display: block;
-        }
-
-        /* Desktop Override: Always show sidebar, push content */
-        @media (min-width: 1024px) {
-            #sidebarPanel {
-                transform: translateX(0);
-                position: fixed;
-                box-shadow: none;
-                border-right: 1px solid #e5e7eb;
-            }
-            #mobileBackdrop { display: none !important; }
-            main {
-                margin-left: 280px; /* Push content to right */
-            }
-            #menuBtn { display: none; } /* Hide hamburger on desktop */
-        }
-
-        /* --- PREVENT COMPRESSION (SCROLL INSTEAD) --- */
-        .no-compress-container {
-            min-width: 900px; /* Forces layout to stay wide */
-            overflow-x: auto;
-        }
-        .calendar-min-width {
-            min-width: 800px; /* Calendar won't squish */
-        }
-
-        /* Form Styles */
+        /* --- FORM STYLES (STRICT PAPER FORMAT) --- */
         .form-container {
-            color: black;
-            border: 1px solid black;
             background: white;
+            color: black;
+            border: 1px solid black; /* Outer Border */
             padding: 2rem;
-            min-width: 850px; /* Fixed width form */
+            min-width: 850px; /* PREVENTS COMPRESSION */
             margin: 0 auto;
         }
+        
+        /* Specific Form Elements */
         .form-title {
             background-color: #D1D5DB;
             font-weight: bold;
@@ -85,8 +34,9 @@
             padding: 0.25rem;
             text-transform: uppercase;
             font-size: 1.1rem;
-            border: none;
+            /* Border removed via inline style in HTML as requested */
         }
+        
         .read-only-field {
             border-bottom: 1px solid black;
             width: 100%;
@@ -96,263 +46,172 @@
             display: inline-block;
         }
         
-        /* Sidebar Item Styling (Like Pinnacle) */
-        .sidebar-item {
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            color: #4B5563;
-            font-weight: 500;
-            border-left: 4px solid transparent;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .sidebar-item:hover {
-            background-color: #f0fdf4;
-            color: var(--pnc-primary);
-        }
-        .sidebar-item.active {
-            background-color: #f0fdf4;
-            color: var(--pnc-primary);
-            border-left-color: var(--pnc-primary);
-        }
-        .sidebar-item svg { margin-right: 12px; }
+        /* Utility overrides for Form */
+        .border-black { border-color: black !important; }
+        .accent-black { accent-color: black; }
+        .w-40 { width: 10rem; } /* Restore fixed width for labels */
 
-        /* Calendar Styles */
-        .calendar-day {
-            min-height: 100px;
-            border: 1px solid #e5e7eb;
-            padding: 4px;
-            position: relative;
-        }
-        .calendar-day:hover { background-color: #f9fafb; }
-        .calendar-event {
-            font-size: 0.75rem;
-            padding: 2px 4px;
-            border-radius: 4px;
-            margin-bottom: 2px;
-            cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .event-confirmed { background-color: #dcfce7; color: #166534; border-left: 3px solid #15803d; }
-        .event-temporary { background-color: #fef3c7; color: #92400e; border-left: 3px solid #d97706; }
-        .editable-day:hover::after {
-            content: '+';
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            font-size: 14px;
-            background-color: #15803d;
-            color: white;
-            padding: 0px 6px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
+        /* --- DASHBOARD UI --- */
         .kiosk-btn {
             background-color: var(--pnc-primary);
             color: white;
-            padding: 0.75rem 1.5rem;
+            padding: 1rem 2rem;
+            font-size: 1.25rem;
             border-radius: 0.5rem;
             transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        .kiosk-btn:hover { background-color: #166534; }
+        .kiosk-btn:hover { background-color: #166534; transform: translateY(-2px); }
+        
+        .request-item { transition: all 0.2s; }
+        .request-item:hover { background-color: #F0FDF4; cursor: pointer; }
+        
+        /* Pop-up Menu */
+        #profileDropdown {
+            transition: opacity 0.2s, transform 0.2s;
+            transform-origin: top right;
+        }
+        #profileDropdown.hidden { opacity: 0; transform: scale(0.95); pointer-events: none; }
+        #profileDropdown.visible { opacity: 1; transform: scale(1); pointer-events: auto; }
+
+        /* Calendar */
+        .calendar-day { min-height: 100px; border: 1px solid #e5e7eb; padding: 4px; position: relative; }
+        .calendar-day:hover { background-color: #f9fafb; }
+        .calendar-event {
+            font-size: 0.75rem; padding: 2px 4px; border-radius: 4px; margin-bottom: 2px;
+            cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .event-confirmed { background-color: #dcfce7; color: #166534; border-left: 3px solid #15803d; }
+        .event-temporary { background-color: #fef3c7; color: #92400e; border-left: 3px solid #d97706; }
+        .editable-day:hover { background-color: #dcfce7 !important; cursor: cell; }
     </style>
 </head>
-<body class="min-h-screen text-gray-800">
+<body class="min-h-screen flex items-start justify-center p-4">
 
-    <div id="landingView" class="fixed inset-0 z-[100] bg-gray-100 flex items-center justify-center p-4">
-        <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border-t-8 border-[#15803d] p-8">
-            <div class="text-center mb-8">
-                <div class="w-16 h-16 mx-auto bg-[#15803d] text-white p-2 rounded-full flex items-center justify-center font-black text-2xl mb-3">PnC</div>
-                <h1 class="text-2xl font-extrabold text-[#15803d]">Approver Login</h1>
-                <p class="text-gray-500 text-sm mt-1">Please enter your credentials.</p>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Username</label>
-                    <input type="text" id="usernameInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 outline-none" placeholder="e.g. colin">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Password</label>
-                    <input type="password" id="passwordInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 outline-none" placeholder="e.g. admin">
-                </div>
-                <button onclick="handleLogin()" class="w-full bg-[#15803d] text-white py-3 rounded-lg font-bold shadow-md hover:bg-green-800 transition">Login</button>
-            </div>
+    <div id="landingView" class="w-full max-w-lg mt-20 p-8 bg-white rounded-2xl shadow-2xl border-t-8 border-[#15803d]">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 mx-auto bg-[#15803d] text-white p-2 rounded-full flex items-center justify-center font-black text-2xl mb-3">PnC</div>
+            <h1 class="text-3xl font-extrabold text-[#15803d]">Approver Login</h1>
+        </div>
+        <div class="space-y-4">
+            <div><label class="block text-sm font-bold text-gray-700 mb-1">Username</label><input type="text" id="usernameInput" class="w-full p-3 border border-gray-300 rounded-lg outline-none" placeholder="e.g. colin"></div>
+            <div><label class="block text-sm font-bold text-gray-700 mb-1">Password</label><input type="password" id="passwordInput" class="w-full p-3 border border-gray-300 rounded-lg outline-none" placeholder="e.g. admin"></div>
+            <button onclick="handleLogin()" class="kiosk-btn w-full text-lg py-3 mt-6 font-bold shadow-lg">Login</button>
         </div>
     </div>
 
-    <div id="approverView" class="hidden min-h-screen flex flex-col">
+    <div id="approverView" class="hidden w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden min-h-[800px] flex flex-col">
         
-        <header class="bg-[#15803d] h-16 fixed top-0 left-0 right-0 z-40 flex items-center px-4 justify-between shadow-md">
-            <div class="flex items-center">
-                <button id="menuBtn" onclick="toggleSidebar()" class="text-white p-2 mr-2 hover:bg-green-700 rounded">
+        <header class="bg-[#15803d] p-4 border-b-4 border-green-600 flex justify-between items-center sticky top-0 z-50 shadow-md">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white text-[#15803d] w-10 h-10 p-2 rounded flex items-center justify-center font-black text-lg">PnC</div>
+                <h1 class="text-2xl font-extrabold text-white truncate">Gym Approver Dashboard</h1>
+            </div>
+            
+            <div class="flex items-center space-x-4 relative">
+                <div class="text-right hidden md:block">
+                    <p class="text-sm font-bold text-white" id="approverNameDisplay">--</p>
+                    <p class="text-xs text-green-200" id="approverRoleDisplay">--</p>
+                </div>
+
+                <button onclick="toggleProfileMenu()" class="h-10 w-10 rounded-full bg-white text-[#15803d] flex items-center justify-center border-2 border-green-400 hover:border-white transition shadow-sm focus:outline-none">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                 </button>
-                <div class="flex items-center space-x-2">
-                    <div class="bg-white text-[#15803d] w-8 h-8 rounded flex items-center justify-center font-black text-xs">PnC</div>
-                    <h1 class="text-lg font-bold text-white truncate">Approver Dashboard</h1>
+
+                <div id="profileDropdown" class="hidden absolute right-0 top-12 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
+                    <a href="#" onclick="location.reload()" class="block px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center font-bold transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                    </a>
                 </div>
-            </div>
-            <div class="text-white text-xs text-right">
-                <div class="font-bold" id="approverNameDisplay">Welcome</div>
-                <div class="opacity-80 truncate max-w-[120px]" id="approverRoleDisplay">Role</div>
             </div>
         </header>
 
-        <div id="mobileBackdrop" onclick="toggleSidebar()"></div>
-
-        <div id="sidebarPanel" class="flex flex-col bg-white">
-            <div class="h-16 flex items-center px-6 border-b border-gray-100">
-                <span class="text-[#15803d] font-bold text-lg">Menu</span>
-                <button onclick="toggleSidebar()" class="ml-auto lg:hidden text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
-
-            <div class="p-6 border-b border-gray-100 bg-gray-50">
-                <p class="text-xs text-gray-500 uppercase tracking-wide font-bold mb-1">CURRENT USER</p>
-                <h3 class="font-bold text-gray-800 text-lg leading-tight" id="sidebarName">--</h3>
-                <span class="inline-block bg-green-100 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded mt-2">ACTIVE</span>
-            </div>
-
-            <div class="flex-1 py-4 space-y-1 overflow-y-auto">
-                <div class="sidebar-item" onclick="loadCalendarView()">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    Facility Calendar
-                </div>
-                
-                <div class="px-6 pt-6 pb-2">
-                    <p class="text-xs text-gray-400 font-bold uppercase">PENDING REQUESTS (<span id="pendingCount">0</span>)</p>
-                </div>
-                <div id="requestList" class="space-y-1">
-                    </div>
-            </div>
-
-            <div class="p-4 border-t border-gray-100">
-                <button onclick="location.reload()" class="flex items-center text-red-600 hover:bg-red-50 w-full p-2 rounded transition font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                    Logout
-                </button>
-            </div>
-        </div>
-
-        <main class="flex-1 pt-16 bg-white overflow-hidden flex flex-col relative h-screen">
+        <div class="flex-grow flex overflow-hidden relative">
             
-            <div id="calendarMainView" class="flex-1 flex flex-col h-full overflow-hidden hidden">
-                <div class="p-4 md:p-6 border-b flex justify-between items-center bg-gray-50">
-                    <h2 class="text-2xl font-bold text-gray-800">Facility Calendar</h2>
-                    <div class="flex items-center bg-white rounded-lg shadow-sm border p-1">
-                        <button onclick="changeCalendarMonth(-1)" class="p-2 hover:bg-gray-100 rounded text-gray-600">&lt;</button>
-                        <span id="calendarMonthYear" class="font-bold text-sm md:text-lg w-32 text-center">--</span>
-                        <button onclick="changeCalendarMonth(1)" class="p-2 hover:bg-gray-100 rounded text-gray-600">&gt;</button>
-                    </div>
+            <div id="sidebarPanel" class="w-1/3 min-w-[300px] bg-gray-50 border-r border-gray-200 flex flex-col h-full">
+                <div class="p-4 bg-white border-b border-gray-200 flex justify-between items-center">
+                     <h2 class="text-xl font-bold text-[#15803d]">Pending Requests (<span id="pendingCount">0</span>)</h2>
                 </div>
-                <div class="flex-1 overflow-auto bg-gray-100 p-4">
-                    <div class="bg-white shadow rounded-lg calendar-min-width">
-                        <div class="grid grid-cols-7 text-center bg-gray-50 font-bold py-3 border-b text-sm text-gray-500">
-                            <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
-                        </div>
-                        <div id="calendarGrid" class="grid grid-cols-7 bg-white"></div>
-                    </div>
+                <div id="sidebarRequests" class="p-4 overflow-y-auto flex-1">
+                    <div id="requestList" class="space-y-2"></div>
                 </div>
             </div>
 
-            <div id="reviewView" class="flex-1 flex flex-col h-full overflow-hidden hidden">
-                <div class="bg-white border-b shadow-sm p-4 z-20">
-                    <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                        <div>
-                            <div class="flex items-center space-x-2">
-                                <button onclick="loadCalendarView()" class="text-gray-500 hover:text-green-700 font-bold flex items-center text-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                                    Back
-                                </button>
-                                <span class="text-gray-300">|</span>
-                                <span id="currentStatusTag" class="text-xs font-bold uppercase px-2 py-1 rounded bg-yellow-100 text-yellow-800">Pending</span>
-                            </div>
-                            <h2 class="text-xl font-bold text-gray-800 mt-1" id="activityTitleHeader">Activity Title</h2>
+            <div class="flex-1 bg-white p-6 overflow-y-auto h-full relative" id="mainContentArea">
+                
+                <div id="initialView" class="hidden text-center py-40 text-gray-400">Select a request or view Calendar.</div>
+                
+                <div id="reviewView" class="hidden flex flex-col h-full">
+                    <div class="flex justify-between items-center pb-3 border-b mb-4">
+                        <h3 class="text-2xl font-bold text-gray-800" id="activityTitleHeader">Activity: --</h3>
+                        <div class="flex items-center space-x-2">
+                             <button onclick="loadCalendarView()" class="text-sm text-gray-500 hover:text-blue-600 underline mr-4">Back to Calendar</button>
+                             <span id="currentStatusTag" class="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">Status: Pending...</span>
                         </div>
-                        
-                        <div id="approvalActionsContainer" class="flex flex-wrap gap-2">
-                            </div>
+                    </div>
+
+                    <div id="approvalActionsContainer"></div>
+                    
+                    <div id="supportingDocTrigger" class="mb-4">
+                         <button onclick="openForm1Modal()" class="flex items-center space-x-2 text-[#15803d] hover:text-green-800 font-bold bg-green-50 px-4 py-2 rounded-lg border border-green-200 w-full justify-center hover:bg-green-100 transition">
+                            <span>📄 View Approved Proposal Letter (Form 1)</span>
+                         </button>
+                    </div>
+
+                    <div id="readOnlyFormContainer" class="flex-grow overflow-x-auto relative pb-10">
+                        <div class="form-container shadow-xl"></div>
                     </div>
                 </div>
 
-                <div class="flex-1 overflow-auto bg-gray-100 p-4 relative">
-                    <div class="max-w-5xl mx-auto space-y-6">
-                        
-                        <div id="supportingDocTrigger" class="bg-white p-4 rounded-lg shadow-sm border border-green-100 flex items-center justify-between">
-                            <div>
-                                <h4 class="font-bold text-gray-800">Proposal Letter (Form 1)</h4>
-                                <p class="text-xs text-gray-500">View the approved request letter.</p>
-                            </div>
-                            <button onclick="openForm1Modal()" class="text-sm font-bold text-[#15803d] border border-[#15803d] px-4 py-2 rounded hover:bg-green-50">View Document</button>
-                        </div>
-
-                        <div class="overflow-x-auto pb-8">
-                            <div id="readOnlyFormContainer" class="no-compress-container">
-                                </div>
+                <div id="calendarMainView" class="hidden h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Facility Calendar</h2>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeCalendarMonth(-1)" class="p-2 bg-gray-200 rounded hover:bg-gray-300">&lt;</button>
+                            <span id="calendarMonthYear" class="font-bold text-xl w-40 text-center">Month Year</span>
+                            <button onclick="changeCalendarMonth(1)" class="p-2 bg-gray-200 rounded hover:bg-gray-300">&gt;</button>
                         </div>
                     </div>
+
+                    <div class="flex-grow border-t border-l border-gray-300">
+                        <div class="grid grid-cols-7 text-center bg-gray-100 font-bold py-2 border-b border-gray-300 border-r">
+                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        </div>
+                        <div id="calendarGrid" class="grid grid-cols-7 h-full overflow-y-auto"></div>
+                    </div>
                 </div>
-            </div>
-
-            <div id="initialView" class="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                <p>Select an item from the menu to get started.</p>
-            </div>
-
-        </main>
-    </div>
-
-    <div id="form1Modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-[60] flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div class="p-4 border-b flex justify-between items-center">
-                <h3 class="font-bold">Proposal Letter</h3>
-                <button onclick="closeForm1Modal()" class="text-2xl">&times;</button>
-            </div>
-            <div class="flex-1 overflow-auto p-4 bg-gray-100">
-                <div id="form1ModalContent" class="bg-white shadow mx-auto min-w-[700px] max-w-[800px]"></div>
             </div>
         </div>
     </div>
 
-    <div id="appointmentModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-[60] flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg w-full max-w-md p-6">
-            <h3 class="text-xl font-bold mb-4">Set Appointment</h3>
-            <input type="hidden" id="apptRequestId">
-            <input type="date" id="apptDate" class="w-full border p-2 rounded mb-3">
-            <input type="time" id="apptTime" class="w-full border p-2 rounded mb-3">
-            <textarea id="apptReason" class="w-full border p-2 rounded mb-4" placeholder="Reason..."></textarea>
-            <div class="flex justify-end gap-2">
-                <button onclick="closeAppointmentModal()" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
-                <button onclick="submitAppointment()" class="px-4 py-2 bg-yellow-500 text-white rounded font-bold">Set</button>
+    <div id="form1Modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
+            <div class="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
+                <h3 class="text-xl font-bold text-gray-800">Proposal Letter</h3>
+                <button onclick="closeForm1Modal()" class="text-gray-500 hover:text-red-600 text-2xl font-bold">&times;</button>
             </div>
+            <div class="p-4 bg-gray-100"><div id="form1ModalContent" class="bg-white shadow-lg mx-auto" style="max-width: 800px;"></div></div>
         </div>
     </div>
 
-    <div id="eventModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-[60] flex items-center justify-center p-4">
+    <div id="eventModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-lg w-full max-w-md p-6">
-            <h3 class="text-xl font-bold mb-4" id="eventModalTitle">Manage Event</h3>
-            <input type="hidden" id="eventIdHidden"><input type="hidden" id="eventDateHidden">
+            <h3 class="text-xl font-bold mb-4">Plot Event</h3>
+            <input type="hidden" id="eventDateHidden"><input type="hidden" id="eventIdHidden">
             <div class="space-y-3">
-                <input type="text" id="eventTitleInput" class="w-full border p-2 rounded" placeholder="Event Title">
-                <div class="flex gap-2">
-                    <select id="eventStartTime" class="border p-2 rounded w-1/2"></select>
-                    <select id="eventEndTime" class="border p-2 rounded w-1/2"></select>
-                </div>
+                <input type="text" id="eventTitleInput" class="w-full border p-2 rounded" placeholder="Title">
+                <div class="flex gap-2"><select id="eventStartTime" class="border p-2 rounded w-1/2"></select><select id="eventEndTime" class="border p-2 rounded w-1/2"></select></div>
                 <select id="eventStatusInput" class="w-full border p-2 rounded"><option value="confirmed">Confirmed</option><option value="temporary">Temporary</option></select>
-                <textarea id="eventDescInput" class="w-full border p-2 rounded" placeholder="Description"></textarea>
+                <textarea id="eventDescInput" class="w-full border p-2 rounded" placeholder="Desc"></textarea>
             </div>
             <div class="flex justify-between mt-6">
-                <button id="btnDeleteEvent" onclick="deleteCurrentEvent()" class="text-red-600 hidden">Delete</button>
-                <div class="flex gap-2">
-                    <button onclick="closeEventModal()" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
-                    <button onclick="saveEvent()" class="px-4 py-2 bg-green-600 text-white rounded font-bold">Save</button>
-                </div>
+                <button onclick="closeEventModal()" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+                <button onclick="saveEvent()" class="px-4 py-2 bg-green-600 text-white rounded font-bold">Save</button>
             </div>
         </div>
     </div>
@@ -376,49 +235,32 @@
         
         window.db = db; window.set = set; window.ref = ref; window.update = update; window.onValue = onValue; window.remove = remove; window.get = get;
 
-        // STATE
-        let currentRequests = [];
-        let activeRequest = null;
-        let currentRoleKey = null; 
-        let currentUserName = ''; 
+        let currentRequests = [], activeRequest = null, currentRoleKey = null, currentUserName = ''; 
         const approvalOrder = ['pmOfficer', 'pmgsdDirector'];
         const roleLabels = { pmOfficer: 'VP Admin', pmgsdDirector: 'PMGSD Dir.' };
         const userDetails = { pmOfficer: 'Mr. Colin B. Garcia', pmgsdDirector: 'Alfredo Glenn H. Beaño' };
         let userCredentials = { 'colin': { role: 'pmOfficer', password: 'admin' }, 'alfredo': { role: 'pmgsdDirector', password: 'admin' } };
-        let calendarMonth = new Date().getMonth();
-        let calendarYear = new Date().getFullYear();
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        let calendarEvents = [];
+        let calendarMonth = new Date().getMonth(), calendarYear = new Date().getFullYear(), calendarEvents = [];
 
-        // UI HELPERS
-        window.toggleSidebar = function() {
-            const sb = document.getElementById('sidebarPanel');
-            const bd = document.getElementById('mobileBackdrop');
-            sb.classList.toggle('open');
-            bd.classList.toggle('open');
+        window.toggleProfileMenu = function() {
+            const m = document.getElementById('profileDropdown');
+            if(m.classList.contains('hidden')) { m.classList.remove('hidden'); setTimeout(()=>m.classList.add('visible'),10); }
+            else { m.classList.remove('visible'); setTimeout(()=>m.classList.add('hidden'),200); }
         };
 
         window.handleLogin = function() {
             const u = document.getElementById('usernameInput').value.trim();
             const p = document.getElementById('passwordInput').value.trim();
             const user = userCredentials[u];
-            
             if (user && user.password === p) {
                 currentRoleKey = user.role;
                 currentUserName = userDetails[currentRoleKey];
-                
                 document.getElementById('landingView').classList.add('hidden');
                 document.getElementById('approverView').classList.remove('hidden');
-                document.getElementById('approverNameDisplay').innerText = u;
+                document.getElementById('approverNameDisplay').innerText = currentUserName;
                 document.getElementById('approverRoleDisplay').innerText = roleLabels[currentRoleKey];
-                document.getElementById('sidebarName').innerText = userDetails[currentRoleKey];
-
-                loadCalendarView();
-                populateTimeDropdowns();
-                renderRequestList();
-            } else {
-                alert('Invalid credentials');
-            }
+                loadCalendarView(); populateTimeDropdowns(); renderRequestList();
+            } else { alert('Invalid credentials'); }
         };
 
         window.loadCalendarView = function() {
@@ -426,38 +268,22 @@
             document.getElementById('reviewView').classList.add('hidden');
             document.getElementById('calendarMainView').classList.remove('hidden');
             renderMainCalendar();
-            // Close mobile menu if open
-            if(window.innerWidth < 1024) window.toggleSidebar();
         };
 
         window.loadRequest = function(requestId) {
             activeRequest = currentRequests.find(r => r.id === requestId);
             if (!activeRequest) return;
-            
             document.getElementById('initialView').classList.add('hidden');
             document.getElementById('calendarMainView').classList.add('hidden');
             document.getElementById('reviewView').classList.remove('hidden');
-            
-            // Update Headers
             document.getElementById('activityTitleHeader').innerText = activeRequest.activityName;
-            const statusTag = document.getElementById('currentStatusTag');
-            statusTag.innerText = activeRequest.status;
-            statusTag.className = `text-xs font-bold uppercase px-2 py-1 rounded ${getStatusClass(activeRequest.status)}`;
+            document.getElementById('currentStatusTag').innerText = activeRequest.status;
             
-            // Update Doc Button Visibility
             const step = getCurrentApprovalStep(activeRequest);
-            const docBtn = document.getElementById('supportingDocTrigger');
-            if(['pmOfficer', 'pmgsdDirector'].includes(step) || activeRequest.status.includes('Approved')) {
-                docBtn.classList.remove('hidden'); docBtn.classList.add('flex');
-            } else {
-                docBtn.classList.add('hidden'); docBtn.classList.remove('flex');
-            }
-
+            document.getElementById('supportingDocTrigger').style.display = (['pmOfficer', 'pmgsdDirector'].includes(step) || activeRequest.status.includes('Approved')) ? 'block' : 'none';
+            
             renderReadOnlyForm(activeRequest);
             renderApprovalActions(activeRequest);
-            
-            // Close mobile menu
-            if(window.innerWidth < 1024) window.toggleSidebar();
         };
 
         function renderRequestList() {
@@ -467,7 +293,7 @@
             
             const myRequests = currentRequests.filter(r => {
                 const step = getCurrentApprovalStep(r);
-                return step === currentRoleKey || (step === null && r.status.includes('Approved')); // Show approved history too
+                return step === currentRoleKey || (step === null && r.status.includes('Approved'));
             });
             const pending = myRequests.filter(r => getCurrentApprovalStep(r) === currentRoleKey);
             countEl.innerText = pending.length;
@@ -475,22 +301,9 @@
             myRequests.forEach(req => {
                 const step = getCurrentApprovalStep(req);
                 const isActionable = step === currentRoleKey;
-                
-                // Pinnacle-style List Item
                 const div = document.createElement('div');
-                div.className = `sidebar-item border-l-4 ${isActionable ? 'border-yellow-400 bg-yellow-50' : 'border-transparent'}`;
-                div.innerHTML = `
-                    <div class="w-full">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-bold text-gray-800 truncate">${req.activityName}</span>
-                            ${isActionable ? '<span class="w-2 h-2 bg-yellow-500 rounded-full"></span>' : ''}
-                        </div>
-                        <div class="text-xs text-gray-500 flex justify-between mt-1">
-                            <span>${req.activityDate}</span>
-                            <span class="${isActionable ? 'text-yellow-600 font-bold' : ''}">${isActionable ? 'Review' : req.status.split(' ')[0]}</span>
-                        </div>
-                    </div>
-                `;
+                div.className = `request-item p-3 rounded-lg shadow-sm border mb-2 ${isActionable ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200'}`;
+                div.innerHTML = `<p class="font-bold text-gray-800">${req.activityName}</p><p class="text-xs text-gray-500">${req.activityDate}</p><span class="text-[10px] font-bold uppercase ${isActionable?'text-yellow-600':'text-gray-400'}">${isActionable?'Review':'View'}</span>`;
                 div.onclick = () => loadRequest(req.id);
                 listEl.appendChild(div);
             });
@@ -498,38 +311,25 @@
 
         function renderMainCalendar() {
             const grid = document.getElementById('calendarGrid');
-            const display = document.getElementById('calendarMonthYear');
-            display.innerText = `${monthNames[calendarMonth]} ${calendarYear}`;
+            document.getElementById('calendarMonthYear').innerText = `${monthNames[calendarMonth]} ${calendarYear}`;
             grid.innerHTML = '';
-            
             const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
             const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
-            
             for(let i=0; i<firstDay; i++) grid.innerHTML += '<div></div>';
             for(let d=1; d<=daysInMonth; d++) {
                 const dateStr = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const events = calendarEvents.filter(e => e.date === dateStr);
                 const isEditable = currentRoleKey === 'pmgsdDirector';
-                
-                let html = `<div class="calendar-day p-2 ${isEditable ? 'editable-day' : ''}" onclick="${isEditable ? `addEvent('${dateStr}')` : ''}">
-                    <span class="font-bold text-gray-400 text-sm">${d}</span>`;
-                
-                events.forEach(ev => {
-                    html += `<div class="calendar-event ${ev.status === 'confirmed' ? 'event-confirmed' : 'event-temporary'}" 
-                    onclick="event.stopPropagation(); ${isEditable ? `editEvent('${ev.id}')` : `alert('${ev.title}')`}">
-                    ${ev.title}</div>`;
-                });
+                let html = `<div class="calendar-day p-2 ${isEditable ? 'editable-day' : ''}" onclick="${isEditable ? `addEvent('${dateStr}')` : ''}"><span class="font-bold text-gray-400 text-sm">${d}</span>`;
+                events.forEach(ev => html += `<div class="calendar-event ${ev.status==='confirmed'?'event-confirmed':'event-temporary'}">${ev.title}</div>`);
                 html += `</div>`;
                 grid.innerHTML += html;
             }
         }
 
-        // Action Logic
         window.processApproval = function(id, action) {
             const req = currentRequests.find(r => r.id === id);
             const step = getCurrentApprovalStep(req);
-            const remark = document.getElementById('approverRemarks').value;
-            
             let newStatus = req.status;
             if (action === 'Rejected') newStatus = 'Rejected';
             else {
@@ -537,131 +337,113 @@
                 if(idx < approvalOrder.length - 1) newStatus = `Pending ${roleLabels[approvalOrder[idx+1]]}`;
                 else newStatus = 'Approved (Completed)';
             }
-            
             const updates = {};
             updates[`requests/${id}/status`] = newStatus;
-            updates[`requests/${id}/approvals/${step}`] = {
-                status: action,
-                name: currentUserName,
-                date: new Date().toISOString().split('T')[0],
-                remarks: remark
-            };
-            
-            window.update(window.ref(window.db), updates);
-            // Auto back to calendar/list after action
-            alert('Request Processed');
-            loadCalendarView();
-            renderRequestList();
+            updates[`requests/${id}/approvals/${step}`] = { status: action, name: currentUserName, date: new Date().toISOString().split('T')[0] };
+            update(ref(db), updates);
+            alert('Processed'); loadCalendarView(); renderRequestList();
         };
 
         function renderApprovalActions(req) {
             const container = document.getElementById('approvalActionsContainer');
             container.innerHTML = '';
             const step = getCurrentApprovalStep(req);
-            
             if(step === currentRoleKey) {
                 container.innerHTML = `
-                    <button onclick="processApproval('${req.id}', 'Approved')" class="px-4 py-2 bg-green-600 text-white rounded font-bold shadow hover:bg-green-700">Approve</button>
-                    <button onclick="processApproval('${req.id}', 'Rejected')" class="px-4 py-2 bg-red-600 text-white rounded font-bold shadow hover:bg-red-700">Reject</button>
-                    <button onclick="openAppointmentModal('${req.id}')" class="px-4 py-2 bg-yellow-500 text-white rounded font-bold shadow hover:bg-yellow-600">Set Appt</button>
-                    <input id="approverRemarks" type="text" placeholder="Remarks..." class="border p-2 rounded w-40">
-                `;
-            } else {
-                container.innerHTML = `<span class="text-sm text-gray-500 italic py-2">Read Only Mode</span>`;
-            }
+                    <div class="flex gap-2 mb-4">
+                        <button onclick="processApproval('${req.id}', 'Approved')" class="px-4 py-2 bg-green-600 text-white rounded font-bold">Approve</button>
+                        <button onclick="processApproval('${req.id}', 'Rejected')" class="px-4 py-2 bg-red-600 text-white rounded font-bold">Reject</button>
+                    </div>`;
+            } else { container.innerHTML = `<span class="text-sm text-gray-500 italic">Read Only</span>`; }
         }
 
-        // Keep Form Render Logic EXACTLY as you liked it (just ensure safe arrays)
+        // --- THE FORM RENDERER (Restored to exact Paper format) ---
         function renderReadOnlyForm(request) {
-            const container = document.getElementById('readOnlyFormContainer');
-            // Helper
+            const container = document.querySelector('#readOnlyFormContainer .form-container');
             const val = (v) => v || '';
+            const formatDate = (d) => d ? d.split('-')[1]+'/'+d.split('-')[2]+'/'+d.split('-')[0] : '';
             const venues = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
             const equipments = Array.isArray(request.equipment) ? request.equipment : (request.equipment ? Object.values(request.equipment) : []);
             const manpower = request.manpower || {};
-            const formatDate = (d) => d ? d.split('-')[1]+'/'+d.split('-')[2]+'/'+d.split('-')[0] : '';
-            const isChecked = (list, item) => list.includes(item) ? 'checked' : '';
-            const getEquip = (name, field) => { const i = equipments.find(e=>e.name===name); return i?i[field]:''; };
-            const isEquipChecked = (name) => equipments.some(e=>e.name===name) ? 'checked' : '';
-            
-            // Approvals
-            const dept = request.approvals?.deptHead || {};
-            const pm = request.approvals?.pmOfficer || {};
-            const dir = request.approvals?.pmgsdDirector || {};
+            const isChecked = (l, i) => l.includes(i) ? 'checked' : '';
+            const getEquip = (n, f) => { const i = equipments.find(e=>e.name===n); return i?i[f]:''; };
+            const isEquipChecked = (n) => equipments.some(e=>e.name===n) ? 'checked' : '';
 
             container.innerHTML = `
-                <div class="form-container">
-                    <div class="form-header flex items-center justify-center space-x-4 mb-6">
-                        <img src="pnc-logo.png" onerror="this.style.display='none'" class="w-16 h-16 object-contain">
-                        <div class="text-center">
-                            <p class="text-xs">Republic of the Philippines</p>
-                            <h2 class="text-xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
-                            <p class="text-xs font-bold">(UNIVERSITY OF CABUYAO)</p>
-                            <p class="font-bold text-gray-700 mt-1 text-sm">Property Management and General Services Department</p>
-                        </div>
+                <div class="form-header flex items-center justify-center space-x-4 mb-6">
+                    <img src="pnc-logo.png" onerror="this.style.display='none'" class="w-16 h-16 object-contain">
+                    <div class="text-center">
+                        <p class="text-xs">Republic of the Philippines</p>
+                        <h2 class="text-xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
+                        <p class="text-xs font-bold">(UNIVERSITY OF CABUYAO)</p>
+                        <p class="font-bold text-gray-700 mt-1 text-sm">Property Management and General Services Department</p>
                     </div>
-                    <div class="form-title text-black bg-gray-300" style="border:none">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
-                    
-                    <div class="border-b border-black p-4 space-y-4 text-sm text-black">
-                        <div class="flex flex-wrap gap-4">
-                            <div class="flex-1 min-w-[150px]"><label>Transaction:</label><div class="read-only-field">${val(request.id)}</div></div>
-                            <div class="flex-1 min-w-[150px]"><label>Date Filed:</label><div class="read-only-field">${formatDate(request.filingDate)}</div></div>
-                            <div class="flex-1 min-w-[150px]"><label>Department:</label><div class="read-only-field">${val(request.department)}</div></div>
-                        </div>
-                        <div class="flex flex-wrap gap-4">
-                            <div class="flex-1"><label>Activity Date:</label><div class="read-only-field">${formatDate(request.activityDate)}</div></div>
-                            <div class="flex-1"><label>Time:</label><div class="read-only-field">${val(request.time)}</div></div>
-                        </div>
-                        <div><label>Activity Name:</label><div class="read-only-field">${val(request.activityName)}</div></div>
-                        <div class="flex gap-4"><div class="flex-1">Internal: <div class="read-only-field w-20 text-center inline-block">${val(request.internalParticipants)}</div></div><div class="flex-1">External: <div class="read-only-field w-20 text-center inline-block">${val(request.externalParticipants)}</div></div></div>
-                    </div>
+                </div>
 
-                    <div class="border border-black border-t-0 flex text-black">
-                        <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Venue</div>
-                        <div class="flex-1 p-2 grid grid-cols-2 gap-2 text-sm">
-                            <label class="flex gap-2"><input type="checkbox" disabled ${isChecked(venues, 'Gym Stage / Court')}> Gym Stage/Court</label>
-                            <label class="flex gap-2"><input type="checkbox" disabled ${isChecked(venues, 'Multi-Purpose Hall')}> Multi-Purpose Hall</label>
-                            <div class="flex gap-2"><input type="checkbox" disabled ${venues.some(v=>v.includes('Classroom'))?'checked':''}> Classroom # <span class="border-b border-black px-2">${(venues.find(v=>v.includes('Classroom'))||'').replace('Classroom','')}</span></div>
+                <div class="form-title text-black bg-gray-300" style="border: none;">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
+
+                <div class="border-b border-black p-4 space-y-4 text-sm text-black">
+                    <div class="flex flex-wrap gap-4">
+                        <div class="flex-1"><label>Transaction Number:</label><div class="read-only-field">${val(request.id)}</div></div>
+                        <div class="flex-1"><label>Date of Filing:</label><div class="read-only-field">${formatDate(request.filingDate)}</div></div>
+                        <div class="flex-1"><label>Department:</label><div class="read-only-field">${val(request.department)}</div></div>
+                    </div>
+                    <div class="flex flex-wrap gap-4">
+                        <div class="flex-1"><label>Activity Date:</label><div class="read-only-field">${formatDate(request.activityDate)}</div></div>
+                        <div class="flex-1"><label>Time:</label><div class="read-only-field">${val(request.time)}</div></div>
+                    </div>
+                    <div><label>Activity Name/Title/Purpose:</label><div class="read-only-field">${val(request.activityName)}</div></div>
+                    <div class="flex gap-4"><div class="flex-1">Internal: <div class="read-only-field w-20 text-center inline-block">${val(request.internalParticipants)}</div></div><div class="flex-1">External: <div class="read-only-field w-20 text-center inline-block">${val(request.externalParticipants)}</div></div></div>
+                </div>
+
+                <div class="border border-black border-t-0 flex text-black">
+                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Venue Reservation</div>
+                    <div class="flex-1 p-2 grid grid-cols-2 gap-2 text-sm">
+                        <label class="flex gap-2"><input type="checkbox" disabled ${isChecked(venues, 'Gym Stage / Court')}> Gym Stage / Court</label>
+                        <label class="flex gap-2"><input type="checkbox" disabled ${isChecked(venues, 'Multi-Purpose Hall')}> Multi-Purpose Hall</label>
+                        <div class="flex gap-2"><input type="checkbox" disabled ${venues.some(v=>v.includes('Classroom'))?'checked':''}> Classroom # <span class="border-b border-black px-2">${(venues.find(v=>v.includes('Classroom'))||'').replace('Classroom','')}</span></div>
+                    </div>
+                </div>
+
+                <div class="border border-black border-t-0 flex text-black">
+                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">Equipment Reservation</div>
+                    <div class="flex-1 p-2 text-sm">
+                        <div class="grid grid-cols-1 gap-2 mb-2">
+                            <div class="flex gap-2 items-center"><input type="checkbox" disabled ${getEquip('Chair','count')?'checked':''}> Chair # <span class="font-bold w-10 text-center border-b border-black">${getEquip('Chair','count')}</span> Type: <span class="flex-1 border-b border-black">${getEquip('Chair','type')}</span></div>
+                            <div class="flex gap-2 items-center"><input type="checkbox" disabled ${getEquip('Table','count')?'checked':''}> Table # <span class="font-bold w-10 text-center border-b border-black">${getEquip('Table','count')}</span> Type: <span class="flex-1 border-b border-black">${getEquip('Table','type')}</span></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex gap-2"><input type="checkbox" disabled ${isEquipChecked('Sound System')}> Sound System</label>
+                            <label class="flex gap-2"><input type="checkbox" disabled ${isEquipChecked('Mic')}> Microphone</label>
+                            <label class="flex gap-2"><input type="checkbox" disabled ${isEquipChecked('Projector')}> Projector</label>
                         </div>
                     </div>
+                </div>
 
-                    <div class="border border-black border-t-0 flex text-black">
-                        <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">Equipment</div>
-                        <div class="flex-1 p-2 text-sm">
-                            <div class="grid grid-cols-1 gap-2 mb-2">
-                                <div class="flex gap-2 items-center"><input type="checkbox" disabled ${getEquip('Chair','count')?'checked':''}> Chair # <span class="font-bold w-10 text-center border-b border-black">${getEquip('Chair','count')}</span> Type: <span class="flex-1 border-b border-black">${getEquip('Chair','type')}</span></div>
-                                <div class="flex gap-2 items-center"><input type="checkbox" disabled ${getEquip('Table','count')?'checked':''}> Table # <span class="font-bold w-10 text-center border-b border-black">${getEquip('Table','count')}</span> Type: <span class="flex-1 border-b border-black">${getEquip('Table','type')}</span></div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <label class="flex gap-2"><input type="checkbox" disabled ${isEquipChecked('Sound System')}> Sound System</label>
-                                <label class="flex gap-2"><input type="checkbox" disabled ${isEquipChecked('Mic')}> Microphone</label>
-                            </div>
-                        </div>
+                <div class="border border-black border-t-0 flex text-black">
+                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Manpower Requirement</div>
+                    <div class="flex-1 p-2 grid grid-cols-2 gap-4 text-sm">
+                        <div class="flex gap-2"><input type="checkbox" disabled ${manpower.technical?'checked':''}> Technical <span class="flex-1 border-b border-black">${val(manpower.technical)}</span></div>
+                        <div class="flex gap-2"><input type="checkbox" disabled ${manpower.housekeeping?'checked':''}> Housekeeping <span class="flex-1 border-b border-black">${val(manpower.housekeeping)}</span></div>
                     </div>
+                </div>
 
-                    <div class="grid grid-cols-4 gap-4 text-center mt-4 text-black text-xs">
-                        <div><p class="font-bold mb-4">Requested by:</p><div class="border-b border-black font-bold uppercase pb-1">${request.requestedBy}</div></div>
-                        <div><p class="font-bold mb-4">Reviewed:</p><div class="border-b border-black font-bold uppercase pb-1">${dept.name||''}</div><div class="text-[10px] font-bold mt-1">${dept.status}</div></div>
-                        <div><p class="font-bold mb-4">Recommended:</p><div class="border-b border-black font-bold uppercase pb-1">Mr. Colin B. Garcia</div><div class="text-[10px] font-bold mt-1">${pm.status}</div></div>
-                        <div><p class="font-bold mb-4">Approved:</p><div class="border-b border-black font-bold uppercase pb-1">Alfredo Glenn H. Beaño</div><div class="text-[10px] font-bold mt-1">${dir.status}</div></div>
-                    </div>
+                <div class="grid grid-cols-4 gap-4 text-center mt-4 text-black text-xs">
+                    <div><p class="font-bold mb-4">Requested by:</p><div class="border-b border-black font-bold uppercase pb-1">${request.requestedBy}</div></div>
+                    <div><p class="font-bold mb-4">Reviewed by:</p><div class="border-b border-black font-bold uppercase pb-1">${request.approvals?.deptHead?.name||''}</div></div>
+                    <div><p class="font-bold mb-4">Recommended by:</p><div class="border-b border-black font-bold uppercase pb-1">Mr. Colin B. Garcia</div></div>
+                    <div><p class="font-bold mb-4">Approved by:</p><div class="border-b border-black font-bold uppercase pb-1">Alfredo Glenn H. Beaño</div></div>
                 </div>
             `;
         }
-        
-        // Form 1 & Modal Helpers
+
         window.openForm1Modal = function() {
             if(!activeRequest) return;
-            const c = document.getElementById('form1ModalContent');
-            c.innerHTML = `<div class="p-8"><h1 class="text-2xl font-bold text-center mb-4">Request Letter</h1><p class="mb-4">I, ${activeRequest.requestedBy}, request to use ${activeRequest.venue.join(', ')}.</p><p>Purpose: ${activeRequest.form1.purpose}</p></div>`;
+            document.getElementById('form1ModalContent').innerHTML = `<div class="p-8"><h1 class="text-2xl font-bold text-center mb-4">Request Letter</h1><p>I, ${activeRequest.requestedBy}, request to use venue.</p></div>`;
             document.getElementById('form1Modal').classList.remove('hidden');
         };
         window.closeForm1Modal = function() { document.getElementById('form1Modal').classList.add('hidden'); };
-        window.openAppointmentModal = function() { document.getElementById('appointmentModal').classList.remove('hidden'); };
-        window.closeAppointmentModal = function() { document.getElementById('appointmentModal').classList.add('hidden'); };
-        window.submitAppointment = function() { processApproval(activeRequest.id, 'Appointment Set'); closeAppointmentModal(); };
 
-        // Firebase Event Listeners
         window.onload = () => {
             onValue(ref(db, 'requests'), (s) => {
                 const d = s.val();
@@ -674,41 +456,17 @@
                 if(!document.getElementById('calendarMainView').classList.contains('hidden')) renderMainCalendar();
             });
         };
-        // Helpers
-        function getCurrentApprovalStep(req) {
-            for(const k of approvalOrder) if(req.approvals[k].status === 'Pending' || req.approvals[k].status === 'Appointment Set') return k;
-            return null;
-        }
-        function getStatusClass(s) {
-            if(s.includes('Approved')) return 'bg-green-100 text-green-800';
-            if(s.includes('Rejected')) return 'bg-red-100 text-red-800';
-            return 'bg-yellow-100 text-yellow-800';
-        }
-        window.changeCalendarMonth = (d) => {
-            calendarMonth += d; 
-            if(calendarMonth>11){calendarMonth=0;calendarYear++} else if(calendarMonth<0){calendarMonth=11;calendarYear--}
-            renderMainCalendar();
-        };
-        // Time population
+        function getCurrentApprovalStep(req) { for(const k of approvalOrder) if(req.approvals[k].status === 'Pending') return k; return null; }
+        window.changeCalendarMonth = (d) => { calendarMonth += d; if(calendarMonth>11){calendarMonth=0;calendarYear++} else if(calendarMonth<0){calendarMonth=11;calendarYear--} renderMainCalendar(); };
         window.populateTimeDropdowns = () => {
-            const s = document.getElementById('eventStartTime');
-            const e = document.getElementById('eventEndTime');
+            const s = document.getElementById('eventStartTime'), e = document.getElementById('eventEndTime');
             s.innerHTML=''; e.innerHTML='';
-            for(let h=7; h<=22; h++) {
-                const t = (h>12?h-12:h)+':00 '+(h>=12?'PM':'AM');
-                s.innerHTML+=`<option>${t}</option>`; e.innerHTML+=`<option>${t}</option>`;
-            }
+            for(let h=7; h<=22; h++) { const t=(h>12?h-12:h)+':00 '+(h>=12?'PM':'AM'); s.innerHTML+=`<option>${t}</option>`; e.innerHTML+=`<option>${t}</option>`; }
         };
-        // Event Modal Stuff (Simplified)
-        window.addEvent = (d) => { 
-            if(currentRoleKey!=='pmgsdDirector') return;
-            document.getElementById('eventDateHidden').value=d; 
-            document.getElementById('eventModal').classList.remove('hidden'); 
-        };
+        window.addEvent = (d) => { if(currentRoleKey!=='pmgsdDirector') return; document.getElementById('eventDateHidden').value=d; document.getElementById('eventModal').classList.remove('hidden'); };
         window.closeEventModal = () => document.getElementById('eventModal').classList.add('hidden');
         window.saveEvent = () => {
-            const t = document.getElementById('eventTitleInput').value;
-            const d = document.getElementById('eventDateHidden').value;
+            const t = document.getElementById('eventTitleInput').value, d = document.getElementById('eventDateHidden').value;
             if(!t) return;
             set(ref(db, 'events/evt-'+Date.now()), { id: 'evt-'+Date.now(), title: t, date: d, status: 'confirmed' });
             closeEventModal();
