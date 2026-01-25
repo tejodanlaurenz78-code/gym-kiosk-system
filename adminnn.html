@@ -954,13 +954,22 @@
             const pmOfficer = request.approvals?.pmOfficer || {};
             const pmgsdDirector = request.approvals?.pmgsdDirector || {};
             
-            // FIX: Ensure lists are arrays to prevent crashes
+            // SAFETY FIX: Prevents white-screen crash if Firebase returns Object instead of Array
             const venues = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
             const equipments = Array.isArray(request.equipment) ? request.equipment : (request.equipment ? Object.values(request.equipment) : []);
             
             // Helpers
             const val = (v) => v || '';
             const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
+            
+            // NEW: Date Formatter (YYYY-MM-DD -> MM/DD/YYYY)
+            const formatDate = (dateStr) => {
+                if (!dateStr) return '';
+                const parts = dateStr.split('-');
+                if (parts.length !== 3) return dateStr; 
+                return `${parts[1]}/${parts[2]}/${parts[0]}`;
+            };
+
             const getEquip = (name, field) => {
                 const item = equipments.find(e => e.name === name);
                 return item ? item[field] : '';
@@ -994,7 +1003,7 @@
                         </div>
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Date of Filing:</label>
-                            <div class="read-only-field">${val(request.filingDate)}</div>
+                            <div class="read-only-field">${formatDate(request.filingDate)}</div>
                         </div>
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Department:</label>
@@ -1005,7 +1014,7 @@
                     <div class="flex flex-wrap gap-4">
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Activity Date:</label>
-                            <div class="read-only-field">${val(request.activityDate)}</div>
+                            <div class="read-only-field">${formatDate(request.activityDate)}</div>
                         </div>
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Time:</label>
@@ -1290,6 +1299,7 @@
     </script>
 </body>
 </html>
+
 
 
 
