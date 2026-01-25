@@ -949,32 +949,18 @@
         }
 
         function renderForm2Content(request) {
-            // 1. Data Setup & Safety Normalization
+            // 1. Data Setup
             const deptHead = request.approvals?.deptHead || {};
             const pmOfficer = request.approvals?.pmOfficer || {};
             const pmgsdDirector = request.approvals?.pmgsdDirector || {};
             
-            // FIX: Ensure lists are always Arrays to prevent crashes
+            // FIX: Ensure lists are arrays to prevent crashes
             const venues = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
             const equipments = Array.isArray(request.equipment) ? request.equipment : (request.equipment ? Object.values(request.equipment) : []);
             
-            // FIX: Format Personnel List for display
-            let personnelHtml = '<p class="text-gray-500 italic">No personnel selected.</p>';
-            if (request.personnel) {
-                personnelHtml = Object.keys(request.personnel).map(office => {
-                    const staff = request.personnel[office] || [];
-                    return `
-                        <div class="mb-2">
-                            <span class="font-bold text-xs uppercase">${office}:</span>
-                            <span class="text-sm ml-2">${Array.isArray(staff) ? staff.join(', ') : staff}</span>
-                        </div>`;
-                }).join('');
-            }
-
-            // Helpers (Updated to use safe arrays 'venues' and 'equipments')
+            // Helpers
             const val = (v) => v || '';
             const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
-            
             const getEquip = (name, field) => {
                 const item = equipments.find(e => e.name === name);
                 return item ? item[field] : '';
@@ -998,9 +984,9 @@
                     </div>
                 </div>
 
-                <div class="form-title text-black bg-gray-300 border border-black border-b-0">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
+                <div class="form-title text-black bg-gray-300">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
 
-                <div class="border border-black p-4 space-y-4 text-sm text-black">
+                <div class="border-b border-black p-4 space-y-4 text-sm text-black">
                     <div class="flex flex-wrap gap-4">
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Transaction Number:</label>
@@ -1138,13 +1124,6 @@
                             <span>Housekeeping</span> 
                             <div class="read-only-field flex-1 font-bold">${val(manpower.housekeeping)}</div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="border border-black border-t-0 flex text-black">
-                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Selected Personnel</div>
-                    <div class="flex-1 p-2 text-sm bg-white">
-                        ${personnelHtml}
                     </div>
                 </div>
 
@@ -1311,6 +1290,7 @@
     </script>
 </body>
 </html>
+
 
 
 
