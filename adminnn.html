@@ -948,23 +948,39 @@
             document.querySelector('#readOnlyFormContainer .form-container').innerHTML = renderForm2Content(request);
         }
 
-      function renderForm2Content(request) {
-            // 1. Data Setup
+        function renderForm2Content(request) {
+            // 1. Data Setup & Safety Normalization
             const deptHead = request.approvals?.deptHead || {};
             const pmOfficer = request.approvals?.pmOfficer || {};
             const pmgsdDirector = request.approvals?.pmgsdDirector || {};
             
-            // Helpers
+            // FIX: Ensure lists are always Arrays to prevent crashes
+            const venues = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
+            const equipments = Array.isArray(request.equipment) ? request.equipment : (request.equipment ? Object.values(request.equipment) : []);
+            
+            // FIX: Format Personnel List for display
+            let personnelHtml = '<p class="text-gray-500 italic">No personnel selected.</p>';
+            if (request.personnel) {
+                personnelHtml = Object.keys(request.personnel).map(office => {
+                    const staff = request.personnel[office] || [];
+                    return `
+                        <div class="mb-2">
+                            <span class="font-bold text-xs uppercase">${office}:</span>
+                            <span class="text-sm ml-2">${Array.isArray(staff) ? staff.join(', ') : staff}</span>
+                        </div>`;
+                }).join('');
+            }
+
+            // Helpers (Updated to use safe arrays 'venues' and 'equipments')
             const val = (v) => v || '';
             const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
+            
             const getEquip = (name, field) => {
-                if (!request.equipment) return '';
-                const item = request.equipment.find(e => e.name === name);
+                const item = equipments.find(e => e.name === name);
                 return item ? item[field] : '';
             };
             const isEquipChecked = (name) => {
-                if (!request.equipment) return '';
-                return request.equipment.some(e => e.name === name) ? 'checked' : '';
+                return equipments.some(e => e.name === name) ? 'checked' : '';
             };
             const manpower = request.manpower || {};
 
@@ -1030,28 +1046,28 @@
                 <div class="border border-black border-t-0 flex text-black">
                     <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Venue Reservation</div>
                     <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(request.venue, 'Gym Stage / Court')} class="accent-black"> <span class="${isChecked(request.venue, 'Gym Stage / Court') ? 'font-bold' : ''}">Gym Stage / Court</span></label>
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(request.venue, 'Multi-Purpose Hall')} class="accent-black"> <span class="${isChecked(request.venue, 'Multi-Purpose Hall') ? 'font-bold' : ''}">Multi-Purpose Hall</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Gym Stage / Court')} class="accent-black"> <span class="${isChecked(venues, 'Gym Stage / Court') ? 'font-bold' : ''}">Gym Stage / Court</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Multi-Purpose Hall')} class="accent-black"> <span class="${isChecked(venues, 'Multi-Purpose Hall') ? 'font-bold' : ''}">Multi-Purpose Hall</span></label>
                         
                         <div class="flex items-center space-x-2">
-                             <input type="checkbox" disabled ${request.venue && request.venue.some(v => v.includes('Classroom')) ? 'checked' : ''}> 
+                             <input type="checkbox" disabled ${venues.some(v => v.includes('Classroom')) ? 'checked' : ''}> 
                              <span>Classroom #</span> 
-                             <div class="read-only-field w-16 text-center">${request.venue ? (request.venue.find(v => v.includes('Classroom')) || '').replace('Classroom', '').trim() : ''}</div>
+                             <div class="read-only-field w-16 text-center">${(venues.find(v => v.includes('Classroom')) || '').replace('Classroom', '').trim()}</div>
                         </div>
 
                         <div class="flex items-center space-x-2">
-                             <input type="checkbox" disabled ${request.venue && request.venue.some(v => v.includes('Laboratory')) ? 'checked' : ''}> 
+                             <input type="checkbox" disabled ${venues.some(v => v.includes('Laboratory')) ? 'checked' : ''}> 
                              <span>Laboratory #</span> 
-                             <div class="read-only-field w-16 text-center">${request.venue ? (request.venue.find(v => v.includes('Laboratory')) || '').replace('Laboratory', '').trim() : ''}</div>
+                             <div class="read-only-field w-16 text-center">${(venues.find(v => v.includes('Laboratory')) || '').replace('Laboratory', '').trim()}</div>
                         </div>
 
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(request.venue, 'Library')} class="accent-black"> <span class="${isChecked(request.venue, 'Library') ? 'font-bold' : ''}">Library</span></label>
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(request.venue, 'Cafeteria')} class="accent-black"> <span class="${isChecked(request.venue, 'Cafeteria') ? 'font-bold' : ''}">Cafeteria</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Library')} class="accent-black"> <span class="${isChecked(venues, 'Library') ? 'font-bold' : ''}">Library</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Cafeteria')} class="accent-black"> <span class="${isChecked(venues, 'Cafeteria') ? 'font-bold' : ''}">Cafeteria</span></label>
                         
                         <div class="col-span-2 flex items-center space-x-2">
-                            <input type="checkbox" disabled ${request.venue && request.venue.some(v => v.includes('Others:')) ? 'checked' : ''}> 
+                            <input type="checkbox" disabled ${venues.some(v => v.includes('Others:')) ? 'checked' : ''}> 
                             <span>Others:</span> 
-                            <div class="read-only-field flex-1">${request.venue ? (request.venue.find(v => v.includes('Others:')) || '').replace('Others:', '').trim() : ''}</div>
+                            <div class="read-only-field flex-1">${(venues.find(v => v.includes('Others:')) || '').replace('Others:', '').trim()}</div>
                         </div>
                     </div>
                 </div>
@@ -1101,9 +1117,9 @@
                             <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Multi-media Projector')} class="accent-black"> <span class="${isEquipChecked('Multi-media Projector') ? 'font-bold' : ''}">Projector</span></label>
                             
                             <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${request.equipment && request.equipment.some(e => e.name.includes('Others:')) ? 'checked' : ''}> 
+                                <input type="checkbox" disabled ${equipments.some(e => e.name.includes('Others:')) ? 'checked' : ''}> 
                                 <span>Others:</span> 
-                                <div class="read-only-field w-full font-bold">${request.equipment ? (request.equipment.find(e => e.name.includes('Others:'))?.name || '').replace('Others:', '').trim() : ''}</div>
+                                <div class="read-only-field w-full font-bold">${(equipments.find(e => e.name.includes('Others:'))?.name || '').replace('Others:', '').trim()}</div>
                             </div>
                         </div>
                     </div>
@@ -1122,6 +1138,13 @@
                             <span>Housekeeping</span> 
                             <div class="read-only-field flex-1 font-bold">${val(manpower.housekeeping)}</div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="border border-black border-t-0 flex text-black">
+                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Selected Personnel</div>
+                    <div class="flex-1 p-2 text-sm bg-white">
+                        ${personnelHtml}
                     </div>
                 </div>
 
@@ -1288,6 +1311,7 @@
     </script>
 </body>
 </html>
+
 
 
 
