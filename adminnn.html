@@ -1,247 +1,127 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en" class="light"> <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PnC Gymnasium Approver Dashboard</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        pnc: {
+                            primary: '#15803d',
+                            dark: '#000000',
+                            card: '#121212',
+                            neon: '#22c55e', // Bright green for dark mode text
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Great+Vibes&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            /* MATCHED THEME: Kiosk Green */
             --pnc-primary: #15803d;
             --pnc-yellow: #FCD34D;
         }
-        body { 
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; 
-        }
 
-        /* --- ADD THIS TO YOUR CSS --- */
-        .form-container {
-            color: black;
-            border: 1px solid black;
-        }
-        .form-title {
-            background-color: #D1D5DB;
-            /* Gray background */
-            font-weight: bold;
-            text-align: center;
-            padding: 0.25rem;
-            text-transform: uppercase;
-            font-size: 1.1rem;
-            margin-bottom: 0;
-            border: 1px solid black;
-            border-bottom: none;
-        }
-        .read-only-field {
-            border-bottom: 1px solid black;
-            width: 100%;
-            padding-left: 0.25rem;
-            font-weight: bold;
-            min-height: 24px;
-            display: inline-block;
-        }
-        .border-black { border-color: black; }
-        .accent-black { accent-color: black; }
-        
-        /* Form Template Styles */
-        .form-container {
-            background: white;
-            border: 1px solid #000;
-            padding: 2rem;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        /* RESPONSIVE FORM ADJUSTMENTS */
-        @media (max-width: 768px) {
-            .form-container {
-                padding: 1rem;
-            }
-            .form-header {
-                flex-direction: column;
-                text-align: center;
-            }
-            /* Stack the "Label" and "Content" columns in the form */
-            .form-row-responsive {
-                flex-direction: column !important;
-            }
-            .form-label-col {
-                width: 100% !important;
-                border-right: none !important;
-                border-bottom: 1px solid black;
-                background-color: #f9fafb;
-            }
-        }
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
 
-        .form-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-        .line-input {
-            border-bottom: 1px solid #000;
-            width: 100%;
-            outline: none;
-            background: transparent;
-            padding-left: 0.25rem;
-        }
+        /* --- DARK MODE OVERRIDES (Black & Green Theme) --- */
+        .dark body { background-color: #000000; color: #4ade80; }
+        .dark .bg-white { background-color: #121212; color: #e5e7eb; }
+        .dark .text-gray-800 { color: #4ade80; } /* Main titles become green */
+        .dark .text-gray-700 { color: #a3a3a3; }
+        .dark .text-gray-600 { color: #d4d4d4; }
+        .dark .text-gray-500 { color: #9ca3af; }
+        .dark .border-gray-200, .dark .border-gray-300 { border-color: #14532d; } /* Dark Green borders */
+        .dark .bg-gray-50, .dark .bg-gray-100 { background-color: #0a0a0a; }
         
-        /* Dashboard specific styles */
-        .kiosk-btn {
-            background-color: var(--pnc-primary);
-            color: white;
-            padding: 1rem 2rem;
-            font-size: 1.25rem;
-            border-radius: 0.5rem;
-            transition: all 0.2s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .kiosk-btn:hover { background-color: #166534; transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
-        .kiosk-btn:active { transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-        
-        /* Read-Only Input */
-        .input-disabled {
-            background-color: #E5E7EB;
-            cursor: not-allowed;
-            color: #6B7280;
-            font-style: italic;
-            border: none;
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-        }
+        /* Dark Mode Form Specifics (The "Matrix" Look) */
+        .dark .form-container { background-color: #000000; border-color: #22c55e; color: #22c55e; }
+        .dark .form-title { background-color: #14532d; color: #fff; border-color: #22c55e; }
+        .dark .read-only-field { border-bottom-color: #22c55e; color: #fff; }
+        .dark .line-input { border-bottom-color: #22c55e; color: #fff; }
+        .dark input, .dark select, .dark textarea { background-color: #18181b; border-color: #15803d; color: white; }
+        .dark .modal-content { background-color: #121212; border: 1px solid #15803d; }
 
-        .request-item:hover {
-            background-color: #F0FDF4;
-            /* Green-50 hover */
-            cursor: pointer;
-        }
+        /* --- ORIGINAL STYLES PRESERVED --- */
+        .form-container { color: black; border: 1px solid black; }
+        .form-title { background-color: #D1D5DB; font-weight: bold; text-align: center; padding: 0.25rem; text-transform: uppercase; font-size: 1.1rem; margin-bottom: 0; border: 1px solid black; border-bottom: none; }
+        .read-only-field { border-bottom: 1px solid black; width: 100%; padding-left: 0.25rem; font-weight: bold; min-height: 24px; display: inline-block; }
         
-        /* Custom Table Borders */
-        .form-border { border: 2px solid black; }
-        .form-border-r { border-right: 2px solid black; }
-        .form-border-b { border-bottom: 2px solid black; }
+        .kiosk-btn { background-color: var(--pnc-primary); color: white; padding: 1rem 2rem; font-size: 1.25rem; border-radius: 0.5rem; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .kiosk-btn:hover { background-color: #166534; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
         
-        /* Filled data styling */
-        .filled-data {
-            font-weight: bold;
-            color: black;
-            text-align: center;
-            display: inline-block;
-            width: 100%;
-        }
-
-        /* Sidebar Transitions */
-        #sidebarPanel {
-            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
-            z-index: 40; /* Ensure it floats above content on mobile */
-        }
-        #sidebarPanel.hidden-sidebar {
-            width: 0 !important;
-            min-width: 0 !important;
-            flex-basis: 0 !important;
-            transform: translateX(-100%);
-            padding: 0 !important;
-            margin: 0 !important;
-            border: none !important;
-        }
-        /* Mobile Specific Sidebar override */
-        @media (max-width: 768px) {
-            #sidebarPanel {
-                position: absolute;
-                height: 100%;
-                width: 100%;
-                max-width: 300px;
-                box-shadow: 4px 0 10px rgba(0,0,0,0.1);
-            }
-        }
+        .request-item:hover { background-color: #F0FDF4; cursor: pointer; }
+        .dark .request-item:hover { background-color: #052e16; } /* Dark mode hover */
 
         /* Calendar Styles */
-        .calendar-day {
-            min-height: 100px;
-            border: 1px solid #e5e7eb;
-            padding: 4px;
-            position: relative;
-        }
-        .calendar-day:hover {
-            background-color: #f9fafb;
-        }
-        .calendar-event {
-            font-size: 0.75rem;
-            padding: 2px 4px;
-            border-radius: 4px;
-            margin-bottom: 2px;
-            cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        .calendar-day { min-height: 100px; border: 1px solid #e5e7eb; padding: 4px; position: relative; }
+        .dark .calendar-day { border-color: #14532d; }
+        .calendar-day:hover { background-color: #f9fafb; }
+        .dark .calendar-day:hover { background-color: #1a1a1a; }
+
+        .calendar-event { font-size: 0.75rem; padding: 2px 4px; border-radius: 4px; margin-bottom: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .event-confirmed { background-color: #dcfce7; color: #166534; border-left: 3px solid #15803d; }
         .event-temporary { background-color: #fef3c7; color: #92400e; border-left: 3px solid #d97706; }
         
-        /* Editable Mode Styles */
-        .editable-day:hover {
-            background-color: #dcfce7 !important;
-            cursor: cell;
-            position: relative;
-        }
-        .editable-day:hover::after {
-            content: '+ Plot Event';
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            font-size: 10px;
-            background-color: #15803d;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: bold;
+        /* Sidebar Transitions (Responsive) */
+        #sidebarPanel { transition: transform 0.3s ease-in-out, width 0.3s ease-in-out; }
+        
+        /* Mobile Helper Classes */
+        .mobile-hidden { display: none; }
+        @media (min-width: 768px) {
+            .mobile-hidden { display: block; }
         }
     </style>
 </head>
-<body class="min-h-screen flex items-start justify-center p-4">
+<body class="min-h-screen flex items-start justify-center p-4 bg-[#f3f4f6] dark:bg-black transition-colors duration-300">
 
-    <div id="landingView" class="w-full max-w-lg mt-10 md:mt-20 p-6 md:p-8 bg-white rounded-2xl shadow-2xl border-t-8 border-[#15803d] mx-4">
+    <div id="landingView" class="w-full max-w-lg mt-20 p-8 bg-white dark:bg-pnc-card rounded-2xl shadow-2xl border-t-8 border-[#15803d]">
         <div class="text-center mb-8">
             <div class="w-16 h-16 mx-auto bg-[#15803d] text-white p-2 rounded-full flex items-center justify-center font-black text-2xl mb-3">PnC</div>
-            <h1 class="text-2xl md:text-3xl font-extrabold text-[#15803d]">Approver Login</h1>
-            <p class="text-gray-500 mt-1">Please enter your credentials.</p>
+            <h1 class="text-3xl font-extrabold text-[#15803d] dark:text-pnc-neon">Approver Login</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">Please enter your credentials.</p>
         </div>
 
         <div class="space-y-4">
             <div>
-                <label for="usernameInput" class="block text-sm font-bold text-gray-700 mb-1">Username</label>
-                <input type="text" id="usernameInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition" placeholder="e.g. colin or alfredo">
+                <label for="usernameInput" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Username</label>
+                <input type="text" id="usernameInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition dark:bg-gray-900 dark:border-green-800 dark:text-white" placeholder="e.g. colin or alfredo">
             </div>
             
             <div>
-                <label for="passwordInput" class="block text-sm font-bold text-gray-700 mb-1">Password</label>
-                <input type="password" id="passwordInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition" placeholder="e.g. admin">
+                <label for="passwordInput" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Password</label>
+                <input type="password" id="passwordInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition dark:bg-gray-900 dark:border-green-800 dark:text-white" placeholder="e.g. admin">
             </div>
             
-            <button onclick="handleLogin()" class="kiosk-btn w-full text-lg py-3 mt-6 font-bold shadow-lg">
-                Login
-            </button>
+            <button onclick="handleLogin()" class="kiosk-btn w-full text-lg py-3 mt-6 font-bold shadow-lg">Login</button>
             
             <div class="text-center mt-4">
-               <p class="text-sm text-gray-600">Don't have an account? <button onclick="showView('signupView')" class="text-[#15803d] font-bold hover:underline">Create an Account</button></p>
+               <p class="text-sm text-gray-600 dark:text-gray-400">Don't have an account? <button onclick="showView('signupView')" class="text-[#15803d] dark:text-pnc-neon font-bold hover:underline">Create an Account</button></p>
             </div>
         </div>
     </div>
 
-    <div id="signupView" class="hidden w-full max-w-lg mt-10 md:mt-20 p-6 md:p-8 bg-white rounded-2xl shadow-2xl border-t-8 border-[#15803d] mx-4">
+    <div id="signupView" class="hidden w-full max-w-lg mt-20 p-8 bg-white dark:bg-pnc-card rounded-2xl shadow-2xl border-t-8 border-[#15803d]">
         <div class="text-center mb-8">
             <div class="w-16 h-16 mx-auto bg-[#15803d] text-white p-2 rounded-full flex items-center justify-center font-black text-2xl mb-3">PnC</div>
-            <h1 class="text-2xl md:text-3xl font-extrabold text-[#15803d]">Create Account</h1>
-            <p class="text-gray-500 mt-1">Register as a new approver.</p>
+            <h1 class="text-3xl font-extrabold text-[#15803d] dark:text-pnc-neon">Create Account</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">Register as a new approver.</p>
         </div>
 
         <div class="space-y-4">
             <div>
-                <label for="signupRole" class="block text-sm font-bold text-gray-700 mb-1">Select Role</label>
-                <select id="signupRole" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition">
+                <label for="signupRole" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Select Role</label>
+                <select id="signupRole" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition dark:bg-gray-900 dark:border-green-800 dark:text-white">
                     <option value="" disabled selected>--- Choose Role ---</option>
                     <option value="pmOfficer">VP Admin & Linkages</option>
                     <option value="pmgsdDirector">OIC-Director PMGSD</option>
@@ -249,29 +129,26 @@
             </div>
 
             <div>
-                <label for="signupUsername" class="block text-sm font-bold text-gray-700 mb-1">Username</label>
-                <input type="text" id="signupUsername" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition" placeholder="Choose a username">
+                <label for="signupUsername" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Username</label>
+                <input type="text" id="signupUsername" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition dark:bg-gray-900 dark:border-green-800 dark:text-white" placeholder="Choose a username">
             </div>
 
             <div>
-                <label for="signupPassword" class="block text-sm font-bold text-gray-700 mb-1">Password</label>
-                <input type="password" id="signupPassword" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition" placeholder="Create a password">
+                <label for="signupPassword" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Password</label>
+                <input type="password" id="signupPassword" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none transition dark:bg-gray-900 dark:border-green-800 dark:text-white" placeholder="Create a password">
             </div>
 
-            <button onclick="handleSignup()" class="kiosk-btn w-full text-lg py-3 mt-6 font-bold shadow-lg">
-                Register
-            </button>
+            <button onclick="handleSignup()" class="kiosk-btn w-full text-lg py-3 mt-6 font-bold shadow-lg">Register</button>
             
             <div class="text-center mt-4">
-                <p class="text-sm text-gray-600">Already have an account?
-                <button onclick="showView('landingView')" class="text-[#15803d] font-bold hover:underline">Back to Login</button></p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Already have an account? <button onclick="showView('landingView')" class="text-[#15803d] dark:text-pnc-neon font-bold hover:underline">Back to Login</button></p>
             </div>
         </div>
     </div>
     
-    <div id="approverView" class="hidden w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden min-h-[100dvh] md:min-h-[800px] flex flex-col">
+    <div id="approverView" class="hidden w-full max-w-7xl bg-white dark:bg-pnc-card rounded-2xl shadow-2xl overflow-hidden min-h-[800px] flex flex-col">
         
-        <header class="bg-[#15803d] p-4 border-b-4 border-green-600 flex flex-wrap justify-between items-center sticky top-0 z-50 shadow-md">
+        <header class="bg-[#15803d] dark:bg-green-900 p-4 border-b-4 border-green-600 flex flex-wrap justify-between items-center sticky top-0 z-20 shadow-md">
             <div class="flex items-center space-x-3">
                 <button onclick="toggleSidebar()" class="text-white p-2 rounded hover:bg-green-700 focus:outline-none mr-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -280,43 +157,50 @@
                 </button>
                 
                 <div class="bg-white text-[#15803d] w-10 h-10 p-2 rounded flex items-center justify-center font-black text-lg">PnC</div>
-                <h1 class="text-lg md:text-2xl font-extrabold text-white">Gym Approver Dashboard</h1>
+                <h1 class="text-lg md:text-2xl font-extrabold text-white">Approver Dashboard</h1>
             </div>
-            
-            <div class="text-right mt-2 md:mt-0 w-full md:w-auto">
-                <button onclick="showView('landingView')" class="text-xs text-green-100 hover:text-white transition font-semibold">
-                    &larr; Logout
+
+            <div class="flex items-center gap-4 mt-2 md:mt-0">
+                <button onclick="toggleDarkMode()" class="bg-black/20 hover:bg-black/40 text-white p-2 rounded-full transition" title="Toggle Dark Mode">
+                    <span id="darkModeIcon">🌙</span>
                 </button>
-                <p class="text-sm font-semibold text-white truncate max-w-[200px]" id="approverRoleDisplay">Current Role: --</p>
-                <p class="text-xs text-green-100" id="approverNameDisplay">Welcome, --</p>
+
+                <div class="text-right">
+                    <button onclick="showView('landingView')" class="text-xs text-green-100 hover:text-white transition font-semibold block ml-auto">
+                        &larr; Logout
+                    </button>
+                    <p class="text-sm font-semibold text-white hidden md:block" id="approverRoleDisplay">Current Role: --</p>
+                    <p class="text-xs text-green-100 hidden md:block" id="approverNameDisplay">Welcome, --</p>
+                </div>
             </div>
         </header>
 
         <main class="flex-grow flex overflow-hidden relative">
             
-            <div id="sidebarPanel" class="w-64 bg-gray-50 border-r border-gray-200 flex flex-col h-full hidden-sidebar md:relative absolute">
-                <div class="p-4 bg-white border-b border-gray-200 flex justify-between items-center">
-                     <h2 class="text-xl font-bold text-[#15803d]">Pending Requests (<span id="pendingCount">0</span>)</h2>
-                     <button onclick="toggleSidebar()" class="md:hidden text-gray-500">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                     </button>
+            <div id="sidebarPanel" class="absolute md:relative z-10 h-full bg-gray-50 dark:bg-[#0a0a0a] border-r border-gray-200 dark:border-green-900 flex flex-col 
+                 w-3/4 md:w-1/3 min-w-[280px] transform -translate-x-full md:translate-x-0 transition-transform duration-300">
+                
+                <div class="p-4 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-green-900 flex justify-between items-center">
+                     <h2 class="text-xl font-bold text-[#15803d] dark:text-pnc-neon">Pending Requests (<span id="pendingCount">0</span>)</h2>
+                     <button onclick="toggleSidebar()" class="md:hidden text-gray-500 hover:text-red-500 text-xl font-bold">&times;</button>
                 </div>
+                
                 <div id="sidebarRequests" class="p-4 overflow-y-auto flex-1">
                     <div id="requestList" class="space-y-2">
                         </div>
                 </div>
             </div>
 
-            <div class="flex-1 bg-white p-4 md:p-6 overflow-y-auto h-full relative" id="mainContentArea">
+            <div class="flex-1 bg-white dark:bg-[#000000] p-4 md:p-6 overflow-y-auto h-full relative" id="mainContentArea">
                 
                 <div id="initialView" class="hidden text-center py-40">
-                   </div>
+                    </div>
                 
                 <div id="reviewView" class="hidden flex flex-col h-full">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-3 border-b mb-4 gap-2">
-                        <h3 class="text-xl md:text-2xl font-bold text-gray-800" id="activityTitleHeader">Activity: --</h3>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <button onclick="loadCalendarView()" class="text-sm text-gray-500 hover:text-blue-600 underline">Back to Calendar</button>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-3 border-b dark:border-green-900 mb-4 gap-2">
+                        <h3 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-green-400" id="activityTitleHeader">Activity: --</h3>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="loadCalendarView()" class="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 underline mr-4">Back to Calendar</button>
                              <span id="currentStatusTag" class="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">Status: Pending...</span>
                         </div>
                     </div>
@@ -324,7 +208,7 @@
                     <div id="approvalActionsContainer"></div>
                     
                     <div id="supportingDocTrigger" class="mb-4">
-                         <button onclick="openForm1Modal()" class="flex items-center justify-center space-x-2 text-[#15803d] hover:text-green-800 font-bold bg-green-50 px-4 py-3 rounded-lg border border-green-200 w-full hover:bg-green-100 transition">
+                         <button onclick="openForm1Modal()" class="flex items-center space-x-2 text-[#15803d] dark:text-white hover:text-green-800 font-bold bg-green-50 dark:bg-green-900 px-4 py-2 rounded-lg border border-green-200 dark:border-green-700 w-full justify-center hover:bg-green-100 dark:hover:bg-green-800 transition">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
@@ -332,36 +216,35 @@
                          </button>
                     </div>
 
-                    <div id="readOnlyFormContainer" class="flex-grow overflow-y-auto relative pb-20">
-                        <div class="form-container shadow-xl border-gray-300">
-                             </div>
+                    <div id="readOnlyFormContainer" class="flex-grow overflow-x-auto pb-20">
+                        <div class="form-container shadow-xl border-gray-300 min-w-[700px]"> </div>
                     </div>
                 </div>
 
                 <div id="calendarMainView" class="hidden h-full flex flex-col">
                     <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                        <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Facility Calendar</h2>
+                        <h2 class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-green-400">Facility Calendar</h2>
                         <div class="flex items-center space-x-2">
-                            <button onclick="changeCalendarMonth(-1)" class="p-2 bg-gray-200 rounded hover:bg-gray-300">&lt;</button>
-                            <span id="calendarMonthYear" class="font-bold text-lg md:text-xl w-40 text-center">Month Year</span>
-                            <button onclick="changeCalendarMonth(1)" class="p-2 bg-gray-200 rounded hover:bg-gray-300">&gt;</button>
+                            <button onclick="changeCalendarMonth(-1)" class="p-2 bg-gray-200 dark:bg-green-900 dark:text-white rounded hover:bg-gray-300">&lt;</button>
+                            <span id="calendarMonthYear" class="font-bold text-xl w-40 text-center dark:text-white">Month Year</span>
+                            <button onclick="changeCalendarMonth(1)" class="p-2 bg-gray-200 dark:bg-green-900 dark:text-white rounded hover:bg-gray-300">&gt;</button>
                         </div>
                     </div>
 
-                    <div class="flex-grow border-t border-l border-gray-300 overflow-x-auto">
-                        <div class="min-w-[700px]">
-                            <div class="grid grid-cols-7 text-center bg-gray-100 font-bold py-2 border-b border-gray-300 border-r">
+                    <div class="flex-grow border-t border-l border-gray-300 dark:border-green-900 overflow-x-auto">
+                        <div class="min-w-[600px]"> 
+                            <div class="grid grid-cols-7 text-center bg-gray-100 dark:bg-green-900 dark:text-white font-bold py-2 border-b border-gray-300 border-r dark:border-green-800">
                                 <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
                             </div>
-                            <div id="calendarGrid" class="grid grid-cols-7 h-full">
+                            <div id="calendarGrid" class="grid grid-cols-7 h-full overflow-y-auto">
                                 </div>
                         </div>
                     </div>
                     
-                    <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
+                    <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
                          <div class="flex items-center"><div class="w-3 h-3 bg-[#dcfce7] border border-[#15803d] mr-2"></div> Confirmed Event</div>
                          <div class="flex items-center"><div class="w-3 h-3 bg-[#fef3c7] border border-[#d97706] mr-2"></div> Temporary Plot</div>
-                         <div id="editHint" class="hidden flex items-center ml-auto font-bold text-[#15803d] w-full md:w-auto mt-2 md:mt-0">👉 Click a day to Add, click an Event to Edit/Delete</div>
+                         <div id="editHint" class="hidden flex items-center ml-auto font-bold text-[#15803d] dark:text-pnc-neon">👉 Click a day to Add, click an Event to Edit/Delete</div>
                     </div>
                 </div>
 
@@ -369,21 +252,21 @@
         </main>
 
         <div id="form1Modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto relative mx-4">
-                <div class="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
-                    <h3 class="text-lg md:text-xl font-bold text-gray-800">Supporting Document: Proposal Letter</h3>
+            <div class="bg-white dark:bg-[#121212] dark:border dark:border-green-700 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto relative modal-content">
+                <div class="sticky top-0 bg-white dark:bg-[#121212] border-b dark:border-green-900 p-4 flex justify-between items-center z-10">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-green-400">Supporting Document: Proposal Letter</h3>
                     <button onclick="closeForm1Modal()" class="text-gray-500 hover:text-red-600 text-2xl font-bold">&times;</button>
                 </div>
-                <div class="p-4 bg-gray-100">
-                    <div id="form1ModalContent" class="bg-white shadow-lg mx-auto" style="max-width: 800px;">
+                <div class="p-4 bg-gray-100 dark:bg-black overflow-x-auto">
+                    <div id="form1ModalContent" class="bg-white dark:bg-[#0a0a0a] shadow-lg mx-auto min-w-[600px]" style="max-width: 800px;">
                         </div>
                 </div>
             </div>
         </div>
 
         <div id="eventModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg w-full max-w-md shadow-xl overflow-hidden animate-fade-in-down mx-4">
-                <div class="bg-[#15803d] p-4 flex justify-between items-center">
+            <div class="bg-white dark:bg-[#121212] dark:border dark:border-green-700 rounded-lg w-full max-w-md shadow-xl overflow-hidden animate-fade-in-down">
+                <div class="bg-[#15803d] dark:bg-green-900 p-4 flex justify-between items-center">
                     <h3 class="text-xl font-bold text-white" id="eventModalTitle">Plot New Event</h3>
                     <button onclick="closeEventModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
                 </div>
@@ -391,43 +274,43 @@
                     <input type="hidden" id="eventDateHidden">
                     <input type="hidden" id="eventIdHidden"> 
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Event Title <span class="text-red-500">*</span></label>
-                        <input type="text" id="eventTitleInput" class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none" placeholder="e.g., Basketball Practice">
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Event Title <span class="text-red-500">*</span></label>
+                        <input type="text" id="eventTitleInput" class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="e.g., Basketball Practice">
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                             <label class="block text-sm font-bold text-gray-700 mb-1">Date</label>
-                             <input type="text" id="eventDateDisplay" disabled class="w-full bg-gray-100 border border-gray-300 p-2 rounded text-gray-500 cursor-not-allowed">
+                             <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                             <input type="text" id="eventDateDisplay" disabled class="w-full bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-500 cursor-not-allowed">
                         </div>
                         <div>
-                             <label class="block text-sm font-bold text-gray-700 mb-1">Time</label>
+                             <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Time</label>
                              <div class="flex space-x-1">
-                                 <select id="eventStartTime" class="w-1/2 border border-gray-300 p-2 rounded text-xs focus:ring-green-500 outline-none"></select>
-                                 <span class="self-center">-</span>
-                                 <select id="eventEndTime" class="w-1/2 border border-gray-300 p-2 rounded text-xs focus:ring-green-500 outline-none"></select>
+                                 <select id="eventStartTime" class="w-1/2 border border-gray-300 p-2 rounded text-xs focus:ring-green-500 outline-none dark:bg-gray-800 dark:border-gray-600 dark:text-white"></select>
+                                 <span class="self-center dark:text-white">-</span>
+                                 <select id="eventEndTime" class="w-1/2 border border-gray-300 p-2 rounded text-xs focus:ring-green-500 outline-none dark:bg-gray-800 dark:border-gray-600 dark:text-white"></select>
                              </div>
                         </div>
                     </div>
         
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Description / Purpose</label>
-                        <textarea id="eventDescInput" rows="3" class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none" placeholder="Additional details..."></textarea>
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Description / Purpose</label>
+                        <textarea id="eventDescInput" rows="3" class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Additional details..."></textarea>
                     </div>
         
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Status</label>
-                        <select id="eventStatusInput" class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none">
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                        <select id="eventStatusInput" class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none dark:bg-gray-800 dark:border-gray-600 dark:text-white">
                             <option value="confirmed">Confirmed</option>
                             <option value="temporary">Temporary Plot</option>
                         </select>
                     </div>
         
-                    <div class="flex justify-between pt-4 border-t items-center">
+                    <div class="flex justify-between pt-4 border-t dark:border-gray-700 items-center">
                         <button id="btnDeleteEvent" onclick="deleteCurrentEvent()" class="px-4 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-bold hidden">🗑 Delete</button>
                         <div class="flex space-x-2 ml-auto">
-                            <button onclick="closeEventModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Cancel</button>
-                            <button onclick="saveEvent()" class="px-4 py-2 bg-[#15803d] text-white rounded hover:bg-green-700 font-bold shadow transition">Save Event</button>
+                            <button onclick="closeEventModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">Cancel</button>
+                            <button onclick="saveEvent()" class="px-4 py-2 bg-[#15803d] dark:bg-green-700 text-white rounded hover:bg-green-700 font-bold shadow transition">Save Event</button>
                         </div>
                     </div>
                 </div>
@@ -435,33 +318,33 @@
         </div>
 
         <div id="appointmentModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg w-full max-w-md shadow-xl overflow-hidden animate-fade-in-down mx-4">
-                <div class="bg-yellow-500 p-4 flex justify-between items-center">
+            <div class="bg-white dark:bg-[#121212] dark:border dark:border-yellow-600 rounded-lg w-full max-w-md shadow-xl overflow-hidden animate-fade-in-down">
+                <div class="bg-yellow-500 dark:bg-yellow-700 p-4 flex justify-between items-center">
                     <h3 class="text-xl font-bold text-white">📅 Set Appointment</h3>
                     <button onclick="closeAppointmentModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
                 </div>
                 <div class="p-6 space-y-4">
-                    <p class="text-sm text-gray-600 mb-2">Schedule a meeting with the requester before proceeding.</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Schedule a meeting with the requester before proceeding.</p>
                     <input type="hidden" id="apptRequestId">
                     
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Date</label>
-                        <input type="date" id="apptDate" class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none">
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" id="apptDate" class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none dark:bg-gray-800 dark:border-gray-600 dark:text-white">
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Time</label>
-                        <input type="time" id="apptTime" class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none">
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                        <input type="time" id="apptTime" class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none dark:bg-gray-800 dark:border-gray-600 dark:text-white">
                     </div>
         
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Reason / Instruction</label>
-                        <textarea id="apptReason" rows="3" class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none">Please meet me in the office to discuss the details of your request.</textarea>
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Reason / Instruction</label>
+                        <textarea id="apptReason" rows="3" class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none dark:bg-gray-800 dark:border-gray-600 dark:text-white">Please meet me in the office to discuss the details of your request.</textarea>
                     </div>
         
-                    <div class="flex justify-end space-x-2 pt-4 border-t">
-                        <button onclick="closeAppointmentModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Cancel</button>
-                        <button onclick="submitAppointment()" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 font-bold shadow transition">Set Appointment</button>
+                    <div class="flex justify-end space-x-2 pt-4 border-t dark:border-gray-700">
+                        <button onclick="closeAppointmentModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white rounded hover:bg-gray-300 transition">Cancel</button>
+                        <button onclick="submitAppointment()" class="px-4 py-2 bg-yellow-500 dark:bg-yellow-700 text-white rounded hover:bg-yellow-600 font-bold shadow transition">Set Appointment</button>
                     </div>
                 </div>
             </div>
@@ -472,6 +355,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, update, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
         // 1. CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
@@ -483,10 +367,11 @@
             appId: "1:453765398844:web:219433f771cfd33b311e39",
             measurementId: "G-41DZ3175NX"
         };
+
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         
-        // Export to window
+        // Export to window for debugging if needed
         window.db = db;
         window.set = set;
         window.ref = ref;
@@ -494,6 +379,7 @@
         window.onValue = onValue; 
         window.remove = remove;
         window.get = get;
+
         // 2. GLOBAL STATE
         let currentRequests = [];
         let activeRequest = null;
@@ -504,19 +390,33 @@
         const approvalOrder = ['pmOfficer', 'pmgsdDirector'];
         const roleLabels = { pmOfficer: 'VP Admin & Linkages (Recommending)', pmgsdDirector: 'OIC-Director PMGSD (Approving)' };
         const userDetails = { pmOfficer: 'Mr. Colin B. Garcia', pmgsdDirector: 'Alfredo Glenn H. Beaño' };
+
         // Login Credentials
         let userCredentials = {
             'colin': { role: 'pmOfficer', password: 'admin' },
             'alfredo': { role: 'pmgsdDirector', password: 'admin' }
         };
+
         // Calendar Data
         let calendarMonth = new Date().getMonth();
         let calendarYear = new Date().getFullYear();
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         let calendarEvents = [];
-        // Will be loaded from Firebase
 
-        // 3. CORE FUNCTIONS
+        // 3. CORE FUNCTIONS (Attached to Window for HTML access)
+        
+        // DARK MODE LOGIC
+        window.toggleDarkMode = function() {
+            const html = document.documentElement;
+            const icon = document.getElementById('darkModeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.innerText = '🌙';
+            } else {
+                html.classList.add('dark');
+                icon.innerText = '☀️';
+            }
+        };
 
         window.showView = function(viewId) {
             document.getElementById('landingView').classList.add('hidden');
@@ -550,7 +450,6 @@
                 
                 renderRequestList(); 
                 window.showView('approverView');
-               
                 populateTimeDropdowns();
                 window.loadCalendarView();
                 
@@ -565,13 +464,16 @@
             const role = document.getElementById('signupRole').value;
             const username = document.getElementById('signupUsername').value.trim();
             const password = document.getElementById('signupPassword').value.trim();
+
             if (!role) return customAlert('Please select a role.');
             if (!username) return customAlert('Please choose a username.');
             if (!password) return customAlert('Please create a password.');
             
             if (userCredentials[username]) return customAlert('⚠️ Username already exists. Please choose another.');
+
             userCredentials[username] = { role: role, password: password };
             if (!userDetails[role]) userDetails[role] = `New User (${username})`;
+
             customAlert('✅ Account created successfully!\nPlease log in.');
             // Clear fields
             document.getElementById('signupRole').selectedIndex = 0;
@@ -580,8 +482,16 @@
             window.showView('landingView');
         };
 
+        // Updated toggleSidebar for mobile responsiveness
         window.toggleSidebar = function() {
-            document.getElementById('sidebarPanel').classList.toggle('hidden-sidebar');
+            const sidebar = document.getElementById('sidebarPanel');
+            // Check if we are on mobile (using simple width check or just class logic)
+            // The CSS class -translate-x-full is used to hide it.
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+            }
         };
 
         // --- CALENDAR & EVENT FUNCTIONS ---
@@ -596,18 +506,20 @@
             else editHint.classList.add('hidden');
             renderMainCalendar();
         };
+
         window.changeCalendarMonth = function(delta) {
             calendarMonth += delta;
             if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
-            else if (calendarMonth < 0) { calendarMonth = 11;
-            calendarYear--; }
+            else if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
             renderMainCalendar();
         };
+
         window.showEventDetailsFromCalendar = function(eventId) {
             const event = calendarEvents.find(e => e.id == eventId);
             if (!event) return;
             customAlert(`📅 Event Details:\n\n📌 Title: ${event.title}\n📝 Purpose: ${event.description || 'N/A'}\n🕒 Time: ${event.time || 'Not Set'}\n🗓️ Date: ${event.date}`);
         };
+
         window.addEvent = function(dateStr) {
             if (currentRoleKey !== 'pmgsdDirector') return;
             document.getElementById('eventModalTitle').innerText = "Plot New Event";
@@ -641,6 +553,7 @@
             document.getElementById('eventStatusInput').value = event.status;
             
             document.getElementById('btnDeleteEvent').classList.remove('hidden');
+
             if (event.time && event.time.includes('-')) {
                 const parts = event.time.split('-').map(s => s.trim());
                 if (parts.length === 2) {
@@ -666,6 +579,7 @@
             const start = document.getElementById('eventStartTime').value;
             const end = document.getElementById('eventEndTime').value;
             const time = `${start} - ${end}`;
+
             if (!title) {
                 alert('Please enter an event title.');
                 return;
@@ -690,6 +604,7 @@
                 status: status,
                 description: desc
             };
+
             window.set(window.ref(window.db, 'events/' + id), eventData)
                 .then(() => {
                     customAlert("✅ Event saved to cloud!");
@@ -714,6 +629,7 @@
                     });
             }
         };
+
         // --- REQUEST & APPROVAL FUNCTIONS ---
         window.loadRequest = function(requestId) {
             activeRequest = currentRequests.find(r => r.id === requestId);
@@ -736,7 +652,13 @@
 
             renderReadOnlyForm(activeRequest);
             renderApprovalActions(activeRequest);
+            
+            // Mobile specific: Close sidebar after selection
+            if(window.innerWidth < 768) {
+                 document.getElementById('sidebarPanel').classList.add('-translate-x-full');
+            }
         };
+
         window.processApproval = function(requestId, action) {
             const requestIndex = currentRequests.findIndex(r => r.id === requestId);
             const request = currentRequests[requestIndex];
@@ -767,6 +689,7 @@
             updates[`${basePath}/approvals/${currentStepKey}/name`] = currentUserName;
             updates[`${basePath}/approvals/${currentStepKey}/remarks`] = remarks;
             updates[`${basePath}/approvals/${currentStepKey}/date`] = new Date().toISOString().split('T')[0];
+
             window.update(window.ref(window.db), updates)
                 .then(() => {
                     customAlert(`Request ${action} and saved to cloud!`);
@@ -783,6 +706,7 @@
             document.getElementById('form1Modal').classList.remove('hidden');
         };
         window.closeForm1Modal = function() { document.getElementById('form1Modal').classList.add('hidden'); };
+
         // --- APPOINTMENT MODAL ---
         window.openAppointmentModal = function(requestId) {
             document.getElementById('apptRequestId').value = requestId;
@@ -797,6 +721,7 @@
             const d = document.getElementById('apptDate').value;
             const t = document.getElementById('apptTime').value;
             const r = document.getElementById('apptReason').value.trim();
+
             if (!d || !t || !r) {
                 alert("Please fill in all appointment details.");
                 return;
@@ -817,6 +742,7 @@
             updates[`${basePath}/approvals/${currentStepKey}/name`] = currentUserName;
             updates[`${basePath}/approvals/${currentStepKey}/remarks`] = appointmentDetails;
             updates[`${basePath}/approvals/${currentStepKey}/date`] = new Date().toISOString().split('T')[0];
+
             window.update(window.ref(window.db), updates)
                 .then(() => {
                     window.closeAppointmentModal();
@@ -834,11 +760,11 @@
             if (!modal) {
                 modal = document.createElement('div');
                 modal.id = 'customAlert';
-                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
                 modal.innerHTML = `
-                    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full text-center mx-4">
-                        <p id="alertMessage" class="text-gray-800 mb-4 font-semibold whitespace-pre-line break-words"></p>
-                        <button id="alertCloseBtn" class="px-4 py-2 bg-[#15803d] text-white rounded hover:bg-green-800">OK</button>
+                    <div class="bg-white dark:bg-[#121212] dark:border dark:border-green-600 p-6 rounded-xl shadow-2xl max-w-sm w-full text-center">
+                        <p id="alertMessage" class="text-gray-800 dark:text-white mb-4 font-semibold whitespace-pre-line"></p>
+                        <button id="alertCloseBtn" class="px-4 py-2 bg-[#15803d] dark:bg-green-700 text-white rounded hover:bg-green-800">OK</button>
                     </div>
                 `;
                 container.appendChild(modal);
@@ -875,18 +801,22 @@
             const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
             const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
             
-            for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="border-b border-r border-gray-200 bg-gray-50"></div>`;
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="border-b border-r border-gray-200 dark:border-green-800 bg-gray-50 dark:bg-black/50"></div>`;
+
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${calendarYear}-${String(calendarMonth+1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const dayEvents = calendarEvents.filter(e => e.date === dateStr);
                 const isEditable = currentRoleKey === 'pmgsdDirector';
-                let dayHtml = `<div class="calendar-day border-b border-r border-gray-200 p-2 min-h-[100px] relative ${isEditable ? 'editable-day' : ''}" 
-                                onclick="${isEditable ? `addEvent('${dateStr}')` : ''}"><span class="font-bold text-gray-700">${day}</span>`;
+                
+                let dayHtml = `<div class="calendar-day border-b border-r border-gray-200 dark:border-green-800 p-2 min-h-[100px] relative ${isEditable ? 'editable-day' : ''}" 
+                                onclick="${isEditable ? `addEvent('${dateStr}')` : ''}"><span class="font-bold text-gray-700 dark:text-green-500">${day}</span>`;
+                
                 dayEvents.forEach(ev => {
                     const colorClass = ev.status === 'confirmed' ? 'event-confirmed' : 'event-temporary';
                     dayHtml += `<div class="calendar-event ${colorClass} mt-1 text-xs p-1 rounded truncate" 
                                      onclick="event.stopPropagation(); ${isEditable ? `editEvent('${ev.id}')` : `showEventDetailsFromCalendar('${ev.id}')`}">${ev.title}</div>`;
                 });
+
                 dayHtml += `</div>`;
                 grid.innerHTML += dayHtml;
             }
@@ -902,23 +832,25 @@
                 if (stepKey === null && r.status.includes('Approved')) return true; 
                 return stepKey === currentRoleKey;
             });
+
             const pendingForMe = myRelevantRequests.filter(r => getCurrentApprovalStep(r) === currentRoleKey);
             pendingCountEl.innerText = pendingForMe.length;
+
             if (myRelevantRequests.length === 0) {
-                 listEl.innerHTML = `<p class="text-gray-500 italic p-4">No requests require your action at this time.</p>`;
+                 listEl.innerHTML = `<p class="text-gray-500 dark:text-gray-500 italic p-4">No requests require your action at this time.</p>`;
             }
 
             myRelevantRequests.forEach(request => {
                 const stepKey = getCurrentApprovalStep(request);
                 const isActionable = stepKey === currentRoleKey;
-                const actionableClass = isActionable ? 'bg-white hover:border-[#15803d] border border-gray-200' : 'bg-gray-100 opacity-80';
+                const actionableClass = isActionable ? 'bg-white dark:bg-black hover:border-[#15803d] border border-gray-200 dark:border-green-900' : 'bg-gray-100 dark:bg-gray-900 opacity-80';
                 let statusText = request.status.includes('Appointment') ? '📅 Appointment Set' : `Review Logistics`;
 
                 listEl.innerHTML += `
-                    <div class="request-item p-3 rounded-lg shadow-sm ${actionableClass} transition active:ring-2 ring-green-500"
+                    <div class="request-item p-3 rounded-lg shadow-sm ${actionableClass} transition active:ring-2 ring-green-500 mb-2"
                          onclick="loadRequest('${request.id}')">
-                        <p class="text-base font-bold text-gray-800">${request.activityName}</p>
-                        <p class="text-xs text-gray-500">Date: ${request.activityDate}</p>
+                        <p class="text-base font-bold text-gray-800 dark:text-green-400">${request.activityName}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-500">Date: ${request.activityDate}</p>
                         <div class="mt-2 flex justify-between items-center">
                             <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${getStatusClass(request.status)}">${isActionable ? statusText : request.status}</span>
                         </div>
@@ -936,25 +868,11 @@
         }
 
         function getStatusClass(status) {
-            if (status.includes('Approved') || status.includes('Submitted') || status.includes('Verified')) return 'bg-green-100 text-green-800';
-            if (status.includes('Rejected')) return 'bg-red-100 text-red-800';
+            if (status.includes('Approved') || status.includes('Submitted') || status.includes('Verified')) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+            if (status.includes('Rejected')) return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
             if (status.includes('Appointment')) return 'bg-yellow-200 text-yellow-900 border border-yellow-400';
-            if (status.includes('Pending')) return 'bg-yellow-100 text-yellow-800';
-            return 'bg-gray-100 text-gray-800';
-        }
-
-        function formatApprovalBox(approval, roleKey) {
-            let name = approval ? (approval.name || '---') : '---';
-            let date = (approval && approval.date) ? new Date(approval.date).toLocaleDateString() : '---';
-            let status = approval ? approval.status : 'Pending';
-            let statusClass = getStatusClass(status);
-            return `
-                <div class="text-center p-2 rounded ${status === 'Approved' || status === 'Verified' || status === 'Submitted' ? 'bg-green-50' : status === 'Rejected' ? 'bg-red-50' : 'bg-yellow-50'} border border-gray-300">
-                    <p class="text-sm font-semibold">${name}</p>
-                    <p class="text-xs italic">${date}</p>
-                    <span class="inline-block mt-1 px-2 text-xs font-bold rounded-full ${statusClass}">${status}</span>
-                </div>
-            `;
+            if (status.includes('Pending')) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
         }
 
         function renderReadOnlyForm(request) {
@@ -966,11 +884,13 @@
             const deptHead = request.approvals?.deptHead || {};
             const pmOfficer = request.approvals?.pmOfficer || {};
             const pmgsdDirector = request.approvals?.pmgsdDirector || {};
+            
             const venues = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
             const equipments = Array.isArray(request.equipment) ? request.equipment : (request.equipment ? Object.values(request.equipment) : []);
-            // Helpers
+            
             const val = (v) => v || '';
             const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
+            
             const formatDate = (dateStr) => {
                 if (!dateStr) return '';
                 const parts = dateStr.split('-');
@@ -985,56 +905,57 @@
                 return equipments.some(e => e.name === name) ? 'checked' : '';
             };
             const manpower = request.manpower || {};
+
             // 2. HTML Template
             return `
-                <div class="form-header flex flex-col md:flex-row items-center justify-center space-y-2 md:space-y-0 md:space-x-4 mb-6">
+                <div class="form-header flex items-center justify-center space-x-4 mb-6">
                     <img src="pnc-logo.png" onerror="this.style.display='none'" alt="PnC Seal" class="w-20 h-20 object-contain">
-                    <div class="text-center">
+                    <div class="text-center dark:text-white">
                         <p class="text-sm">Republic of the Philippines</p>
-                        <h2 class="text-xl md:text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
+                        <h2 class="text-2xl font-bold text-green-800 dark:text-green-400 font-serif">Pamantasan ng Cabuyao</h2>
                         <p class="text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
                         <p class="text-sm italic">Administration and Finance Division</p>
-                        <p class="font-bold text-gray-700 mt-1">Property Management and General Services Department</p>
-                        <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
+                        <p class="font-bold text-gray-700 dark:text-gray-300 mt-1">Property Management and General Services Department</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
                     </div>
                 </div>
 
-                <div class="form-title text-black bg-gray-300" style="border: none;">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
+                <div class="form-title text-black bg-gray-300 dark:bg-green-900 dark:text-white" style="border: none;">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
 
-                <div class="border-b border-black p-4 space-y-4 text-sm text-black">
+                <div class="border-b border-black dark:border-green-700 p-4 space-y-4 text-sm text-black dark:text-white">
                     <div class="flex flex-wrap gap-4">
-                        <div class="flex-1 min-w-[200px]">
-                            <label class="font-normal text-gray-600">Transaction Number:</label>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600 dark:text-gray-400">Transaction Number:</label>
                             <div class="read-only-field">${val(request.id)}</div>
                         </div>
-                        <div class="flex-1 min-w-[200px]">
-                            <label class="font-normal text-gray-600">Date of Filing:</label>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600 dark:text-gray-400">Date of Filing:</label>
                             <div class="read-only-field">${formatDate(request.filingDate)}</div>
                         </div>
-                        <div class="flex-1 min-w-[200px]">
-                            <label class="font-normal text-gray-600">Department:</label>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600 dark:text-gray-400">Department:</label>
                             <div class="read-only-field">${val(request.department)}</div>
                         </div>
                     </div>
                     
                     <div class="flex flex-wrap gap-4">
-                        <div class="flex-1 min-w-[200px]">
-                            <label class="font-normal text-gray-600">Activity Date:</label>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600 dark:text-gray-400">Activity Date:</label>
                             <div class="read-only-field">${formatDate(request.activityDate)}</div>
                         </div>
-                        <div class="flex-1 min-w-[200px]">
-                            <label class="font-normal text-gray-600">Time:</label>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600 dark:text-gray-400">Time:</label>
                             <div class="read-only-field">${val(request.time)}</div>
                         </div>
                     </div>
 
                     <div>
-                        <label class="font-normal text-gray-600">Activity Name/Title/Purpose:</label>
+                        <label class="font-normal text-gray-600 dark:text-gray-400">Activity Name/Title/Purpose:</label>
                         <div class="read-only-field">${val(request.activityName)}</div>
                     </div>
 
                     <div class="flex flex-wrap gap-4 items-end">
-                        <div class="w-full md:w-1/3 font-normal text-gray-600">Expected # of Participants:</div>
+                        <div class="w-1/3 font-normal text-gray-600 dark:text-gray-400">Expected # of Participants:</div>
                         <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span>
                             <div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div>
                         </div>
@@ -1044,9 +965,9 @@
                     </div>
                 </div>
 
-                <div class="border border-black border-t-0 flex flex-col md:flex-row text-black form-row-responsive">
-                    <div class="w-full md:w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center form-label-col">Venue Reservation</div>
-                    <div class="flex-1 p-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div class="border border-black dark:border-green-700 border-t-0 flex text-black dark:text-white">
+                    <div class="w-40 font-bold p-2 bg-gray-50 dark:bg-black border-r border-black dark:border-green-700 flex items-center">Venue Reservation</div>
+                    <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Gym Stage / Court')} class="accent-black"> <span class="${isChecked(venues, 'Gym Stage / Court') ? 'font-bold' : ''}">Gym Stage / Court</span></label>
                         <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Multi-Purpose Hall')} class="accent-black"> <span class="${isChecked(venues, 'Multi-Purpose Hall') ? 'font-bold' : ''}">Multi-Purpose Hall</span></label>
                         
@@ -1065,7 +986,7 @@
                         <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Library')} class="accent-black"> <span class="${isChecked(venues, 'Library') ? 'font-bold' : ''}">Library</span></label>
                         <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Cafeteria')} class="accent-black"> <span class="${isChecked(venues, 'Cafeteria') ? 'font-bold' : ''}">Cafeteria</span></label>
                         
-                        <div class="col-span-1 md:col-span-2 flex items-center space-x-2">
+                        <div class="col-span-2 flex items-center space-x-2">
                             <input type="checkbox" disabled ${venues.some(v => v.includes('Others:')) ? 'checked' : ''}> 
                             <span>Others:</span> 
                             <div class="read-only-field flex-1">${(venues.find(v => v.includes('Others:')) || '').replace('Others:', '').trim()}</div>
@@ -1073,34 +994,34 @@
                     </div>
                 </div>
 
-                <div class="border border-black border-t-0 flex flex-col md:flex-row text-black form-row-responsive">
-                    <div class="w-full md:w-40 font-bold p-2 bg-gray-50 border-r border-black form-label-col">
+                <div class="border border-black dark:border-green-700 border-t-0 flex text-black dark:text-white">
+                    <div class="w-40 font-bold p-2 bg-gray-50 dark:bg-black border-r border-black dark:border-green-700">
                         <p>Equipment Reservation</p>
                         <p class="mt-4 text-xs font-bold">Set-up Details:</p>
-                        <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
-                            <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressDate)}</span></p>
-                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressTime)}</span></p>
-                            <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressDate)}</span></p>
-                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressTime)}</span></p>
+                        <div class="mt-1 text-xs font-normal space-y-1 text-gray-600 dark:text-gray-400">
+                            <p>Ingress Date: <span class="border-b border-black dark:border-green-500 px-1 min-w-[50px] inline-block font-bold text-black dark:text-white">${val(request.ingressDate)}</span></p>
+                            <p>Time: <span class="border-b border-black dark:border-green-500 px-1 min-w-[50px] inline-block font-bold text-black dark:text-white">${val(request.ingressTime)}</span></p>
+                            <p class="mt-1">Egress Date: <span class="border-b border-black dark:border-green-500 px-1 min-w-[50px] inline-block font-bold text-black dark:text-white">${val(request.egressDate)}</span></p>
+                            <p>Time: <span class="border-b border-black dark:border-green-500 px-1 min-w-[50px] inline-block font-bold text-black dark:text-white">${val(request.egressTime)}</span></p>
                         </div>
                     </div>
                     <div class="flex-1 p-2 text-sm">
                         <div class="grid grid-cols-1 gap-2 mb-2">
-                            <div class="flex flex-wrap items-center gap-2">
+                             <div class="flex items-center space-x-2">
                                 <input type="checkbox" disabled ${getEquip('Chair', 'count') ? 'checked' : ''} class="accent-black"> 
                                 <span class="${getEquip('Chair', 'count') ? 'font-bold' : ''}">Chair #</span> 
                                 <div class="read-only-field w-16 text-center font-bold">${getEquip('Chair', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1 font-bold min-w-[100px]">${getEquip('Chair', 'type')}</div>
+                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquip('Chair', 'type')}</div>
                             </div>
-                            <div class="flex flex-wrap items-center gap-2">
+                            <div class="flex items-center space-x-2">
                                 <input type="checkbox" disabled ${getEquip('Table', 'count') ? 'checked' : ''} class="accent-black"> 
                                 <span class="${getEquip('Table', 'count') ? 'font-bold' : ''}">Table #</span> 
                                 <div class="read-only-field w-16 text-center font-bold">${getEquip('Table', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1 font-bold min-w-[100px]">${getEquip('Table', 'type')}</div>
+                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquip('Table', 'type')}</div>
                             </div>
                         </div>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-2">
                             <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Podium/Rostrum')} class="accent-black"> <span class="${isEquipChecked('Podium/Rostrum') ? 'font-bold' : ''}">Podium/Rostrum</span></label>
                             <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Sound System')} class="accent-black"> <span class="${isEquipChecked('Sound System') ? 'font-bold' : ''}">Sound System</span></label>
                             <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Electric fans')} class="accent-black"> <span class="${isEquipChecked('Electric fans') ? 'font-bold' : ''}">Electric fans</span></label>
@@ -1126,9 +1047,9 @@
                     </div>
                 </div>
 
-                <div class="border border-black border-t-0 flex flex-col md:flex-row text-black form-row-responsive">
-                    <div class="w-full md:w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center form-label-col">Manpower Requirement</div>
-                    <div class="flex-1 p-2 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="border border-black dark:border-green-700 border-t-0 flex text-black dark:text-white">
+                    <div class="w-40 font-bold p-2 bg-gray-50 dark:bg-black border-r border-black dark:border-green-700 flex items-center">Manpower Requirement</div>
+                    <div class="flex-1 p-2 grid grid-cols-2 gap-4 text-sm">
                         <div class="flex items-center space-x-2">
                             <input type="checkbox" disabled ${manpower.technical ? 'checked' : ''}> 
                             <span>Technical</span> 
@@ -1142,36 +1063,36 @@
                     </div>
                 </div>
 
-                <div class="text-xs text-gray-600 mt-2 mb-6 space-y-1 italic p-2">
+                <div class="text-xs text-gray-600 dark:text-gray-400 mt-2 mb-6 space-y-1 italic p-2">
                     <p>• Request must be submitted at least a week before the activity.</p>
                     <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required.</p>
                     <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 text-center mt-4 text-black text-xs">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mt-4 text-black dark:text-white text-xs">
                     <div>
-                        <p class="font-bold mb-8 text-gray-700">Requested by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${request.requestedBy}</div>
+                        <p class="font-bold mb-8 text-gray-700 dark:text-gray-300">Requested by:</p>
+                        <div class="border-b border-black dark:border-green-500 font-bold uppercase pb-1">${request.requestedBy}</div>
                         <p class="mt-1">Signature over Printed Name/Date</p>
                     </div>
                     
                     <div class="opacity-90">
-                        <p class="font-bold mb-8 text-gray-700">Reviewed by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || ''}</div>
+                        <p class="font-bold mb-8 text-gray-700 dark:text-gray-300">Reviewed by:</p>
+                        <div class="border-b border-black dark:border-green-500 font-bold uppercase pb-1">${deptHead.name || ''}</div>
                         <p class="mt-1">Department/Division Head</p>
                         <div class="text-[10px] font-bold ${getStatusClass(deptHead.status)} rounded-full inline-block px-2 mt-1">${deptHead.status}</div>
                     </div>
 
                     <div class="opacity-90">
-                        <p class="font-bold mb-8 text-gray-700">Recommended by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">Mr. Colin B. Garcia</div>
+                        <p class="font-bold mb-8 text-gray-700 dark:text-gray-300">Recommended by:</p>
+                        <div class="border-b border-black dark:border-green-500 font-bold uppercase pb-1">Mr. Colin B. Garcia</div>
                         <p class="mt-1">PM Officer</p>
                         <div class="text-[10px] font-bold ${getStatusClass(pmOfficer.status)} rounded-full inline-block px-2 mt-1">${pmOfficer.status}</div>
                     </div>
 
                     <div class="opacity-90">
-                        <p class="font-bold mb-8 text-gray-700">Approved by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">Alfredo Glenn H. Beaño</div>
+                        <p class="font-bold mb-8 text-gray-700 dark:text-gray-300">Approved by:</p>
+                        <div class="border-b border-black dark:border-green-500 font-bold uppercase pb-1">Alfredo Glenn H. Beaño</div>
                         <p class="mt-1">PMGSD Director</p>
                         <div class="text-[10px] font-bold ${getStatusClass(pmgsdDirector.status)} rounded-full inline-block px-2 mt-1">${pmgsdDirector.status}</div>
                     </div>
@@ -1190,38 +1111,38 @@
                 const dateStr = approval.date ? new Date(approval.date).toLocaleDateString() : '---';
                 return `
                     <div class="mt-4 mb-2">
-                        <div class="font-bold uppercase text-black">${approval.name}</div>
-                        <div class="text-xs font-semibold text-gray-600">${title}</div>
-                        <div class="text-[10px] text-green-700 font-bold">APPROVED - ${dateStr}</div>
+                        <div class="font-bold uppercase text-black dark:text-white">${approval.name}</div>
+                        <div class="text-xs font-semibold text-gray-600 dark:text-gray-400">${title}</div>
+                        <div class="text-[10px] text-green-700 dark:text-green-400 font-bold">APPROVED - ${dateStr}</div>
                     </div>
                 `;
             }
 
             return `
-                <div class="bg-white p-4 md:p-8 text-gray-900 font-sans leading-relaxed relative">
-                    <div class="relative mb-10 text-center md:text-left">
-                         <img src="${logoUrl}" alt="PnC Logo" class="w-20 h-20 md:w-24 md:h-24 object-contain inline-block md:absolute md:left-0 mb-4 md:mb-0">
-                         <div class="text-center relative z-10 md:pl-24">
-                            <p class="text-xs font-serif text-gray-700">Republic of the Philippines</p>
-                            <h1 class="text-3xl md:text-5xl tracking-wide my-1 text-[#005728]" style="font-family: 'UnifrakturMaguntia', cursive;">University of Cabuyao</h1>
-                            <p class="text-xs md:text-sm font-bold tracking-widest text-gray-700 uppercase font-serif">(PAMANTASAN NG CABUYAO)</p>
-                            <p class="text-xs md:text-sm italic text-gray-700 mt-1 font-serif">Property Management and General Service Department</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5 font-serif">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
+                <div class="bg-white dark:bg-[#121212] p-8 text-gray-900 dark:text-gray-200 font-sans leading-relaxed relative">
+                    <div class="relative mb-10">
+                         <img src="${logoUrl}" alt="PnC Logo" class="w-24 h-24 object-contain absolute left-0">
+                         <div class="text-center relative z-10">
+                            <p class="text-xs font-serif text-gray-700 dark:text-gray-400">Republic of the Philippines</p>
+                            <h1 class="text-5xl tracking-wide my-1 text-[#005728] dark:text-green-500" style="font-family: 'UnifrakturMaguntia', cursive;">University of Cabuyao</h1>
+                            <p class="text-sm font-bold tracking-widest text-gray-700 dark:text-gray-400 uppercase font-serif">(PAMANTASAN NG CABUYAO)</p>
+                            <p class="text-sm italic text-gray-700 dark:text-gray-400 mt-1 font-serif">Property Management and General Service Department</p>
+                            <p class="text-[10px] text-gray-500 dark:text-gray-500 mt-0.5 font-serif">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
                         </div>
                     </div>
                     <div class="mb-8"><p class="text-xs text-gray-500">(${request.id})</p><p class="mt-2 text-sm">${new Date(request.filingDate).toLocaleDateString()}</p></div>
                     <div class="mb-6"><p class="font-bold text-sm">Dr. Roberto F. Rañola Jr.</p><p class="text-sm">OIC-University President</p></div>
-                    <div class="mb-8 pl-4 md:pl-8"><p class="text-sm"><span class="font-bold">Thru: Mr. Colin B. Garcia</span></p><p class="text-sm ml-9">Vice President for Administration and Linkages</p></div>
+                    <div class="mb-8 pl-8"><p class="text-sm"><span class="font-bold">Thru: Mr. Colin B. Garcia</span></p><p class="text-sm ml-9">Vice President for Administration and Linkages</p></div>
                     <div class="text-sm text-justify space-y-4">
                         <p class="indent-8">I am writing to respectfully request your approval for the activity titled "<span class="font-bold uppercase">${request.activityName}</span>". The purpose is ${request.form1 ? request.form1.purpose : 'to conduct activity'}.</p>
                         <p class="indent-8">We would like to reserve <span class="font-bold">${request.venue ? request.venue.join(' and ') : 'Venue'}</span> on <span class="font-bold">${new Date(request.activityDate).toLocaleDateString()}</span>.</p>
                         <p class="indent-8">Thank you very much for your favorable response.</p>
                     </div>
-                    <div class="mt-8"><p class="text-sm mb-4">Respectfully yours,</p><div class="mt-4"><p class="font-bold uppercase">${request.requestedBy}</p><p class="text-sm text-gray-600">Requester / ${request.department}</p></div></div>
-                    <div class="mt-10 pt-4 border-t-2 border-dashed border-gray-200">
+                    <div class="mt-8"><p class="text-sm mb-4">Respectfully yours,</p><div class="mt-4"><p class="font-bold uppercase">${request.requestedBy}</p><p class="text-sm text-gray-600 dark:text-gray-400">Requester / ${request.department}</p></div></div>
+                    <div class="mt-10 pt-4 border-t-2 border-dashed border-gray-200 dark:border-green-900">
                         <p class="text-xs font-bold text-gray-400 uppercase mb-4">Administrative Action / Signatories</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
-                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Department / Division Head', deptHeadApproval)}</div>
+                        <div class="grid grid-cols-2 gap-y-6 gap-x-8">
+                             <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Department / Division Head', deptHeadApproval)}</div>
                             <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('OVPAS', ovpasApproval)}</div>
                             <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Office of the Executive VP', oevpApproval)}</div>
                             <div><p class="text-xs italic text-gray-500 font-bold">Approved / Disapproved:</p>${getLetterSignature('Office of the University President', oupApproval)}</div>
@@ -1241,40 +1162,36 @@
                 const approveText = currentStepKey === 'pmgsdDirector' ? 'Final Approval & Deployment' : 'Verify & Forward';
                 let actionTitle = `${roleLabels[currentStepKey]}'s Review`;
                 container.innerHTML = `
-                    <div id="approvalActions" class="p-4 bg-green-50 rounded-lg border-2 border-green-200 mb-6">
-                        <p class="font-bold text-[#15803d] mb-2">${actionTitle}</p>
-                        <div class="flex flex-col md:flex-row gap-3">
+                    <div id="approvalActions" class="p-4 bg-green-50 dark:bg-green-900 rounded-lg border-2 border-green-200 dark:border-green-600 mb-6">
+                        <p class="font-bold text-[#15803d] dark:text-white mb-2">${actionTitle}</p>
+                        <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-3">
                             <button onclick="window.processApproval('${request.id}', 'Approved')" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-sm">${approveText}</button>
                             <button onclick="window.processApproval('${request.id}', 'Rejected')" class="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition shadow-sm">Reject</button>
                             <button onclick="window.openAppointmentModal('${request.id}')" class="px-6 py-3 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition shadow-sm">📅 Set Appointment</button>
-                            <input type="text" id="approverRemarks" placeholder="Add optional remarks..." class="w-full md:flex-grow p-2 border rounded-lg focus:ring-green-500 focus:border-green-500 outline-none">
+                            <input type="text" id="approverRemarks" placeholder="Add optional remarks..." class="flex-grow p-2 border rounded-lg focus:ring-green-500 focus:border-green-500 outline-none dark:bg-black dark:border-green-500 dark:text-white">
                         </div>
                     </div>
                 `;
             } else {
-                container.innerHTML = `<div class="p-4 bg-gray-100 border-2 mb-6 font-semibold">Request status: ${request.status}</div>`;
+                container.innerHTML = `<div class="p-4 bg-gray-100 dark:bg-gray-800 dark:text-white border-2 dark:border-gray-700 mb-6 font-semibold">Request status: ${request.status}</div>`;
             }
         }
 
         // 4. INITIALIZATION
         window.onload = () => { 
             window.showView('landingView');
-            // 1. Create a reference to the 'requests' folder in your Cloud Database
             const requestRef = window.ref(window.db, 'requests');
-            // 2. Turn on the Listener (onValue)
             window.onValue(requestRef, (snapshot) => {
                 const data = snapshot.val();
-                currentRequests = []; // Clear the old list
-
+                currentRequests = [];
                 if (data) {
                     Object.keys(data).forEach(key => {
                         currentRequests.push(data[key]);
                     });
                 }
-                // Update the screen immediately
                 if(currentRoleKey) renderRequestList();
             });
-            // Listen for events
+
             const eventsRef = window.ref(window.db, 'events');
             window.onValue(eventsRef, (snapshot) => {
                 const data = snapshot.val();
@@ -1285,16 +1202,6 @@
                 if(document.getElementById('calendarMainView') && !document.getElementById('calendarMainView').classList.contains('hidden')) {
                     renderMainCalendar();
                 }
-            });
-        };
-        
-        // Debug tool
-        window.debugFirebase = function() {
-            console.log("=== FIREBASE DATA CHECK ===");
-            const requestsRef = window.ref(window.db, 'requests');
-            window.get(requestsRef).then((snapshot) => {
-                const data = snapshot.val();
-                console.log("Data:", data);
             });
         };
     </script>
