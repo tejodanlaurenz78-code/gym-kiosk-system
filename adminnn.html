@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,26 +13,42 @@
             --pnc-yellow: #FCD34D;
         }
         body { 
-            font-family: 'Inter', sans-serif; 
+            font-family: 'Inter', sans-serif;
             background-color: #f3f4f6; 
         }
 
-        /* --- ADD THIS TO YOUR CSS --- */
+        /* --- CSS UPDATED FOR RESPONSIVENESS --- */
         .form-container {
             color: black;
             border: 1px solid black;
+            background: white;
+            /* Adaptive padding and width */
+            padding: 1rem; 
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
         }
+        @media (min-width: 768px) {
+            .form-container {
+                padding: 2rem;
+            }
+        }
+
         .form-title {
-            background-color: #D1D5DB; /* Gray background */
+            background-color: #D1D5DB;
             font-weight: bold;
             text-align: center;
             padding: 0.25rem;
             text-transform: uppercase;
-            font-size: 1.1rem;
+            font-size: 1rem; /* Adjusted for mobile */
             margin-bottom: 0;
             border: 1px solid black;
             border-bottom: none;
         }
+        @media (min-width: 768px) {
+            .form-title { font-size: 1.1rem; }
+        }
+
         .read-only-field {
             border-bottom: 1px solid black;
             width: 100%;
@@ -45,32 +60,9 @@
         .border-black { border-color: black; }
         .accent-black { accent-color: black; }
         
-        /* Form Template Styles */
-        .form-container {
-            background: white;
-            border: 1px solid #000;
-            padding: 2rem;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
         .form-header {
             text-align: center;
             margin-bottom: 1.5rem;
-        }
-        .form-title {
-            font-weight: bold;
-            text-align: center;
-            padding: 0.25rem;
-            text-transform: uppercase;
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-        }
-        .line-input {
-            border-bottom: 1px solid #000;
-            width: 100%;
-            outline: none;
-            background: transparent;
-            padding-left: 0.25rem;
         }
         
         /* Dashboard specific styles */
@@ -83,31 +75,16 @@
             transition: all 0.2s;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        .kiosk-btn:hover { background-color: #166534; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
-        .kiosk-btn:active { transform: translateY(0); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .kiosk-btn:hover { background-color: #166534; transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
+        .kiosk-btn:active { transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
         
-        /* Read-Only Input */
-        .input-disabled {
-            background-color: #E5E7EB;
-            cursor: not-allowed;
-            color: #6B7280;
-            font-style: italic;
-            border: none;
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-        }
-
         .request-item:hover {
-            background-color: #F0FDF4; /* Green-50 hover */
+            background-color: #F0FDF4;
             cursor: pointer;
         }
         
-        /* Custom Table Borders */
-        .form-border { border: 2px solid black; }
-        .form-border-r { border-right: 2px solid black; }
-        .form-border-b { border-bottom: 2px solid black; }
-        
-        /* Filled data styling */
         .filled-data {
             font-weight: bold;
             color: black;
@@ -119,7 +96,18 @@
         /* Sidebar Transitions */
         #sidebarPanel {
             transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+            /* Mobile default: absolute positioning to float over content */
+            position: absolute; 
+            z-index: 40;
+            height: 100%;
         }
+        /* Desktop override: relative positioning */
+        @media (min-width: 768px) {
+            #sidebarPanel {
+                position: relative;
+            }
+        }
+
         #sidebarPanel.hidden-sidebar {
             width: 0 !important;
             min-width: 0 !important;
@@ -132,16 +120,19 @@
 
         /* Calendar Styles */
         .calendar-day {
-            min-height: 100px;
+            min-height: 80px; /* Reduced for mobile */
             border: 1px solid #e5e7eb;
-            padding: 4px;
+            padding: 2px;
             position: relative;
         }
-        .calendar-day:hover {
-            background-color: #f9fafb;
+        @media (min-width: 768px) {
+            .calendar-day { min-height: 100px; padding: 4px; }
         }
+
+        .calendar-day:hover { background-color: #f9fafb; }
+        
         .calendar-event {
-            font-size: 0.75rem;
+            font-size: 0.65rem; /* Smaller for mobile */
             padding: 2px 4px;
             border-radius: 4px;
             margin-bottom: 2px;
@@ -150,6 +141,10 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        @media (min-width: 768px) {
+            .calendar-event { font-size: 0.75rem; }
+        }
+
         .event-confirmed { background-color: #dcfce7; color: #166534; border-left: 3px solid #15803d; }
         .event-temporary { background-color: #fef3c7; color: #92400e; border-left: 3px solid #d97706; }
         
@@ -160,25 +155,28 @@
             position: relative;
         }
         .editable-day:hover::after {
-            content: '+ Plot Event';
+            content: '+'; /* Shortened for mobile */
             position: absolute;
             bottom: 4px;
             right: 4px;
-            font-size: 10px;
+            font-size: 12px;
             background-color: #15803d;
             color: white;
             padding: 2px 6px;
             border-radius: 4px;
             font-weight: bold;
         }
+        @media (min-width: 768px) {
+            .editable-day:hover::after { content: '+ Plot Event'; font-size: 10px; }
+        }
     </style>
 </head>
-<body class="min-h-screen flex items-start justify-center p-4">
+<body class="min-h-screen flex items-start justify-center p-2 md:p-4">
 
-    <div id="landingView" class="w-full max-w-lg mt-20 p-8 bg-white rounded-2xl shadow-2xl border-t-8 border-[#15803d]">
+    <div id="landingView" class="w-full max-w-lg mt-10 md:mt-20 p-6 md:p-8 bg-white rounded-2xl shadow-2xl border-t-8 border-[#15803d]">
         <div class="text-center mb-8">
             <div class="w-16 h-16 mx-auto bg-[#15803d] text-white p-2 rounded-full flex items-center justify-center font-black text-2xl mb-3">PnC</div>
-            <h1 class="text-3xl font-extrabold text-[#15803d]">Approver Login</h1>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-[#15803d]">Approver Login</h1>
             <p class="text-gray-500 mt-1">Please enter your credentials.</p>
         </div>
 
@@ -198,15 +196,15 @@
             </button>
             
             <div class="text-center mt-4">
-                <p class="text-sm text-gray-600">Don't have an account? <button onclick="showView('signupView')" class="text-[#15803d] font-bold hover:underline">Create an Account</button></p>
+               <p class="text-sm text-gray-600">Don't have an account? <button onclick="showView('signupView')" class="text-[#15803d] font-bold hover:underline">Create an Account</button></p>
             </div>
         </div>
     </div>
 
-    <div id="signupView" class="hidden w-full max-w-lg mt-20 p-8 bg-white rounded-2xl shadow-2xl border-t-8 border-[#15803d]">
+    <div id="signupView" class="hidden w-full max-w-lg mt-10 md:mt-20 p-6 md:p-8 bg-white rounded-2xl shadow-2xl border-t-8 border-[#15803d]">
         <div class="text-center mb-8">
             <div class="w-16 h-16 mx-auto bg-[#15803d] text-white p-2 rounded-full flex items-center justify-center font-black text-2xl mb-3">PnC</div>
-            <h1 class="text-3xl font-extrabold text-[#15803d]">Create Account</h1>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-[#15803d]">Create Account</h1>
             <p class="text-gray-500 mt-1">Register as a new approver.</p>
         </div>
 
@@ -235,68 +233,70 @@
             </button>
             
             <div class="text-center mt-4">
-                <p class="text-sm text-gray-600">Already have an account? <button onclick="showView('landingView')" class="text-[#15803d] font-bold hover:underline">Back to Login</button></p>
+                <p class="text-sm text-gray-600">Already have an account?
+                <button onclick="showView('landingView')" class="text-[#15803d] font-bold hover:underline">Back to Login</button></p>
             </div>
         </div>
     </div>
     
-    <div id="approverView" class="hidden w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden min-h-[800px] flex flex-col">
+    <div id="approverView" class="hidden w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden min-h-[600px] md:min-h-[800px] flex flex-col relative">
         
-        <header class="bg-[#15803d] p-4 border-b-4 border-green-600 flex justify-between items-center sticky top-0 z-20 shadow-md">
-            <div class="flex items-center space-x-3">
+        <header class="bg-[#15803d] p-3 md:p-4 border-b-4 border-green-600 flex flex-wrap justify-between items-center sticky top-0 z-50 shadow-md">
+            <div class="flex items-center space-x-2 md:space-x-3">
                 <button onclick="toggleSidebar()" class="text-white p-2 rounded hover:bg-green-700 focus:outline-none mr-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
                 
-                <div class="bg-white text-[#15803d] w-10 h-10 p-2 rounded flex items-center justify-center font-black text-lg">PnC</div>
-                <h1 class="text-2xl font-extrabold text-white">Gym Reservation Approver Dashboard</h1>
+                <div class="bg-white text-[#15803d] w-8 h-8 md:w-10 md:h-10 p-2 rounded flex items-center justify-center font-black text-sm md:text-lg">PnC</div>
+                <h1 class="text-lg md:text-2xl font-extrabold text-white leading-tight">Approver <span class="hidden md:inline">Dashboard</span></h1>
             </div>
-            
-            <div class="text-right">
-                <button onclick="showView('landingView')" class="text-xs text-green-100 hover:text-white transition font-semibold">
+
+            <div class="text-right mt-1 md:mt-0">
+                <button onclick="showView('landingView')" class="text-xs text-green-100 hover:text-white transition font-semibold block ml-auto mb-1">
                     &larr; Logout
                 </button>
-                <p class="text-sm font-semibold text-white" id="approverRoleDisplay">Current Role: --</p>
-                <p class="text-xs text-green-100" id="approverNameDisplay">Welcome, --</p>
+                <p class="text-xs md:text-sm font-semibold text-white" id="approverRoleDisplay">Role: --</p>
+                <p class="text-[10px] md:text-xs text-green-100" id="approverNameDisplay">--</p>
             </div>
         </header>
 
         <main class="flex-grow flex overflow-hidden relative">
-            
-            <div id="sidebarPanel" class="w-1/3 min-w-[300px] bg-gray-50 border-r border-gray-200 flex flex-col h-full hidden-sidebar">
+             
+            <div id="sidebarPanel" class="w-full md:w-1/3 min-w-[300px] bg-gray-50 border-r border-gray-200 flex flex-col hidden-sidebar shadow-xl md:shadow-none">
                 <div class="p-4 bg-white border-b border-gray-200 flex justify-between items-center">
-                     <h2 class="text-xl font-bold text-[#15803d]">Pending Requests (<span id="pendingCount">0</span>)</h2>
+                     <h2 class="text-xl font-bold text-[#15803d]">Pending (<span id="pendingCount">0</span>)</h2>
+                     <button onclick="toggleSidebar()" class="md:hidden text-gray-500 font-bold">Close &times;</button>
                 </div>
                 <div id="sidebarRequests" class="p-4 overflow-y-auto flex-1">
                     <div id="requestList" class="space-y-2">
-                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="flex-1 bg-white p-6 overflow-y-auto h-full relative" id="mainContentArea">
+            <div class="flex-1 bg-white p-2 md:p-6 overflow-y-auto h-full relative w-full" id="mainContentArea">
                 
-                <div id="initialView" class="hidden text-center py-40">
+                <div id="initialView" class="hidden text-center py-20 md:py-40">
                     </div>
                 
                 <div id="reviewView" class="hidden flex flex-col h-full">
-                    <div class="flex justify-between items-center pb-3 border-b mb-4">
-                        <h3 class="text-2xl font-bold text-gray-800" id="activityTitleHeader">Activity: --</h3>
-                        <div class="flex items-center space-x-2">
-                             <button onclick="loadCalendarView()" class="text-sm text-gray-500 hover:text-blue-600 underline mr-4">Back to Calendar</button>
-                             <span id="currentStatusTag" class="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">Status: Pending...</span>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-3 border-b mb-4 gap-2">
+                        <h3 class="text-lg md:text-2xl font-bold text-gray-800 break-words w-full" id="activityTitleHeader">Activity: --</h3>
+                        <div class="flex items-center justify-between w-full md:w-auto space-x-2">
+                             <button onclick="loadCalendarView()" class="text-sm text-gray-500 hover:text-blue-600 underline mr-4 whitespace-nowrap">Back to Calendar</button>
+                             <span id="currentStatusTag" class="px-3 py-1 text-xs md:text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800 whitespace-nowrap">Status: Pending...</span>
                         </div>
                     </div>
 
-                    <div id="approvalActionsContainer"></div>
+                    <div id="approvalActionsContainer" class="w-full"></div>
                     
                     <div id="supportingDocTrigger" class="mb-4">
-                         <button onclick="openForm1Modal()" class="flex items-center space-x-2 text-[#15803d] hover:text-green-800 font-bold bg-green-50 px-4 py-2 rounded-lg border border-green-200 w-full justify-center hover:bg-green-100 transition">
+                         <button onclick="openForm1Modal()" class="flex items-center space-x-2 text-[#15803d] hover:text-green-800 font-bold bg-green-50 px-2 md:px-4 py-2 rounded-lg border border-green-200 w-full justify-center hover:bg-green-100 transition text-sm md:text-base">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <span>📄 View Approved Proposal Letter (Form 1)</span>
+                            <span>📄 View Approved Proposal (Form 1)</span>
                          </button>
                     </div>
 
@@ -307,41 +307,42 @@
                 </div>
 
                 <div id="calendarMainView" class="hidden h-full flex flex-col">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-3xl font-bold text-gray-800">Facility Calendar</h2>
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-4 md:mb-6 gap-3">
+                        <h2 class="text-xl md:text-3xl font-bold text-gray-800">Facility Calendar</h2>
                         <div class="flex items-center space-x-2">
                             <button onclick="changeCalendarMonth(-1)" class="p-2 bg-gray-200 rounded hover:bg-gray-300">&lt;</button>
-                            <span id="calendarMonthYear" class="font-bold text-xl w-40 text-center">Month Year</span>
+                            <span id="calendarMonthYear" class="font-bold text-lg md:text-xl w-32 md:w-40 text-center">Month Year</span>
                             <button onclick="changeCalendarMonth(1)" class="p-2 bg-gray-200 rounded hover:bg-gray-300">&gt;</button>
                         </div>
                     </div>
 
-                    <div class="flex-grow border-t border-l border-gray-300">
-                        <div class="grid grid-cols-7 text-center bg-gray-100 font-bold py-2 border-b border-gray-300 border-r">
-                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-                        </div>
-                        <div id="calendarGrid" class="grid grid-cols-7 h-full overflow-y-auto">
+                    <div class="flex-grow border-t border-l border-gray-300 overflow-x-auto">
+                        <div class="min-w-[600px] h-full flex flex-col"> <div class="grid grid-cols-7 text-center bg-gray-100 font-bold py-2 border-b border-gray-300 border-r text-xs md:text-base">
+                                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
                             </div>
+                            <div id="calendarGrid" class="grid grid-cols-7 h-full overflow-y-auto">
+                                </div>
+                        </div>
                     </div>
                     
-                    <div class="mt-4 flex gap-4 text-sm text-gray-600">
-                         <div class="flex items-center"><div class="w-3 h-3 bg-[#dcfce7] border border-[#15803d] mr-2"></div> Confirmed Event</div>
-                         <div class="flex items-center"><div class="w-3 h-3 bg-[#fef3c7] border border-[#d97706] mr-2"></div> Temporary Plot</div>
-                         <div id="editHint" class="hidden flex items-center ml-auto font-bold text-[#15803d]">👉 Click a day to Add, click an Event to Edit/Delete</div>
+                    <div class="mt-4 flex flex-col md:flex-row gap-2 md:gap-4 text-xs md:text-sm text-gray-600">
+                         <div class="flex items-center"><div class="w-3 h-3 bg-[#dcfce7] border border-[#15803d] mr-2"></div> Confirmed</div>
+                         <div class="flex items-center"><div class="w-3 h-3 bg-[#fef3c7] border border-[#d97706] mr-2"></div> Temporary</div>
+                         <div id="editHint" class="hidden md:flex items-center ml-auto font-bold text-[#15803d]">👉 Click a day to Add, click Event to Edit</div>
                     </div>
                 </div>
 
             </div>
         </main>
 
-        <div id="form1Modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
+        <div id="form1Modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-2 md:p-4">
             <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
-                <div class="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
-                    <h3 class="text-xl font-bold text-gray-800">Supporting Document: Proposal Letter</h3>
+                <div class="sticky top-0 bg-white border-b p-3 md:p-4 flex justify-between items-center z-10">
+                    <h3 class="text-lg md:text-xl font-bold text-gray-800">Proposal Letter</h3>
                     <button onclick="closeForm1Modal()" class="text-gray-500 hover:text-red-600 text-2xl font-bold">&times;</button>
                 </div>
-                <div class="p-4 bg-gray-100">
-                    <div id="form1ModalContent" class="bg-white shadow-lg mx-auto" style="max-width: 800px;">
+                <div class="p-2 md:p-4 bg-gray-100">
+                    <div id="form1ModalContent" class="bg-white shadow-lg mx-auto w-full">
                         </div>
                 </div>
             </div>
@@ -353,14 +354,15 @@
                     <h3 class="text-xl font-bold text-white" id="eventModalTitle">Plot New Event</h3>
                     <button onclick="closeEventModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
                 </div>
-                <div class="p-6 space-y-4">
+                <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
                     <input type="hidden" id="eventDateHidden">
-                    <input type="hidden" id="eventIdHidden"> <div>
+                    <input type="hidden" id="eventIdHidden"> 
+                    <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">Event Title <span class="text-red-500">*</span></label>
                         <input type="text" id="eventTitleInput" class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none" placeholder="e.g., Basketball Practice">
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-4">
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                              <label class="block text-sm font-bold text-gray-700 mb-1">Date</label>
                              <input type="text" id="eventDateDisplay" disabled class="w-full bg-gray-100 border border-gray-300 p-2 rounded text-gray-500 cursor-not-allowed">
@@ -388,12 +390,12 @@
                         </select>
                     </div>
         
-                    <div class="flex justify-between pt-4 border-t items-center">
-                        <button id="btnDeleteEvent" onclick="deleteCurrentEvent()" class="px-4 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-bold hidden">🗑 Delete</button>
-                        <div class="flex space-x-2 ml-auto">
+                    <div class="flex flex-col md:flex-row justify-between pt-4 border-t items-center gap-2">
+                        <button id="btnDeleteEvent" onclick="deleteCurrentEvent()" class="w-full md:w-auto px-4 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-bold hidden">🗑 Delete</button>
+                         <div class="flex space-x-2 ml-auto w-full md:w-auto justify-end">
                             <button onclick="closeEventModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Cancel</button>
-                            <button onclick="saveEvent()" class="px-4 py-2 bg-[#15803d] text-white rounded hover:bg-green-700 font-bold shadow transition">Save Event</button>
-                        </div>
+                            <button onclick="saveEvent()" class="px-4 py-2 bg-[#15803d] text-white rounded hover:bg-green-700 font-bold shadow transition">Save</button>
+                         </div>
                     </div>
                 </div>
             </div>
@@ -437,7 +439,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, update, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
         // 1. CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
@@ -449,7 +450,6 @@
             appId: "1:453765398844:web:219433f771cfd33b311e39",
             measurementId: "G-41DZ3175NX"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         
@@ -461,7 +461,6 @@
         window.onValue = onValue; 
         window.remove = remove;
         window.get = get;
-
         // 2. GLOBAL STATE
         let currentRequests = [];
         let activeRequest = null;
@@ -469,21 +468,20 @@
         let currentUserName = ''; 
 
         // Role & User Config
-        const approvalOrder = ['pmOfficer', 'pmgsdDirector']; 
+        const approvalOrder = ['pmOfficer', 'pmgsdDirector'];
         const roleLabels = { pmOfficer: 'VP Admin & Linkages (Recommending)', pmgsdDirector: 'OIC-Director PMGSD (Approving)' };
         const userDetails = { pmOfficer: 'Mr. Colin B. Garcia', pmgsdDirector: 'Alfredo Glenn H. Beaño' };
-        
         // Login Credentials
         let userCredentials = {
             'colin': { role: 'pmOfficer', password: 'admin' },
             'alfredo': { role: 'pmgsdDirector', password: 'admin' }
         };
-
         // Calendar Data
         let calendarMonth = new Date().getMonth();
         let calendarYear = new Date().getFullYear();
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        let calendarEvents = []; // Will be loaded from Firebase
+        let calendarEvents = [];
+        // Will be loaded from Firebase
 
         // 3. CORE FUNCTIONS (Attached to Window for HTML access)
 
@@ -507,12 +505,11 @@
             if (!username || !password) return customAlert('Please enter both username and password.');
 
             const user = userCredentials[username];
-
             if (user && user.password === password) {
                 currentRoleKey = user.role;
                 currentUserName = userDetails[currentRoleKey] || `User: ${username}`;
                 
-                document.getElementById('approverRoleDisplay').innerText = `Current Role: ${roleLabels[currentRoleKey]}`;
+                document.getElementById('approverRoleDisplay').innerText = `Role: ${roleLabels[currentRoleKey].split('(')[0]}`;
                 document.getElementById('approverNameDisplay').innerText = `Welcome, ${currentUserName.split('(')[0].trim()}`;
 
                 document.getElementById('initialView').classList.add('hidden'); 
@@ -520,6 +517,7 @@
                 
                 renderRequestList(); 
                 window.showView('approverView');
+               
                 populateTimeDropdowns();
                 window.loadCalendarView();
                 
@@ -534,16 +532,13 @@
             const role = document.getElementById('signupRole').value;
             const username = document.getElementById('signupUsername').value.trim();
             const password = document.getElementById('signupPassword').value.trim();
-            
             if (!role) return customAlert('Please select a role.');
             if (!username) return customAlert('Please choose a username.');
             if (!password) return customAlert('Please create a password.');
             
             if (userCredentials[username]) return customAlert('⚠️ Username already exists. Please choose another.');
-            
             userCredentials[username] = { role: role, password: password };
-            if (!userDetails[role]) userDetails[role] = `New User (${username})`; 
-            
+            if (!userDetails[role]) userDetails[role] = `New User (${username})`;
             customAlert('✅ Account created successfully!\nPlease log in.');
             // Clear fields
             document.getElementById('signupRole').selectedIndex = 0;
@@ -568,20 +563,18 @@
             else editHint.classList.add('hidden');
             renderMainCalendar();
         };
-
         window.changeCalendarMonth = function(delta) {
             calendarMonth += delta;
             if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
-            else if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+            else if (calendarMonth < 0) { calendarMonth = 11;
+            calendarYear--; }
             renderMainCalendar();
         };
-
         window.showEventDetailsFromCalendar = function(eventId) {
             const event = calendarEvents.find(e => e.id == eventId);
             if (!event) return;
             customAlert(`📅 Event Details:\n\n📌 Title: ${event.title}\n📝 Purpose: ${event.description || 'N/A'}\n🕒 Time: ${event.time || 'Not Set'}\n🗓️ Date: ${event.date}`);
         };
-
         window.addEvent = function(dateStr) {
             if (currentRoleKey !== 'pmgsdDirector') return;
             document.getElementById('eventModalTitle').innerText = "Plot New Event";
@@ -615,7 +608,6 @@
             document.getElementById('eventStatusInput').value = event.status;
             
             document.getElementById('btnDeleteEvent').classList.remove('hidden');
-            
             if (event.time && event.time.includes('-')) {
                 const parts = event.time.split('-').map(s => s.trim());
                 if (parts.length === 2) {
@@ -641,7 +633,6 @@
             const start = document.getElementById('eventStartTime').value;
             const end = document.getElementById('eventEndTime').value;
             const time = `${start} - ${end}`;
-            
             if (!title) {
                 alert('Please enter an event title.');
                 return;
@@ -666,13 +657,13 @@
                 status: status,
                 description: desc
             };
-            
             window.set(window.ref(window.db, 'events/' + id), eventData)
                 .then(() => {
                     customAlert("✅ Event saved to cloud!");
                     window.closeEventModal();
                 })
-                .catch((err) => {
+                .catch((err) => 
+                {
                     alert("Error saving: " + err.message);
                 });
         };
@@ -688,19 +679,25 @@
                     })
                     .catch((err) => {
                         alert("Error deleting: " + err.message);
-                    });
+                    
+});
             }
         };
-
         // --- REQUEST & APPROVAL FUNCTIONS ---
         window.loadRequest = function(requestId) {
             activeRequest = currentRequests.find(r => r.id === requestId);
             if (!activeRequest) return;
             
+            // Toggle view visibility
             document.getElementById('initialView').classList.add('hidden');
             document.getElementById('reviewView').classList.remove('hidden');
             document.getElementById('calendarMainView').classList.add('hidden');
             
+            // Hide sidebar on mobile when a request is clicked
+            if (window.innerWidth < 768) {
+                document.getElementById('sidebarPanel').classList.add('hidden-sidebar');
+            }
+
             document.getElementById('activityTitleHeader').innerText = `Activity: ${activeRequest.activityName}`;
             document.getElementById('currentStatusTag').innerText = `Status: ${activeRequest.status}`;
             document.getElementById('currentStatusTag').className = `px-3 py-1 text-sm font-semibold rounded-full ${getStatusClass(activeRequest.status)}`;
@@ -715,7 +712,6 @@
             renderReadOnlyForm(activeRequest);
             renderApprovalActions(activeRequest);
         };
-
         window.processApproval = function(requestId, action) {
             const requestIndex = currentRequests.findIndex(r => r.id === requestId);
             const request = currentRequests[requestIndex];
@@ -746,7 +742,6 @@
             updates[`${basePath}/approvals/${currentStepKey}/name`] = currentUserName;
             updates[`${basePath}/approvals/${currentStepKey}/remarks`] = remarks;
             updates[`${basePath}/approvals/${currentStepKey}/date`] = new Date().toISOString().split('T')[0];
-
             window.update(window.ref(window.db), updates)
                 .then(() => {
                     customAlert(`Request ${action} and saved to cloud!`);
@@ -763,7 +758,6 @@
             document.getElementById('form1Modal').classList.remove('hidden');
         };
         window.closeForm1Modal = function() { document.getElementById('form1Modal').classList.add('hidden'); };
-
         // --- APPOINTMENT MODAL ---
         window.openAppointmentModal = function(requestId) {
             document.getElementById('apptRequestId').value = requestId;
@@ -778,7 +772,6 @@
             const d = document.getElementById('apptDate').value;
             const t = document.getElementById('apptTime').value;
             const r = document.getElementById('apptReason').value.trim();
-
             if (!d || !t || !r) {
                 alert("Please fill in all appointment details.");
                 return;
@@ -799,7 +792,6 @@
             updates[`${basePath}/approvals/${currentStepKey}/name`] = currentUserName;
             updates[`${basePath}/approvals/${currentStepKey}/remarks`] = appointmentDetails;
             updates[`${basePath}/approvals/${currentStepKey}/date`] = new Date().toISOString().split('T')[0];
-
             window.update(window.ref(window.db), updates)
                 .then(() => {
                     window.closeAppointmentModal();
@@ -819,7 +811,7 @@
                 modal.id = 'customAlert';
                 modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
                 modal.innerHTML = `
-                    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full text-center">
+                    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full text-center mx-4">
                         <p id="alertMessage" class="text-gray-800 mb-4 font-semibold whitespace-pre-line"></p>
                         <button id="alertCloseBtn" class="px-4 py-2 bg-[#15803d] text-white rounded hover:bg-green-800">OK</button>
                     </div>
@@ -838,9 +830,12 @@
             const times = [];
             for(let h = 7; h <= 22; h++) {
                 for(let m = 0; m < 60; m += 30) {
-                    const ampm = h >= 12 ? 'PM' : 'AM';
-                    const displayH = h > 12 ? h - 12 : (h === 0 ? 12 : h);
-                    const displayM = m === 0 ? '00' : '30';
+                    const ampm = h >= 12 ?
+                    'PM' : 'AM';
+                    const displayH = h > 12 ?
+                    h - 12 : (h === 0 ? 12 : h);
+                    const displayM = m === 0 ?
+                    '00' : '30';
                     const timeStr = `${displayH}:${displayM} ${ampm}`;
                     times.push(timeStr);
                 }
@@ -859,18 +854,17 @@
             const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
             
             for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="border-b border-r border-gray-200 bg-gray-50"></div>`;
-            
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${calendarYear}-${String(calendarMonth+1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const dayEvents = calendarEvents.filter(e => e.date === dateStr);
                 const isEditable = currentRoleKey === 'pmgsdDirector';
-                
-                let dayHtml = `<div class="calendar-day border-b border-r border-gray-200 p-2 min-h-[100px] relative ${isEditable ? 'editable-day' : ''}" 
-                                onclick="${isEditable ? `addEvent('${dateStr}')` : ''}"><span class="font-bold text-gray-700">${day}</span>`;
+                let dayHtml = `<div class="calendar-day border-b border-r border-gray-200 min-h-[80px] md:min-h-[100px] relative ${isEditable ? 'editable-day' : ''}" 
+                                onclick="${isEditable ? `addEvent('${dateStr}')` : ''}"><span class="font-bold text-gray-700 text-xs md:text-base p-1">${day}</span>`;
                 dayEvents.forEach(ev => {
                     const colorClass = ev.status === 'confirmed' ? 'event-confirmed' : 'event-temporary';
-                    dayHtml += `<div class="calendar-event ${colorClass} mt-1 text-xs p-1 rounded truncate" 
-                                     onclick="event.stopPropagation(); ${isEditable ? `editEvent('${ev.id}')` : `showEventDetailsFromCalendar('${ev.id}')`}">${ev.title}</div>`;
+                    dayHtml += `<div class="calendar-event ${colorClass} mt-1 rounded truncate" 
+                                     onclick="event.stopPropagation(); ${isEditable 
+                    ? `editEvent('${ev.id}')` : `showEventDetailsFromCalendar('${ev.id}')`}">${ev.title}</div>`;
                 });
                 dayHtml += `</div>`;
                 grid.innerHTML += dayHtml;
@@ -887,10 +881,8 @@
                 if (stepKey === null && r.status.includes('Approved')) return true; 
                 return stepKey === currentRoleKey;
             });
-
             const pendingForMe = myRelevantRequests.filter(r => getCurrentApprovalStep(r) === currentRoleKey);
             pendingCountEl.innerText = pendingForMe.length;
-
             if (myRelevantRequests.length === 0) {
                  listEl.innerHTML = `<p class="text-gray-500 italic p-4">No requests require your action at this time.</p>`;
             }
@@ -899,15 +891,18 @@
                 const stepKey = getCurrentApprovalStep(request);
                 const isActionable = stepKey === currentRoleKey;
                 const actionableClass = isActionable ? 'bg-white hover:border-[#15803d] border border-gray-200' : 'bg-gray-100 opacity-80';
-                let statusText = request.status.includes('Appointment') ? '📅 Appointment Set' : `Review Logistics`;
+                let statusText = 
+                request.status.includes('Appointment') ? '📅 Appointment Set' : `Review Logistics`;
 
                 listEl.innerHTML += `
                     <div class="request-item p-3 rounded-lg shadow-sm ${actionableClass} transition active:ring-2 ring-green-500"
                          onclick="loadRequest('${request.id}')">
+                      
                         <p class="text-base font-bold text-gray-800">${request.activityName}</p>
                         <p class="text-xs text-gray-500">Date: ${request.activityDate}</p>
                         <div class="mt-2 flex justify-between items-center">
-                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${getStatusClass(request.status)}">${isActionable ? statusText : request.status}</span>
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${getStatusClass(request.status)}">${isActionable ?
+                            statusText : request.status}</span>
                         </div>
                     </div>
                 `;
@@ -917,9 +912,9 @@
         function getCurrentApprovalStep(request) {
             if (!request.approvals) return null;
             for (const key of approvalOrder) {
-                if (request.approvals[key].status === 'Pending' || request.approvals[key].status === 'Appointment Set') return key; 
+                if (request.approvals[key].status === 'Pending' || request.approvals[key].status === 'Appointment Set') return key;
             }
-            return null; 
+            return null;
         }
 
         function getStatusClass(status) {
@@ -931,15 +926,16 @@
         }
 
         function formatApprovalBox(approval, roleKey) {
-            let name = approval ? (approval.name || '---') : '---';
+            let name = approval ?
+            (approval.name || '---') : '---';
             let date = (approval && approval.date) ? new Date(approval.date).toLocaleDateString() : '---';
             let status = approval ? approval.status : 'Pending';
             let statusClass = getStatusClass(status);
-            
             return `
                 <div class="text-center p-2 rounded ${status === 'Approved' || status === 'Verified' || status === 'Submitted' ? 'bg-green-50' : status === 'Rejected' ? 'bg-red-50' : 'bg-yellow-50'} border border-gray-300">
                     <p class="text-sm font-semibold">${name}</p>
                     <p class="text-xs italic">${date}</p>
+             
                     <span class="inline-block mt-1 px-2 text-xs font-bold rounded-full ${statusClass}">${status}</span>
                 </div>
             `;
@@ -951,18 +947,18 @@
 
         function renderForm2Content(request) {
             // 1. Data Setup
-            const deptHead = request.approvals?.deptHead || {};
+            const deptHead = request.approvals?.deptHead ||
+            {};
             const pmOfficer = request.approvals?.pmOfficer || {};
             const pmgsdDirector = request.approvals?.pmgsdDirector || {};
-            
             // SAFETY FIX: Prevents white-screen crash if Firebase returns Object instead of Array
-            const venues = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
+            const venues = Array.isArray(request.venue) ?
+            request.venue : (request.venue ? Object.values(request.venue) : []);
             const equipments = Array.isArray(request.equipment) ? request.equipment : (request.equipment ? Object.values(request.equipment) : []);
-            
             // Helpers
-            const val = (v) => v || '';
+            const val = (v) => v ||
+            '';
             const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
-            
             // NEW: Date Formatter (YYYY-MM-DD -> MM/DD/YYYY)
             const formatDate = (dateStr) => {
                 if (!dateStr) return '';
@@ -970,170 +966,223 @@
                 if (parts.length !== 3) return dateStr; 
                 return `${parts[1]}/${parts[2]}/${parts[0]}`;
             };
-
             const getEquip = (name, field) => {
                 const item = equipments.find(e => e.name === name);
                 return item ? item[field] : '';
             };
             const isEquipChecked = (name) => {
-                return equipments.some(e => e.name === name) ? 'checked' : '';
+                return equipments.some(e => e.name === name) ?
+                'checked' : '';
             };
             const manpower = request.manpower || {};
-
-            // 2. HTML Template
+            // 2. HTML Template - REFACTORED FOR RESPONSIVENESS
+            // Notes: Using flex-col for mobile stacking, w-full for full width on mobile
             return `
-                <div class="form-header flex items-center justify-center space-x-4 mb-6">
+                <div class="form-header flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 mb-6">
                     <img src="pnc-logo.png" onerror="this.style.display='none'" alt="PnC Seal" class="w-20 h-20 object-contain">
                     <div class="text-center">
+              
                         <p class="text-sm">Republic of the Philippines</p>
-                        <h2 class="text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
+                        <h2 class="text-xl md:text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
                         <p class="text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
-                        <p class="text-sm italic">Administration and Finance Division</p>
+                        <p class="text-sm italic">Administration and 
+                        Finance Division</p>
                         <p class="font-bold text-gray-700 mt-1">Property Management and General Services Department</p>
-                        <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
+                        <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy.
+                        Banay-banay, City of Cabuyao, Laguna 4025</p>
                     </div>
                 </div>
 
                 <div class="form-title text-black bg-gray-300" style="border: none;">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
 
-                <div class="border-b border-black p-4 space-y-4 text-sm text-black">
-                    <div class="flex flex-wrap gap-4">
+                <div class="border-b border-black p-2 md:p-4 space-y-4 text-sm text-black">
+         
+                    <div class="flex flex-col md:flex-row gap-4">
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Transaction Number:</label>
                             <div class="read-only-field">${val(request.id)}</div>
+ 
                         </div>
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Date of Filing:</label>
+                    
                             <div class="read-only-field">${formatDate(request.filingDate)}</div>
                         </div>
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Department:</label>
+            
                             <div class="read-only-field">${val(request.department)}</div>
                         </div>
                     </div>
                     
-                    <div class="flex flex-wrap gap-4">
+                   
+                    <div class="flex flex-col md:flex-row gap-4">
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Activity Date:</label>
                             <div class="read-only-field">${formatDate(request.activityDate)}</div>
+           
                         </div>
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Time:</label>
                             <div class="read-only-field">${val(request.time)}</div>
+   
                         </div>
                     </div>
 
                     <div>
                         <label class="font-normal text-gray-600">Activity Name/Title/Purpose:</label>
+            
                         <div class="read-only-field">${val(request.activityName)}</div>
                     </div>
 
                     <div class="flex flex-wrap gap-4 items-end">
-                        <div class="w-1/3 font-normal text-gray-600">Expected # of Participants:</div>
+                        <div class="w-full md:w-1/3 font-normal text-gray-600">Expected # of Participants:</div>
+             
                         <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span>
                             <div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div>
                         </div>
                         <div class="flex-1 flex items-center"><span class="mr-2">External:</span>
+  
                             <div class="read-only-field w-20 text-center">${val(request.externalParticipants)}</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="border border-black border-t-0 flex text-black">
-                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Venue Reservation</div>
-                    <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div class="border border-black border-t-0 flex flex-col md:flex-row text-black">
+                    <div class="w-full md:w-40 font-bold p-2 bg-gray-50 border-b md:border-b-0 md:border-r border-black flex items-center">Venue Reservation</div>
+                    <div class="flex-1 p-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Gym Stage / Court')} class="accent-black"> <span class="${isChecked(venues, 'Gym Stage / Court') ? 'font-bold' : ''}">Gym Stage / Court</span></label>
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Multi-Purpose Hall')} class="accent-black"> <span class="${isChecked(venues, 'Multi-Purpose Hall') ? 'font-bold' : ''}">Multi-Purpose Hall</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Multi-Purpose Hall')} class="accent-black"> <span class="${isChecked(venues, 'Multi-Purpose Hall') ?
+                        'font-bold' : ''}">Multi-Purpose Hall</span></label>
                         
                         <div class="flex items-center space-x-2">
                              <input type="checkbox" disabled ${venues.some(v => v.includes('Classroom')) ? 'checked' : ''}> 
+       
                              <span>Classroom #</span> 
                              <div class="read-only-field w-16 text-center">${(venues.find(v => v.includes('Classroom')) || '').replace('Classroom', '').trim()}</div>
                         </div>
 
+               
                         <div class="flex items-center space-x-2">
                              <input type="checkbox" disabled ${venues.some(v => v.includes('Laboratory')) ? 'checked' : ''}> 
                              <span>Laboratory #</span> 
+                  
                              <div class="read-only-field w-16 text-center">${(venues.find(v => v.includes('Laboratory')) || '').replace('Laboratory', '').trim()}</div>
                         </div>
 
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Library')} class="accent-black"> <span class="${isChecked(venues, 'Library') ? 'font-bold' : ''}">Library</span></label>
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Cafeteria')} class="accent-black"> <span class="${isChecked(venues, 'Cafeteria') ? 'font-bold' : ''}">Cafeteria</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Library')} class="accent-black"> <span class="${isChecked(venues, 'Library') ?
+                        'font-bold' : ''}">Library</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Cafeteria')} class="accent-black"> <span class="${isChecked(venues, 'Cafeteria') ?
+                        'font-bold' : ''}">Cafeteria</span></label>
                         
-                        <div class="col-span-2 flex items-center space-x-2">
+                        <div class="col-span-1 md:col-span-2 flex items-center space-x-2">
                             <input type="checkbox" disabled ${venues.some(v => v.includes('Others:')) ? 'checked' : ''}> 
+        
                             <span>Others:</span> 
                             <div class="read-only-field flex-1">${(venues.find(v => v.includes('Others:')) || '').replace('Others:', '').trim()}</div>
                         </div>
+                    
                     </div>
                 </div>
 
-                <div class="border border-black border-t-0 flex text-black">
-                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">
+                <div class="border border-black border-t-0 flex flex-col md:flex-row text-black">
+                    <div class="w-full md:w-40 font-bold p-2 bg-gray-50 border-b md:border-b-0 md:border-r border-black">
                         <p>Equipment Reservation</p>
+            
                         <p class="mt-4 text-xs font-bold">Set-up Details:</p>
                         <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
                             <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressDate)}</span></p>
+                  
                             <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressTime)}</span></p>
                             <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressDate)}</span></p>
                             <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressTime)}</span></p>
+        
                         </div>
                     </div>
                     <div class="flex-1 p-2 text-sm">
                         <div class="grid grid-cols-1 gap-2 mb-2">
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${getEquip('Chair', 'count') ? 'checked' : ''} class="accent-black"> 
-                                <span class="${getEquip('Chair', 'count') ? 'font-bold' : ''}">Chair #</span> 
-                                <div class="read-only-field w-16 text-center font-bold">${getEquip('Chair', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquip('Chair', 'type')}</div>
+             
+                            <div class="flex flex-wrap items-center space-x-2 gap-y-2">
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" disabled ${getEquip('Chair', 'count') ?
+                                    'checked' : ''} class="accent-black"> 
+                                    <span class="${getEquip('Chair', 'count') ? 'font-bold' : ''}">Chair #</span> 
+                                    <div class="read-only-field w-16 text-center font-bold">${getEquip('Chair', 'count')}</div>
+                                </div>
+                                <div class="flex items-center space-x-2 flex-1">
+                                    <span>Type:</span> <div class="read-only-field flex-1 font-bold min-w-[100px]">${getEquip('Chair', 'type')}</div>
+                                </div>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${getEquip('Table', 'count') ? 'checked' : ''} class="accent-black"> 
-                                <span class="${getEquip('Table', 'count') ? 'font-bold' : ''}">Table #</span> 
-                                <div class="read-only-field w-16 text-center font-bold">${getEquip('Table', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquip('Table', 'type')}</div>
+
+                            <div class="flex flex-wrap items-center space-x-2 gap-y-2">
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" disabled ${getEquip('Table', 'count') ?
+                                    'checked' : ''} class="accent-black"> 
+                                    <span class="${getEquip('Table', 'count') ? 'font-bold' : ''}">Table #</span> 
+                                    <div class="read-only-field w-16 text-center font-bold">${getEquip('Table', 'count')}</div>
+                                </div>
+                                <div class="flex items-center space-x-2 flex-1">
+                                    <span>Type:</span> <div class="read-only-field flex-1 font-bold min-w-[100px]">${getEquip('Table', 'type')}</div>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+      
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
                             <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Podium/Rostrum')} class="accent-black"> <span class="${isEquipChecked('Podium/Rostrum') ? 'font-bold' : ''}">Podium/Rostrum</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Sound System')} class="accent-black"> <span class="${isEquipChecked('Sound System') ? 'font-bold' : ''}">Sound System</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Electric fans')} class="accent-black"> <span class="${isEquipChecked('Electric fans') ? 'font-bold' : ''}">Electric fans</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Sound System')} class="accent-black"> 
+                            <span class="${isEquipChecked('Sound System') ? 'font-bold' : ''}">Sound System</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Electric fans')} class="accent-black"> <span class="${isEquipChecked('Electric fans') ?
+                            'font-bold' : ''}">Electric fans</span></label>
                             
                             <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${getEquip('Microphone', 'count') ? 'checked' : ''} class="accent-black"> 
+                                <input type="checkbox" disabled ${getEquip('Microphone', 'count') ? 
+                                'checked' : ''} class="accent-black"> 
                                 <span>Microphone #</span> 
                                 <div class="read-only-field w-12 text-center font-bold">${getEquip('Microphone', 'count')}</div>
+                         
                             </div>
 
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Extension Cord')} class="accent-black"> <span class="${isEquipChecked('Extension Cord') ? 'font-bold' : ''}">Extension Cord</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Panel Board / White Board')} class="accent-black"> <span class="${isEquipChecked('Panel Board / White Board') ? 'font-bold' : ''}">Panel/White Board</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Philippine Flag')} class="accent-black"> <span class="${isEquipChecked('Philippine Flag') ? 'font-bold' : ''}">Philippine Flag</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Pamantasan ng Cabuyao Flag')} class="accent-black"> <span class="${isEquipChecked('Pamantasan ng Cabuyao Flag') ? 'font-bold' : ''}">PnC Flag</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Multi-media Projector')} class="accent-black"> <span class="${isEquipChecked('Multi-media Projector') ? 'font-bold' : ''}">Projector</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Extension Cord')} class="accent-black"> <span class="${isEquipChecked('Extension Cord') ?
+                            'font-bold' : ''}">Extension Cord</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Panel Board / White Board')} class="accent-black"> <span class="${isEquipChecked('Panel Board / White Board') ?
+                            'font-bold' : ''}">Panel/White Board</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Philippine Flag')} class="accent-black"> <span class="${isEquipChecked('Philippine Flag') ?
+                            'font-bold' : ''}">Philippine Flag</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Pamantasan ng Cabuyao Flag')} class="accent-black"> <span class="${isEquipChecked('Pamantasan ng Cabuyao Flag') ?
+                            'font-bold' : ''}">PnC Flag</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Multi-media Projector')} class="accent-black"> <span class="${isEquipChecked('Multi-media Projector') ?
+                            'font-bold' : ''}">Projector</span></label>
                             
                             <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${equipments.some(e => e.name.includes('Others:')) ? 'checked' : ''}> 
+                                <input type="checkbox" disabled ${equipments.some(e => e.name.includes('Others:')) ? 
+                                'checked' : ''}> 
                                 <span>Others:</span> 
                                 <div class="read-only-field w-full font-bold">${(equipments.find(e => e.name.includes('Others:'))?.name || '').replace('Others:', '').trim()}</div>
+                        
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="border border-black border-t-0 flex text-black">
-                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Manpower Requirement</div>
-                    <div class="flex-1 p-2 grid grid-cols-2 gap-4 text-sm">
+                <div class="border border-black border-t-0 flex flex-col md:flex-row text-black">
+               
+                    <div class="w-full md:w-40 font-bold p-2 bg-gray-50 border-b md:border-b-0 md:border-r border-black flex items-center">Manpower Requirement</div>
+                    <div class="flex-1 p-2 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div class="flex items-center space-x-2">
-                            <input type="checkbox" disabled ${manpower.technical ? 'checked' : ''}> 
+                            <input type="checkbox" disabled ${manpower.technical ?
+                            'checked' : ''}> 
                             <span>Technical</span> 
                             <div class="read-only-field flex-1 font-bold">${val(manpower.technical)}</div>
                         </div>
+             
                         <div class="flex items-center space-x-2">
-                            <input type="checkbox" disabled ${manpower.housekeeping ? 'checked' : ''}> 
+                            <input type="checkbox" disabled ${manpower.housekeeping ?
+                            'checked' : ''}> 
                             <span>Housekeeping</span> 
                             <div class="read-only-field flex-1 font-bold">${val(manpower.housekeeping)}</div>
                         </div>
+             
                     </div>
                 </div>
 
@@ -1143,11 +1192,13 @@
                     <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
                 </div>
 
-                <div class="grid grid-cols-4 gap-4 text-center mt-4 text-black text-xs">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mt-4 text-black text-xs">
+                    
                     <div>
                         <p class="font-bold mb-8 text-gray-700">Requested by:</p>
                         <div class="border-b border-black font-bold uppercase text-black pb-1">${request.requestedBy}</div>
                         <p class="mt-1">Signature over Printed Name/Date</p>
+              
                     </div>
                     
                     <div class="opacity-90">
@@ -1157,9 +1208,11 @@
                         <div class="text-[10px] font-bold ${getStatusClass(deptHead.status)} rounded-full inline-block px-2 mt-1">${deptHead.status}</div>
                     </div>
 
+                
                     <div class="opacity-90">
                         <p class="font-bold mb-8 text-gray-700">Recommended by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">Mr. Colin B. Garcia</div>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">Mr.
+                        Colin B. Garcia</div>
                         <p class="mt-1">PM Officer</p>
                         <div class="text-[10px] font-bold ${getStatusClass(pmOfficer.status)} rounded-full inline-block px-2 mt-1">${pmOfficer.status}</div>
                     </div>
@@ -1168,6 +1221,7 @@
                         <p class="font-bold mb-8 text-gray-700">Approved by:</p>
                         <div class="border-b border-black font-bold uppercase text-black pb-1">Alfredo Glenn H. Beaño</div>
                         <p class="mt-1">PMGSD Director</p>
+             
                         <div class="text-[10px] font-bold ${getStatusClass(pmgsdDirector.status)} rounded-full inline-block px-2 mt-1">${pmgsdDirector.status}</div>
                     </div>
                 </div>
@@ -1177,49 +1231,60 @@
         function renderForm1Content(request) {
             const deptHeadApproval = request.approvals.deptHead;
             const ovpasApproval = request.approvals.ovpas || {name: '---', date: '', status: 'Pending'};
-            const oevpApproval = request.approvals.oevp || {name: '---', date: '', status: 'Pending'};
+            const oevpApproval = request.approvals.oevp ||
+            {name: '---', date: '', status: 'Pending'};
             const oupApproval = request.approvals.oup || {name: '---', date: '', status: 'Pending'};
-            
             const logoUrl = 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c8/Pamantasan_ng_Cabuyao_Logo.png/220px-Pamantasan_ng_Cabuyao_Logo.png';
             
             function getLetterSignature(title, approval) {
-                const dateStr = approval.date ? new Date(approval.date).toLocaleDateString() : '---';
+                const dateStr = approval.date ?
+                new Date(approval.date).toLocaleDateString() : '---';
                 return `
                     <div class="mt-4 mb-2">
                         <div class="font-bold uppercase text-black">${approval.name}</div>
                         <div class="text-xs font-semibold text-gray-600">${title}</div>
+                   
                         <div class="text-[10px] text-green-700 font-bold">APPROVED - ${dateStr}</div>
                     </div>
                 `;
             }
 
             return `
-                <div class="bg-white p-8 text-gray-900 font-sans leading-relaxed relative">
-                    <div class="relative mb-10">
-                         <img src="${logoUrl}" alt="PnC Logo" class="w-24 h-24 object-contain absolute left-0">
+                <div class="bg-white p-4 md:p-8 text-gray-900 font-sans leading-relaxed relative">
+                    <div class="relative mb-10 flex flex-col items-center">
+                         <img src="${logoUrl}" alt="PnC Logo" class="w-16 h-16 md:w-24 md:h-24 object-contain mb-4 md:mb-0 md:absolute md:left-0">
+          
                         <div class="text-center relative z-10">
                             <p class="text-xs font-serif text-gray-700">Republic of the Philippines</p>
-                            <h1 class="text-5xl tracking-wide my-1 text-[#005728]" style="font-family: 'UnifrakturMaguntia', cursive;">University of Cabuyao</h1>
+                            <h1 class="text-3xl md:text-5xl tracking-wide my-1 text-[#005728]" style="font-family: 'UnifrakturMaguntia', cursive;">University of Cabuyao</h1>
+            
                             <p class="text-sm font-bold tracking-widest text-gray-700 uppercase font-serif">(PAMANTASAN NG CABUYAO)</p>
                             <p class="text-sm italic text-gray-700 mt-1 font-serif">Property Management and General Service Department</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5 font-serif">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5 font-serif">Katapatan Mutual Homes, Brgy.
+                            Banay-banay, City of Cabuyao, Laguna 4025</p>
                         </div>
                     </div>
                     <div class="mb-8"><p class="text-xs text-gray-500">(${request.id})</p><p class="mt-2 text-sm">${new Date(request.filingDate).toLocaleDateString()}</p></div>
-                    <div class="mb-6"><p class="font-bold text-sm">Dr. Roberto F. Rañola Jr.</p><p class="text-sm">OIC-University President</p></div>
+                    <div class="mb-6"><p class="font-bold text-sm">Dr.
+                    Roberto F. Rañola Jr.</p><p class="text-sm">OIC-University President</p></div>
                     <div class="mb-8 pl-8"><p class="text-sm"><span class="font-bold">Thru: Mr. Colin B. Garcia</span></p><p class="text-sm ml-9">Vice President for Administration and Linkages</p></div>
                     <div class="text-sm text-justify space-y-4">
-                        <p class="indent-8">I am writing to respectfully request your approval for the activity titled "<span class="font-bold uppercase">${request.activityName}</span>". The purpose is ${request.form1 ? request.form1.purpose : 'to conduct activity'}.</p>
-                        <p class="indent-8">We would like to reserve <span class="font-bold">${request.venue ? request.venue.join(' and ') : 'Venue'}</span> on <span class="font-bold">${new Date(request.activityDate).toLocaleDateString()}</span>.</p>
+                        <p class="indent-8">I am writing to respectfully request your approval for the activity titled 
+                        "<span class="font-bold uppercase">${request.activityName}</span>". The purpose is ${request.form1 ? request.form1.purpose : 'to conduct activity'}.</p>
+                        <p class="indent-8">We would like to reserve <span class="font-bold">${request.venue ?
+                        request.venue.join(' and ') : 'Venue'}</span> on <span class="font-bold">${new Date(request.activityDate).toLocaleDateString()}</span>.</p>
                         <p class="indent-8">Thank you very much for your favorable response.</p>
                     </div>
                     <div class="mt-8"><p class="text-sm mb-4">Respectfully yours,</p><div class="mt-4"><p class="font-bold uppercase">${request.requestedBy}</p><p class="text-sm text-gray-600">Requester / ${request.department}</p></div></div>
+         
                     <div class="mt-10 pt-4 border-t-2 border-dashed border-gray-200">
                         <p class="text-xs font-bold text-gray-400 uppercase mb-4">Administrative Action / Signatories</p>
-                        <div class="grid grid-cols-2 gap-y-6 gap-x-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
+                        
                             <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Department / Division Head', deptHeadApproval)}</div>
                             <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('OVPAS', ovpasApproval)}</div>
                             <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Office of the Executive VP', oevpApproval)}</div>
+                  
                             <div><p class="text-xs italic text-gray-500 font-bold">Approved / Disapproved:</p>${getLetterSignature('Office of the University President', oupApproval)}</div>
                         </div>
                     </div>
@@ -1232,22 +1297,23 @@
             const currentStepKey = getCurrentApprovalStep(request);
             const isMyTurn = currentRoleKey === currentStepKey;
             
-            container.innerHTML = ''; 
-
+            container.innerHTML = '';
             if (isMyTurn) {
-                const approveText = currentStepKey === 'pmgsdDirector' ? 'Final Approval & Deployment' : 'Verify & Forward';
+                const approveText = currentStepKey === 'pmgsdDirector' ?
+                'Final Approval & Deployment' : 'Verify & Forward';
                 let actionTitle = `${roleLabels[currentStepKey]}'s Review`;
-                
                 container.innerHTML = `
-                    <div id="approvalActions" class="p-4 bg-green-50 rounded-lg border-2 border-green-200 mb-6">
+                    <div id="approvalActions" class="p-3 md:p-4 bg-green-50 rounded-lg border-2 border-green-200 mb-6">
                         <p class="font-bold text-[#15803d] mb-2">${actionTitle}</p>
-                        <div class="flex space-x-3">
-                            <button onclick="window.processApproval('${request.id}', 'Approved')" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-sm">${approveText}</button>
-                            <button onclick="window.processApproval('${request.id}', 'Rejected')" class="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition shadow-sm">Reject</button>
-                            <button onclick="window.openAppointmentModal('${request.id}')" class="px-6 py-3 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition shadow-sm">📅 Set Appointment</button>
-                            <input type="text" id="approverRemarks" placeholder="Add optional remarks..." class="flex-grow p-2 border rounded-lg focus:ring-green-500 focus:border-green-500 outline-none">
+                        <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-3">
+                  
+                            <button onclick="window.processApproval('${request.id}', 'Approved')" class="w-full md:w-auto px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-sm">${approveText}</button>
+                            <button onclick="window.processApproval('${request.id}', 'Rejected')" class="w-full md:w-auto px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition shadow-sm">Reject</button>
+                            <button onclick="window.openAppointmentModal('${request.id}')" class="w-full md:w-auto px-6 py-3 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition shadow-sm">📅 Set Appointment</button>
+                            <input type="text" id="approverRemarks" placeholder="Add optional remarks..." class="w-full md:flex-grow p-2 border rounded-lg focus:ring-green-500 focus:border-green-500 outline-none">
                         </div>
                     </div>
+                
                 `;
             } else {
                 container.innerHTML = `<div class="p-4 bg-gray-100 border-2 mb-6 font-semibold">Request status: ${request.status}</div>`;
@@ -1256,8 +1322,7 @@
 
         // 4. INITIALIZATION
         window.onload = () => { 
-            window.showView('landingView'); 
-
+            window.showView('landingView');
             // 1. Create a reference to the 'requests' folder in your Cloud Database
             const requestRef = window.ref(window.db, 'requests');
             // 2. Turn on the Listener (onValue)
@@ -1266,14 +1331,15 @@
                 currentRequests = []; // Clear the old list
 
                 if (data) {
+                   
                     Object.keys(data).forEach(key => {
                         currentRequests.push(data[key]);
                     });
                 }
                 // Update the screen immediately
-                if(currentRoleKey) renderRequestList();
+                if(currentRoleKey) 
+                renderRequestList();
             });
-            
             // Listen for events
             const eventsRef = window.ref(window.db, 'events');
             window.onValue(eventsRef, (snapshot) => {
@@ -1282,6 +1348,7 @@
                 if(data) {
                     Object.keys(data).forEach(key => calendarEvents.push(data[key]));
                 }
+     
                 if(document.getElementById('calendarMainView') && !document.getElementById('calendarMainView').classList.contains('hidden')) {
                     renderMainCalendar();
                 }
@@ -1300,14 +1367,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
