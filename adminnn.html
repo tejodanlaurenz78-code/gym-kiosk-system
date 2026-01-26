@@ -13,92 +13,26 @@
             --pnc-primary: #15803d;
             --pnc-yellow: #FCD34D;
         }
-        
-        /* 4. Viewport Height Fix: Use dvh for mobile browser bar adaptation */
         body { 
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', sans-serif; 
             background-color: #f3f4f6; 
-            min-height: 100dvh; /* Replaces 100vh */
-            display: flex;
-            flex-direction: column;
         }
-        
-        /* --- RESPONSIVE TYPOGRAPHY & LAYOUT --- */
-        
-        /* Mapped from .navbar request */
-        header {
-            /* 2. Responsive Font Sizes using clamp */
-            font-size: clamp(1rem, 2vw + 1rem, 1.5rem);
-        }
-        
-        /* Mapped from #reservation-form request */
+
+        /* --- ADD THIS TO YOUR CSS --- */
         .form-container {
-            background: white;
-            border: 1px solid #000;
-            /* 1. Relative Padding using min() */
-            padding: min(2rem, 5vw); 
-            max-width: 1000px;
-            margin: 0 auto;
-            width: 100%;
             color: black;
+            border: 1px solid black;
         }
-        
         .form-title {
-            background-color: #D1D5DB;
+            background-color: #D1D5DB; /* Gray background */
             font-weight: bold;
             text-align: center;
-            /* 2. Responsive Font Sizes */
-            font-size: clamp(0.9rem, 3vw, 1.2rem); 
             padding: 0.25rem;
             text-transform: uppercase;
-            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            margin-bottom: 0;
             border: 1px solid black;
             border-bottom: none;
-        }
-        
-        /* Mapped from #calendar request */
-        #calendarMainView {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* 3. Responsive Images */
-        img {
-            max-width: 100%;
-            height: auto;
-            /* Keeps aspect ratio logic, though 'contain' is usually safer for logos */
-            aspect-ratio: 16/9; 
-            object-fit: contain; 
-        }
-        
-        /* Specific override for the PnC logo to prevent it from getting huge */
-        .form-header img {
-            aspect-ratio: 1/1;
-            max-width: 80px;
-        }
-        
-        /* --- KIOSK ELEMENTS --- */
-        
-        .kiosk-btn {
-            background-color: var(--pnc-primary);
-            color: white;
-            padding: 1rem 2rem;
-            font-size: clamp(1rem, 1.5vw + 0.5rem, 1.25rem);
-            border-radius: 0.5rem;
-            transition: all 0.2s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .kiosk-btn:hover { background-color: #166534; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
-        .kiosk-btn:active { transform: translateY(0); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-        
-        /* Form Inputs */
-        .line-input {
-            border-bottom: 1px solid #000;
-            width: 100%;
-            outline: none;
-            background: transparent;
-            padding-left: 0.25rem;
         }
         .read-only-field {
             border-bottom: 1px solid black;
@@ -107,18 +41,105 @@
             font-weight: bold;
             min-height: 24px;
             display: inline-block;
-            word-break: break-word; /* Prevents overflow on mobile */
+        }
+        .border-black { border-color: black; }
+        .accent-black { accent-color: black; }
+        
+        /* Form Template Styles */
+        .form-container {
+            background: white;
+            border: 1px solid #000;
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .form-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .form-title {
+            font-weight: bold;
+            text-align: center;
+            padding: 0.25rem;
+            text-transform: uppercase;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+        .line-input {
+            border-bottom: 1px solid #000;
+            width: 100%;
+            outline: none;
+            background: transparent;
+            padding-left: 0.25rem;
         }
         
+        /* Dashboard specific styles */
+        .kiosk-btn {
+            background-color: var(--pnc-primary);
+            color: white;
+            padding: 1rem 2rem;
+            font-size: 1.25rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .kiosk-btn:hover { background-color: #166534; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
+        .kiosk-btn:active { transform: translateY(0); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        
+        /* Read-Only Input */
+        .input-disabled {
+            background-color: #E5E7EB;
+            cursor: not-allowed;
+            color: #6B7280;
+            font-style: italic;
+            border: none;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .request-item:hover {
+            background-color: #F0FDF4; /* Green-50 hover */
+            cursor: pointer;
+        }
+        
+        /* Custom Table Borders */
+        .form-border { border: 2px solid black; }
+        .form-border-r { border-right: 2px solid black; }
+        .form-border-b { border-bottom: 2px solid black; }
+        
+        /* Filled data styling */
+        .filled-data {
+            font-weight: bold;
+            color: black;
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+        }
+
+        /* Sidebar Transitions */
+        #sidebarPanel {
+            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+        }
+        #sidebarPanel.hidden-sidebar {
+            width: 0 !important;
+            min-width: 0 !important;
+            flex-basis: 0 !important;
+            transform: translateX(-100%);
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+        }
+
         /* Calendar Styles */
         .calendar-day {
-            /* Responsive height for calendar cells */
-            min-height: clamp(80px, 10vh, 120px); 
+            min-height: 100px;
             border: 1px solid #e5e7eb;
             padding: 4px;
             position: relative;
         }
-        .calendar-day:hover { background-color: #f9fafb; }
+        .calendar-day:hover {
+            background-color: #f9fafb;
+        }
         .calendar-event {
             font-size: 0.75rem;
             padding: 2px 4px;
@@ -132,88 +153,23 @@
         .event-confirmed { background-color: #dcfce7; color: #166534; border-left: 3px solid #15803d; }
         .event-temporary { background-color: #fef3c7; color: #92400e; border-left: 3px solid #d97706; }
         
-        /* Sidebar Transitions */
-        #sidebarPanel {
-            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+        /* Editable Mode Styles */
+        .editable-day:hover {
+            background-color: #dcfce7 !important;
+            cursor: cell;
+            position: relative;
         }
-        /* 5. Accessible Hidden Elements logic */
-        /* Note: JS must toggle the 'inert' attribute on the HTML element */
-        #sidebarPanel.hidden-sidebar {
-            width: 0 !important;
-            min-width: 0 !important;
-            transform: translateX(-100%);
-            opacity: 0;
-            padding: 0 !important;
-            margin: 0 !important;
-            border: none !important;
-            /* CSS support for inert-like behavior if browser doesn't support attribute */
-            pointer-events: none; 
-        }
-        
-        /* --- MEDIA QUERIES --- */
-        
-        /* 6. Tablet Breakpoint: Stack Form and Sidebar */
-        @media (max-width: 768px) {
-            /* Target the main container (mapped from .container/column) */
-            #approverView main {
-                flex-direction: column;
-            }
-        
-            #sidebarPanel {
-                width: 100% !important;
-                height: auto;
-                max-height: 250px; /* Limit height when stacked */
-                border-right: none;
-                border-bottom: 1px solid #e5e7eb;
-            }
-            
-            #sidebarPanel.hidden-sidebar {
-                height: 0 !important;
-                transform: translateY(-100%);
-            }
-        
-            /* Make calendar scrollable horizontally if squashed */
-            #calendarGrid {
-                min-width: 600px; 
-            }
-            #calendarMainView .flex-grow {
-                overflow-x: auto;
-            }
-        }
-        
-        /* 6. Mobile Breakpoint: Simplification */
-        @media (max-width: 480px) {
-            /* Simplify Navbar */
-            header {
-                flex-direction: column;
-                gap: 1rem;
-                text-align: center;
-            }
-            
-            header .flex {
-                width: 100%;
-                justify-content: center;
-            }
-        
-            /* Enlarge buttons for touch targets */
-            .kiosk-btn, button {
-                min-height: 44px; /* Accessible touch target size */
-            }
-        
-            /* Stack form fields densely */
-            .form-container .flex {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-            
-            .w-1/3, .w-40, .w-20 {
-                width: 100% !important;
-            }
-        
-            /* Adjust Calendar text for small screens */
-            .calendar-day span {
-                font-size: 0.8rem;
-            }
+        .editable-day:hover::after {
+            content: '+ Plot Event';
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            font-size: 10px;
+            background-color: #15803d;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
         }
     </style>
 </head>
