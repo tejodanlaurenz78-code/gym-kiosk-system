@@ -17,26 +17,19 @@
             background-color: #f3f4f6; 
         }
 
-        /* 5. Responsive Images */
-        img {
-            max-width: 100%;
-            height: auto;
-        }
-
-        /* 2. Relative Units & Form Container */
+        /* Responsive Form Container */
         .form-container {
             color: black;
             border: 1px solid black;
             background: white;
-            padding: 1rem; /* Reduced padding for mobile */
+            padding: 1rem; /* Smaller padding on mobile */
             width: 100%;
             max-width: 1000px;
             margin: 0 auto;
         }
+        /* Desktop padding increase */
         @media (min-width: 768px) {
-            .form-container {
-                padding: 2rem;
-            }
+            .form-container { padding: 2rem; }
         }
 
         .form-title {
@@ -45,7 +38,7 @@
             text-align: center;
             padding: 0.25rem;
             text-transform: uppercase;
-            font-size: 1rem; 
+            font-size: 1rem;
             margin-bottom: 0;
             border: 1px solid black;
             border-bottom: none;
@@ -59,8 +52,13 @@
             min-height: 24px;
             display: inline-block;
         }
+        .border-black { border-color: black; }
+        .accent-black { accent-color: black; }
         
-        /* 6. Touch Targets (Buttons) handled via Tailwind classes in HTML */
+        .form-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
         
         .kiosk-btn {
             background-color: var(--pnc-primary);
@@ -76,32 +74,39 @@
         .kiosk-btn:active { transform: translateY(0);
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
         
-        /* Sidebar Transitions */
+        .request-item:hover {
+            background-color: #F0FDF4;
+            cursor: pointer;
+        }
+
+        /* Sidebar: Absolute on Mobile (Overlay), Relative on Desktop (Side-by-side) */
         #sidebarPanel {
             transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
-            position: absolute; /* Mobile first: floats over content */
-            z-index: 40;
+            position: absolute;
+            z-index: 50;
             height: 100%;
-            background-color: white;
+            background: white;
         }
-        /* 4. Media Query: Desktop Sidebar */
         @media (min-width: 768px) {
             #sidebarPanel {
                 position: relative;
+                z-index: 0;
             }
         }
 
         #sidebarPanel.hidden-sidebar {
             width: 0 !important;
             min-width: 0 !important;
+            flex-basis: 0 !important;
             transform: translateX(-100%);
             padding: 0 !important;
+            margin: 0 !important;
             border: none !important;
         }
 
         /* Calendar Styles */
         .calendar-day {
-            min-height: 80px; /* Smaller for mobile */
+            min-height: 80px;
             border: 1px solid #e5e7eb;
             padding: 2px;
             position: relative;
@@ -113,7 +118,7 @@
         .calendar-day:hover { background-color: #f9fafb; }
         
         .calendar-event {
-            font-size: 0.65rem;
+            font-size: 0.70rem;
             padding: 2px 4px;
             border-radius: 4px;
             margin-bottom: 2px;
@@ -122,17 +127,32 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
         .event-confirmed { background-color: #dcfce7; color: #166534; border-left: 3px solid #15803d; }
         .event-temporary { background-color: #fef3c7; color: #92400e; border-left: 3px solid #d97706; }
         
         .editable-day:hover {
             background-color: #dcfce7 !important;
             cursor: cell;
+            position: relative;
+        }
+        .editable-day:hover::after {
+            content: '+'; /* Smaller symbol for mobile */
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            font-size: 12px;
+            background-color: #15803d;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        @media (min-width: 768px) {
+            .editable-day:hover::after { content: '+ Plot Event'; font-size: 10px; }
         }
     </style>
 </head>
-<body class="min-h-screen flex items-start justify-center p-2 md:p-4 bg-gray-100">
+<body class="min-h-screen flex items-start justify-center p-2 md:p-4">
 
     <div id="landingView" class="w-full max-w-lg mt-10 md:mt-20 p-6 md:p-8 bg-white rounded-2xl shadow-2xl border-t-8 border-[#15803d]">
         <div class="text-center mb-8">
@@ -202,7 +222,7 @@
     
     <div id="approverView" class="hidden w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden min-h-[600px] md:min-h-[800px] flex flex-col relative">
         
-        <header class="bg-[#15803d] p-3 md:p-4 border-b-4 border-green-600 flex flex-wrap justify-between items-center sticky top-0 z-50 shadow-md">
+        <header class="bg-[#15803d] p-3 md:p-4 border-b-4 border-green-600 flex flex-wrap justify-between items-center sticky top-0 z-40 shadow-md">
             <div class="flex items-center space-x-2 md:space-x-3">
                 <button onclick="toggleSidebar()" class="text-white p-2 rounded hover:bg-green-700 focus:outline-none mr-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -219,6 +239,7 @@
                     &larr; Logout
                 </button>
                 <p class="text-xs md:text-sm font-semibold text-white" id="approverRoleDisplay">Role: --</p>
+                <p class="text-[10px] md:text-xs text-green-100" id="approverNameDisplay">--</p>
             </div>
         </header>
 
@@ -227,7 +248,7 @@
             <div id="sidebarPanel" class="w-full md:w-1/3 min-w-[300px] bg-gray-50 border-r border-gray-200 flex flex-col hidden-sidebar shadow-xl md:shadow-none">
                 <div class="p-4 bg-white border-b border-gray-200 flex justify-between items-center">
                      <h2 class="text-xl font-bold text-[#15803d]">Pending (<span id="pendingCount">0</span>)</h2>
-                     <button onclick="toggleSidebar()" class="md:hidden text-gray-500 font-bold text-xl">&times;</button>
+                     <button onclick="toggleSidebar()" class="md:hidden text-gray-500 font-bold px-2 py-1 text-xl">&times;</button>
                 </div>
                 <div id="sidebarRequests" class="p-4 overflow-y-auto flex-1">
                     <div id="requestList" class="space-y-2">
@@ -237,7 +258,8 @@
 
             <div class="flex-1 bg-white p-2 md:p-6 overflow-y-auto h-full relative w-full" id="mainContentArea">
                 
-                <div id="initialView" class="hidden text-center py-20 md:py-40"></div>
+                <div id="initialView" class="hidden text-center py-20 md:py-40">
+                    </div>
                 
                 <div id="reviewView" class="hidden flex flex-col h-full">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-3 border-b mb-4 gap-2">
@@ -251,7 +273,10 @@
                     <div id="approvalActionsContainer" class="w-full"></div>
                     
                     <div id="supportingDocTrigger" class="mb-4">
-                         <button onclick="openForm1Modal()" class="flex items-center space-x-2 text-[#15803d] hover:text-green-800 font-bold bg-green-50 px-4 py-3 rounded-lg border border-green-200 w-full justify-center hover:bg-green-100 transition text-sm md:text-base">
+                         <button onclick="openForm1Modal()" class="flex items-center space-x-2 text-[#15803d] hover:text-green-800 font-bold bg-green-50 px-2 md:px-4 py-2 rounded-lg border border-green-200 w-full justify-center hover:bg-green-100 transition text-sm md:text-base">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
                             <span>📄 View Approved Proposal (Form 1)</span>
                          </button>
                     </div>
@@ -266,9 +291,9 @@
                     <div class="flex flex-col md:flex-row justify-between items-center mb-4 md:mb-6 gap-3">
                         <h2 class="text-xl md:text-3xl font-bold text-gray-800">Facility Calendar</h2>
                         <div class="flex items-center space-x-2">
-                            <button onclick="changeCalendarMonth(-1)" class="p-2 bg-gray-200 rounded hover:bg-gray-300 min-h-[44px] min-w-[44px]">&lt;</button>
+                            <button onclick="changeCalendarMonth(-1)" class="p-2 bg-gray-200 rounded hover:bg-gray-300">&lt;</button>
                             <span id="calendarMonthYear" class="font-bold text-lg md:text-xl w-32 md:w-40 text-center">Month Year</span>
-                            <button onclick="changeCalendarMonth(1)" class="p-2 bg-gray-200 rounded hover:bg-gray-300 min-h-[44px] min-w-[44px]">&gt;</button>
+                            <button onclick="changeCalendarMonth(1)" class="p-2 bg-gray-200 rounded hover:bg-gray-300">&gt;</button>
                         </div>
                     </div>
 
@@ -292,31 +317,44 @@
             </div>
         </main>
 
+        <div id="form1Modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-2 md:p-4">
+            <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
+                <div class="sticky top-0 bg-white border-b p-3 md:p-4 flex justify-between items-center z-10">
+                    <h3 class="text-lg md:text-xl font-bold text-gray-800">Proposal Letter</h3>
+                    <button onclick="closeForm1Modal()" class="text-gray-500 hover:text-red-600 text-2xl font-bold">&times;</button>
+                </div>
+                <div class="p-2 md:p-4 bg-gray-100">
+                    <div id="form1ModalContent" class="bg-white shadow-lg mx-auto w-full">
+                        </div>
+                </div>
+            </div>
+        </div>
+
         <div id="eventModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg w-full max-w-md shadow-xl overflow-hidden animate-fade-in-down max-h-[90vh] overflow-y-auto">
+            <div class="bg-white rounded-lg w-full max-w-md shadow-xl overflow-hidden animate-fade-in-down">
                 <div class="bg-[#15803d] p-4 flex justify-between items-center">
                     <h3 class="text-xl font-bold text-white" id="eventModalTitle">Plot New Event</h3>
-                    <button onclick="closeEventModal()" class="text-white hover:text-gray-200 text-2xl min-h-[44px] min-w-[44px]">&times;</button>
+                    <button onclick="closeEventModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
                 </div>
-                <div class="p-6 space-y-4">
+                <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
                     <input type="hidden" id="eventDateHidden">
                     <input type="hidden" id="eventIdHidden"> 
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">Event Title <span class="text-red-500">*</span></label>
-                        <input type="text" id="eventTitleInput" class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none h-11" placeholder="e.g., Basketball Practice">
+                        <input type="text" id="eventTitleInput" class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none" placeholder="e.g., Basketball Practice">
                     </div>
                     
                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                              <label class="block text-sm font-bold text-gray-700 mb-1">Date</label>
-                             <input type="text" id="eventDateDisplay" disabled class="w-full bg-gray-100 border border-gray-300 p-2 rounded text-gray-500 cursor-not-allowed h-11">
+                             <input type="text" id="eventDateDisplay" disabled class="w-full bg-gray-100 border border-gray-300 p-2 rounded text-gray-500 cursor-not-allowed">
                         </div>
                         <div>
                              <label class="block text-sm font-bold text-gray-700 mb-1">Time</label>
                              <div class="flex space-x-1">
-                                 <select id="eventStartTime" class="w-1/2 border border-gray-300 p-2 rounded text-xs focus:ring-green-500 outline-none h-11"></select>
+                                 <select id="eventStartTime" class="w-1/2 border border-gray-300 p-2 rounded text-xs focus:ring-green-500 outline-none"></select>
                                  <span class="self-center">-</span>
-                                 <select id="eventEndTime" class="w-1/2 border border-gray-300 p-2 rounded text-xs focus:ring-green-500 outline-none h-11"></select>
+                                 <select id="eventEndTime" class="w-1/2 border border-gray-300 p-2 rounded text-xs focus:ring-green-500 outline-none"></select>
                              </div>
                         </div>
                     </div>
@@ -328,67 +366,53 @@
         
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">Status</label>
-                        <select id="eventStatusInput" class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none h-11">
+                        <select id="eventStatusInput" class="w-full border border-gray-300 p-2 rounded focus:ring-green-500 focus:border-green-500 outline-none">
                             <option value="confirmed">Confirmed</option>
                             <option value="temporary">Temporary Plot</option>
                         </select>
                     </div>
         
                     <div class="flex flex-col md:flex-row justify-between pt-4 border-t items-center gap-2">
-                        <button id="btnDeleteEvent" onclick="deleteCurrentEvent()" class="w-full md:w-auto px-4 py-3 bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-bold hidden">🗑 Delete</button>
+                        <button id="btnDeleteEvent" onclick="deleteCurrentEvent()" class="w-full md:w-auto px-4 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-bold hidden">🗑 Delete</button>
                          <div class="flex space-x-2 ml-auto w-full md:w-auto justify-end">
-                            <button onclick="closeEventModal()" class="w-1/2 md:w-auto px-4 py-3 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Cancel</button>
-                            <button onclick="saveEvent()" class="w-1/2 md:w-auto px-4 py-3 bg-[#15803d] text-white rounded hover:bg-green-700 font-bold shadow transition">Save</button>
+                            <button onclick="closeEventModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Cancel</button>
+                            <button onclick="saveEvent()" class="px-4 py-2 bg-[#15803d] text-white rounded hover:bg-green-700 font-bold shadow transition">Save</button>
                          </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="form1Modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-2 md:p-4">
-             <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
-                <div class="sticky top-0 bg-white border-b p-3 md:p-4 flex justify-between items-center z-10">
-                    <h3 class="text-lg md:text-xl font-bold text-gray-800">Proposal Letter</h3>
-                    <button onclick="closeForm1Modal()" class="text-gray-500 hover:text-red-600 text-2xl font-bold min-h-[44px] min-w-[44px]">&times;</button>
-                </div>
-                <div class="p-2 md:p-4 bg-gray-100">
-                    <div id="form1ModalContent" class="bg-white shadow-lg mx-auto w-full"></div>
-                </div>
-            </div>
-        </div>
-        
         <div id="appointmentModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-lg w-full max-w-md shadow-xl overflow-hidden animate-fade-in-down">
                 <div class="bg-yellow-500 p-4 flex justify-between items-center">
                     <h3 class="text-xl font-bold text-white">📅 Set Appointment</h3>
-                    <button onclick="closeAppointmentModal()" class="text-white hover:text-gray-200 text-2xl min-h-[44px] min-w-[44px]">&times;</button>
+                    <button onclick="closeAppointmentModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
                 </div>
                 <div class="p-6 space-y-4">
+                    <p class="text-sm text-gray-600 mb-2">Schedule a meeting with the requester before proceeding.</p>
                     <input type="hidden" id="apptRequestId">
+                    
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">Date</label>
-                        <input type="date" id="apptDate" class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none h-11">
+                        <input type="date" id="apptDate" class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none">
                     </div>
+                    
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">Time</label>
-                        <input type="time" id="apptTime" class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none h-11">
+                        <input type="time" id="apptTime" class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none">
                     </div>
+        
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Reason</label>
-                        <textarea id="apptReason" rows="3" class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none"></textarea>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Reason / Instruction</label>
+                        <textarea id="apptReason" rows="3" class="w-full border border-gray-300 p-2 rounded focus:ring-yellow-500 outline-none">Please meet me in the office to discuss the details of your request.</textarea>
                     </div>
+        
                     <div class="flex justify-end space-x-2 pt-4 border-t">
-                        <button onclick="closeAppointmentModal()" class="px-4 py-3 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Cancel</button>
-                        <button onclick="submitAppointment()" class="px-4 py-3 bg-yellow-500 text-white rounded hover:bg-yellow-600 font-bold shadow transition">Set Appointment</button>
+                        <button onclick="closeAppointmentModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Cancel</button>
+                        <button onclick="submitAppointment()" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 font-bold shadow transition">Set Appointment</button>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <div id="customAlert" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-             <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full text-center mx-4">
-                <p id="alertMessage" class="text-gray-800 mb-4 font-semibold whitespace-pre-line"></p>
-                <button id="alertCloseBtn" class="px-6 py-3 bg-[#15803d] text-white rounded hover:bg-green-800 font-bold w-full">OK</button>
             </div>
         </div>
 
@@ -398,7 +422,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, update, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         
-        // ... (Firebase Config matches your original code) ...
         const firebaseConfig = {
             apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
             authDomain: "group4-ee960.firebaseapp.com",
@@ -411,75 +434,433 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-
-        // Global State & Utils matches your code
+        
         window.db = db; window.set = set; window.ref = ref; window.update = update; window.onValue = onValue; window.remove = remove; window.get = get;
-        let currentRequests = []; let activeRequest = null; let currentRoleKey = null; let currentUserName = '';
+        
+        let currentRequests = []; let activeRequest = null; let currentRoleKey = null; let currentUserName = ''; 
+
         const approvalOrder = ['pmOfficer', 'pmgsdDirector'];
         const roleLabels = { pmOfficer: 'VP Admin & Linkages (Recommending)', pmgsdDirector: 'OIC-Director PMGSD (Approving)' };
         const userDetails = { pmOfficer: 'Mr. Colin B. Garcia', pmgsdDirector: 'Alfredo Glenn H. Beaño' };
         let userCredentials = { 'colin': { role: 'pmOfficer', password: 'admin' }, 'alfredo': { role: 'pmgsdDirector', password: 'admin' } };
-        let calendarMonth = new Date().getMonth(); let calendarYear = new Date().getFullYear();
+        let calendarMonth = new Date().getMonth();
+        let calendarYear = new Date().getFullYear();
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         let calendarEvents = [];
 
-        // UI Functions
         window.showView = function(viewId) {
             document.getElementById('landingView').classList.add('hidden');
             document.getElementById('signupView').classList.add('hidden');
             document.getElementById('approverView').classList.add('hidden');
             document.getElementById(viewId).classList.remove('hidden');
-            // Ensure Flex display for approver view
+            
             if (viewId === 'approverView') {
-                document.getElementById('approverView').classList.add('flex');
+                document.getElementById('approverView').classList.add('w-full', 'max-w-7xl', 'flex');
+            } else {
+                document.getElementById('approverView').classList.remove('w-full', 'max-w-7xl', 'flex');
             }
         };
 
         window.handleLogin = function() {
             const username = document.getElementById('usernameInput').value.trim();
             const password = document.getElementById('passwordInput').value.trim();
+            
             if (!username || !password) return customAlert('Please enter both username and password.');
+
             const user = userCredentials[username];
             if (user && user.password === password) {
                 currentRoleKey = user.role;
                 currentUserName = userDetails[currentRoleKey] || `User: ${username}`;
+                
                 document.getElementById('approverRoleDisplay').innerText = `Role: ${roleLabels[currentRoleKey].split('(')[0]}`;
+                document.getElementById('approverNameDisplay').innerText = `Welcome, ${currentUserName.split('(')[0].trim()}`;
+
                 document.getElementById('initialView').classList.add('hidden'); 
                 document.getElementById('reviewView').classList.add('hidden');
+                
                 renderRequestList(); 
                 window.showView('approverView');
+               
                 populateTimeDropdowns();
                 window.loadCalendarView();
+                
                 document.getElementById('usernameInput').value = '';
                 document.getElementById('passwordInput').value = '';
-            } else { customAlert('❌ Invalid Username or Password.'); }
+            } else {
+                customAlert('❌ Invalid Username or Password.\nPlease try again.');
+            }
+        };
+
+        window.handleSignup = function() {
+            const role = document.getElementById('signupRole').value;
+            const username = document.getElementById('signupUsername').value.trim();
+            const password = document.getElementById('signupPassword').value.trim();
+            if (!role) return customAlert('Please select a role.');
+            if (!username) return customAlert('Please choose a username.');
+            if (!password) return customAlert('Please create a password.');
+            
+            if (userCredentials[username]) return customAlert('⚠️ Username already exists. Please choose another.');
+            userCredentials[username] = { role: role, password: password };
+            if (!userDetails[role]) userDetails[role] = `New User (${username})`;
+            customAlert('✅ Account created successfully!\nPlease log in.');
+            document.getElementById('signupRole').selectedIndex = 0;
+            document.getElementById('signupUsername').value = '';
+            document.getElementById('signupPassword').value = '';
+            window.showView('landingView');
         };
 
         window.toggleSidebar = function() {
             document.getElementById('sidebarPanel').classList.toggle('hidden-sidebar');
         };
 
-        // --- Render Form 2 Content (UPDATED FOR RESPONSIVENESS) ---
-        // This replaces fixed widths with Flexbox wrapping for the form fields
-        window.renderForm2Content = function(request) {
+        // --- CALENDAR & EVENT FUNCTIONS ---
+        window.loadCalendarView = function() {
+            document.getElementById('initialView').classList.add('hidden');
+            document.getElementById('reviewView').classList.add('hidden');
+            const calView = document.getElementById('calendarMainView');
+            calView.classList.remove('hidden');
+            calView.classList.add('flex');
+            const editHint = document.getElementById('editHint');
+            if (currentRoleKey === 'pmgsdDirector') editHint.classList.remove('hidden');
+            else editHint.classList.add('hidden');
+            renderMainCalendar();
+        };
+        window.changeCalendarMonth = function(delta) {
+            calendarMonth += delta;
+            if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+            else if (calendarMonth < 0) { calendarMonth = 11;
+            calendarYear--; }
+            renderMainCalendar();
+        };
+        window.showEventDetailsFromCalendar = function(eventId) {
+            const event = calendarEvents.find(e => e.id == eventId);
+            if (!event) return;
+            customAlert(`📅 Event Details:\n\n📌 Title: ${event.title}\n📝 Purpose: ${event.description || 'N/A'}\n🕒 Time: ${event.time || 'Not Set'}\n🗓️ Date: ${event.date}`);
+        };
+        window.addEvent = function(dateStr) {
+            if (currentRoleKey !== 'pmgsdDirector') return;
+            document.getElementById('eventModalTitle').innerText = "Plot New Event";
+            document.getElementById('eventDateHidden').value = dateStr;
+            document.getElementById('eventDateDisplay').value = dateStr;
+            document.getElementById('eventIdHidden').value = ""; 
+            document.getElementById('eventTitleInput').value = '';
+            document.getElementById('eventDescInput').value = '';
+            document.getElementById('eventStatusInput').value = 'confirmed';
+            document.getElementById('btnDeleteEvent').classList.add('hidden');
+            document.getElementById('eventStartTime').value = "8:00 AM";
+            document.getElementById('eventEndTime').value = "5:00 PM";
+            document.getElementById('eventModal').classList.remove('hidden');
+            document.getElementById('eventTitleInput').focus();
+        };
+
+        window.editEvent = function(id) {
+            if (currentRoleKey !== 'pmgsdDirector') return;
+            const event = calendarEvents.find(e => e.id == id);
+            if (!event) return;
+            document.getElementById('eventModalTitle').innerText = "Edit Event";
+            document.getElementById('eventDateHidden').value = event.date;
+            document.getElementById('eventDateDisplay').value = event.date;
+            document.getElementById('eventIdHidden').value = event.id;
+            document.getElementById('eventTitleInput').value = event.title;
+            document.getElementById('eventDescInput').value = event.description || '';
+            document.getElementById('eventStatusInput').value = event.status;
+            document.getElementById('btnDeleteEvent').classList.remove('hidden');
+            if (event.time && event.time.includes('-')) {
+                const parts = event.time.split('-').map(s => s.trim());
+                if (parts.length === 2) {
+                    const startOpt = document.querySelector(`#eventStartTime option[value="${parts[0]}"]`);
+                    const endOpt = document.querySelector(`#eventEndTime option[value="${parts[1]}"]`);
+                    if (startOpt) document.getElementById('eventStartTime').value = parts[0];
+                    if (endOpt) document.getElementById('eventEndTime').value = parts[1];
+                }
+            }
+            document.getElementById('eventModal').classList.remove('hidden');
+        };
+
+        window.closeEventModal = function() { document.getElementById('eventModal').classList.add('hidden'); };
+
+        window.saveEvent = function() {
+            let id = document.getElementById('eventIdHidden').value;
+            const title = document.getElementById('eventTitleInput').value.trim();
+            const date = document.getElementById('eventDateHidden').value;
+            const desc = document.getElementById('eventDescInput').value.trim();
+            const status = document.getElementById('eventStatusInput').value;
+            const start = document.getElementById('eventStartTime').value;
+            const end = document.getElementById('eventEndTime').value;
+            const time = `${start} - ${end}`;
+            if (!title) { alert('Please enter an event title.'); return; }
+            const startTimeIndex = document.getElementById('eventStartTime').selectedIndex;
+            const endTimeIndex = document.getElementById('eventEndTime').selectedIndex;
+            if (endTimeIndex <= startTimeIndex) { alert("End time must be after start time."); return; }
+            if (!id) { id = "EVT-" + Date.now(); }
+            const eventData = { id: id, title: title, date: date, time: time, status: status, description: desc };
+            window.set(window.ref(window.db, 'events/' + id), eventData)
+                .then(() => { customAlert("✅ Event saved to cloud!"); window.closeEventModal(); })
+                .catch((err) => { alert("Error saving: " + err.message); });
+        };
+
+        window.deleteCurrentEvent = function() {
+            const id = document.getElementById('eventIdHidden').value;
+            if (!id) return;
+            if(confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+                window.remove(window.ref(window.db, 'events/' + id))
+                    .then(() => { customAlert("🗑 Event deleted from cloud."); window.closeEventModal(); })
+                    .catch((err) => { alert("Error deleting: " + err.message); });
+            }
+        };
+        
+        // --- REQUEST & APPROVAL FUNCTIONS ---
+        window.loadRequest = function(requestId) {
+            activeRequest = currentRequests.find(r => r.id === requestId);
+            if (!activeRequest) return;
+            document.getElementById('initialView').classList.add('hidden');
+            document.getElementById('reviewView').classList.remove('hidden');
+            document.getElementById('calendarMainView').classList.add('hidden');
+            
+            // Auto hide sidebar on mobile
+            if (window.innerWidth < 768) {
+                document.getElementById('sidebarPanel').classList.add('hidden-sidebar');
+            }
+
+            document.getElementById('activityTitleHeader').innerText = `Activity: ${activeRequest.activityName}`;
+            document.getElementById('currentStatusTag').innerText = `Status: ${activeRequest.status}`;
+            document.getElementById('currentStatusTag').className = `px-3 py-1 text-sm font-semibold rounded-full ${getStatusClass(activeRequest.status)}`;
+
+            const stepKey = getCurrentApprovalStep(activeRequest);
+            if (['pmOfficer', 'pmgsdDirector'].includes(stepKey)) {
+                document.getElementById('supportingDocTrigger').classList.remove('hidden');
+            } else {
+                document.getElementById('supportingDocTrigger').classList.add('hidden');
+            }
+            renderReadOnlyForm(activeRequest);
+            renderApprovalActions(activeRequest);
+        };
+        window.processApproval = function(requestId, action) {
+            const requestIndex = currentRequests.findIndex(r => r.id === requestId);
+            const request = currentRequests[requestIndex];
+            const currentStepKey = getCurrentApprovalStep(request);
+            const remarks = document.getElementById('approverRemarks').value.trim();
+
+            if (currentStepKey !== currentRoleKey) return customAlert('Not your turn.');
+            if (action === 'Rejected' && !remarks) return customAlert("⚠️ Please provide a reason for rejection.");
+
+            let newGlobalStatus = request.status;
+            if (action === 'Rejected') { newGlobalStatus = 'Rejected'; } 
+            else if (action === 'Appointment Set') { newGlobalStatus = `Appointment Set by ${roleLabels[currentStepKey]}`; } 
+            else {
+                const nextIndex = approvalOrder.indexOf(currentStepKey) + 1;
+                if (nextIndex < approvalOrder.length) { newGlobalStatus = `Pending ${roleLabels[approvalOrder[nextIndex]]}`; } 
+                else { newGlobalStatus = 'Approved (Completed)'; }
+            }
+
+            const updates = {};
+            const basePath = `requests/${requestId}`;
+            updates[`${basePath}/status`] = newGlobalStatus;
+            updates[`${basePath}/approvals/${currentStepKey}/status`] = action;
+            updates[`${basePath}/approvals/${currentStepKey}/name`] = currentUserName;
+            updates[`${basePath}/approvals/${currentStepKey}/remarks`] = remarks;
+            updates[`${basePath}/approvals/${currentStepKey}/date`] = new Date().toISOString().split('T')[0];
+            window.update(window.ref(window.db), updates)
+                .then(() => { customAlert(`Request ${action} and saved to cloud!`); })
+                .catch((err) => { customAlert("Error saving to cloud: " + err.message); });
+        };
+
+        // --- FORM 1 MODAL ---
+        window.openForm1Modal = function() {
+            if(!activeRequest) return;
+            document.getElementById('form1ModalContent').innerHTML = renderForm1Content(activeRequest);
+            document.getElementById('form1Modal').classList.remove('hidden');
+        };
+        window.closeForm1Modal = function() { document.getElementById('form1Modal').classList.add('hidden'); };
+        
+        // --- APPOINTMENT MODAL ---
+        window.openAppointmentModal = function(requestId) {
+            document.getElementById('apptRequestId').value = requestId;
+            document.getElementById('apptDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('apptReason').value = "Please meet me in the office to discuss the details of your request.";
+            document.getElementById('appointmentModal').classList.remove('hidden');
+        };
+        window.closeAppointmentModal = function() { document.getElementById('appointmentModal').classList.add('hidden'); };
+        
+        window.submitAppointment = function() {
+            const requestId = document.getElementById('apptRequestId').value;
+            const d = document.getElementById('apptDate').value;
+            const t = document.getElementById('apptTime').value;
+            const r = document.getElementById('apptReason').value.trim();
+            if (!d || !t || !r) { alert("Please fill in all appointment details."); return; }
+            
+            const requestIndex = currentRequests.findIndex(req => req.id === requestId);
+            if (requestIndex === -1) return;
+            const request = currentRequests[requestIndex];
+            const currentStepKey = getCurrentApprovalStep(request);
+            if (!currentStepKey) return;
+            
+            const updates = {};
+            const basePath = `requests/${requestId}`;
+            const appointmentDetails = `Date: ${d}, Time: ${t}\nReason: ${r}`;
+            updates[`${basePath}/status`] = `Appointment Set by ${roleLabels[currentStepKey]}`;
+            updates[`${basePath}/approvals/${currentStepKey}/status`] = 'Appointment Set';
+            updates[`${basePath}/approvals/${currentStepKey}/name`] = currentUserName;
+            updates[`${basePath}/approvals/${currentStepKey}/remarks`] = appointmentDetails;
+            updates[`${basePath}/approvals/${currentStepKey}/date`] = new Date().toISOString().split('T')[0];
+            window.update(window.ref(window.db), updates)
+                .then(() => { window.closeAppointmentModal(); customAlert(`📅 Appointment Set.\n${appointmentDetails}`); })
+                .catch((err) => { alert("Error saving appointment: " + err.message); });
+        };
+
+        // --- UTILITY & RENDER HELPERS ---
+        function customAlert(message) {
+            const container = document.body;
+            let modal = document.getElementById('customAlert');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'customAlert';
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                modal.innerHTML = `
+                    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full text-center mx-4">
+                        <p id="alertMessage" class="text-gray-800 mb-4 font-semibold whitespace-pre-line"></p>
+                        <button id="alertCloseBtn" class="px-4 py-2 bg-[#15803d] text-white rounded hover:bg-green-800">OK</button>
+                    </div>
+                `;
+                container.appendChild(modal);
+                document.getElementById('alertCloseBtn').onclick = () => modal.classList.add('hidden');
+            }
+            document.getElementById('alertMessage').innerText = message;
+            modal.classList.remove('hidden');
+        }
+
+        function populateTimeDropdowns() {
+            const startSelect = document.getElementById('eventStartTime');
+            const endSelect = document.getElementById('eventEndTime');
+            startSelect.innerHTML = ''; endSelect.innerHTML = '';
+            const times = [];
+            for(let h = 7; h <= 22; h++) {
+                for(let m = 0; m < 60; m += 30) {
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    const displayH = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+                    const displayM = m === 0 ? '00' : '30';
+                    const timeStr = `${displayH}:${displayM} ${ampm}`;
+                    times.push(timeStr);
+                }
+            }
+            times.forEach(t => { startSelect.innerHTML += `<option value="${t}">${t}</option>`; endSelect.innerHTML += `<option value="${t}">${t}</option>`; });
+            startSelect.value = "8:00 AM"; endSelect.value = "5:00 PM";
+        }
+
+        function renderMainCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const monthYearDisplay = document.getElementById('calendarMonthYear');
+            monthYearDisplay.innerText = `${monthNames[calendarMonth]} ${calendarYear}`;
+            grid.innerHTML = '';
+            const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+            const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="border-b border-r border-gray-200 bg-gray-50"></div>`;
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${calendarYear}-${String(calendarMonth+1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayEvents = calendarEvents.filter(e => e.date === dateStr);
+                const isEditable = currentRoleKey === 'pmgsdDirector';
+                let dayHtml = `<div class="calendar-day border-b border-r border-gray-200 relative ${isEditable ? 'editable-day' : ''}" 
+                                onclick="${isEditable ? `addEvent('${dateStr}')` : ''}"><span class="font-bold text-gray-700 text-xs md:text-base p-1">${day}</span>`;
+                dayEvents.forEach(ev => {
+                    const colorClass = ev.status === 'confirmed' ? 'event-confirmed' : 'event-temporary';
+                    dayHtml += `<div class="calendar-event ${colorClass} mt-1 rounded truncate" 
+                                     onclick="event.stopPropagation(); ${isEditable ? `editEvent('${ev.id}')` : `showEventDetailsFromCalendar('${ev.id}')`}">${ev.title}</div>`;
+                });
+                dayHtml += `</div>`;
+                grid.innerHTML += dayHtml;
+            }
+        }
+
+        function renderRequestList() {
+            const listEl = document.getElementById('requestList');
+            const pendingCountEl = document.getElementById('pendingCount');
+            listEl.innerHTML = '';
+            const myRelevantRequests = currentRequests.filter(r => {
+                const stepKey = getCurrentApprovalStep(r);
+                if (stepKey === null && r.status.includes('Approved')) return true; 
+                return stepKey === currentRoleKey;
+            });
+            const pendingForMe = myRelevantRequests.filter(r => getCurrentApprovalStep(r) === currentRoleKey);
+            pendingCountEl.innerText = pendingForMe.length;
+            if (myRelevantRequests.length === 0) {
+                 listEl.innerHTML = `<p class="text-gray-500 italic p-4">No requests require your action at this time.</p>`;
+            }
+            myRelevantRequests.forEach(request => {
+                const stepKey = getCurrentApprovalStep(request);
+                const isActionable = stepKey === currentRoleKey;
+                const actionableClass = isActionable ? 'bg-white hover:border-[#15803d] border border-gray-200' : 'bg-gray-100 opacity-80';
+                let statusText = request.status.includes('Appointment') ? '📅 Appointment Set' : `Review Logistics`;
+                listEl.innerHTML += `
+                    <div class="request-item p-3 rounded-lg shadow-sm ${actionableClass} transition active:ring-2 ring-green-500"
+                         onclick="loadRequest('${request.id}')">
+                        <p class="text-base font-bold text-gray-800">${request.activityName}</p>
+                        <p class="text-xs text-gray-500">Date: ${request.activityDate}</p>
+                        <div class="mt-2 flex justify-between items-center">
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${getStatusClass(request.status)}">${isActionable ? statusText : request.status}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function getCurrentApprovalStep(request) {
+            if (!request.approvals) return null;
+            for (const key of approvalOrder) {
+                if (request.approvals[key].status === 'Pending' || request.approvals[key].status === 'Appointment Set') return key;
+            }
+            return null;
+        }
+
+        function getStatusClass(status) {
+            if (status.includes('Approved') || status.includes('Submitted') || status.includes('Verified')) return 'bg-green-100 text-green-800';
+            if (status.includes('Rejected')) return 'bg-red-100 text-red-800';
+            if (status.includes('Appointment')) return 'bg-yellow-200 text-yellow-900 border border-yellow-400';
+            if (status.includes('Pending')) return 'bg-yellow-100 text-yellow-800';
+            return 'bg-gray-100 text-gray-800';
+        }
+
+        function renderReadOnlyForm(request) {
+            document.querySelector('#readOnlyFormContainer .form-container').innerHTML = renderForm2Content(request);
+        }
+
+        // FIX 3: Adaptive HTML Structure for Form 2 (Stack on Mobile, Side-by-side on Desktop)
+        function renderForm2Content(request) {
+            const deptHead = request.approvals?.deptHead || {};
+            const pmOfficer = request.approvals?.pmOfficer || {};
+            const pmgsdDirector = request.approvals?.pmgsdDirector || {};
+            const venues = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
+            const equipments = Array.isArray(request.equipment) ? request.equipment : (request.equipment ? Object.values(request.equipment) : []);
             const val = (v) => v || '';
             const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
             const formatDate = (dateStr) => {
                 if (!dateStr) return '';
                 const parts = dateStr.split('-');
-                return parts.length === 3 ? `${parts[1]}/${parts[2]}/${parts[0]}` : dateStr;
+                if (parts.length !== 3) return dateStr; 
+                return `${parts[1]}/${parts[2]}/${parts[0]}`;
             };
+            const getEquip = (name, field) => {
+                const item = equipments.find(e => e.name === name);
+                return item ? item[field] : '';
+            };
+            const isEquipChecked = (name) => {
+                return equipments.some(e => e.name === name) ? 'checked' : '';
+            };
+            const manpower = request.manpower || {};
             
-            // Note: Injected HTML now uses flex-wrap and percentage widths (w-full md:w-1/2)
             return `
                 <div class="form-header flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 mb-6">
+                    <img src="pnc-logo.png" onerror="this.style.display='none'" alt="PnC Seal" class="w-20 h-20 object-contain">
                     <div class="text-center">
+                        <p class="text-sm">Republic of the Philippines</p>
                         <h2 class="text-xl md:text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
+                        <p class="text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
+                        <p class="text-sm italic">Administration and Finance Division</p>
                         <p class="font-bold text-gray-700 mt-1">Property Management and General Services Department</p>
+                        <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
                     </div>
                 </div>
 
-                <div class="form-title text-black bg-gray-300">EQUIPMENT AND VENUE RESERVATION FORM</div>
+                <div class="form-title text-black bg-gray-300" style="border: none;">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
 
                 <div class="border-b border-black p-2 md:p-4 space-y-4 text-sm text-black">
                     <div class="flex flex-col md:flex-row gap-4">
@@ -491,53 +872,300 @@
                             <label class="font-normal text-gray-600">Date of Filing:</label>
                             <div class="read-only-field">${formatDate(request.filingDate)}</div>
                         </div>
-                    </div>
-                    
-                    <div class="flex flex-col md:flex-row gap-4">
-                         <div class="flex-1">
+                        <div class="flex-1">
                             <label class="font-normal text-gray-600">Department:</label>
                             <div class="read-only-field">${val(request.department)}</div>
                         </div>
+                    </div>
+                    
+                    <div class="flex flex-col md:flex-row gap-4">
                         <div class="flex-1">
                             <label class="font-normal text-gray-600">Activity Date:</label>
                             <div class="read-only-field">${formatDate(request.activityDate)}</div>
                         </div>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600">Time:</label>
+                            <div class="read-only-field">${val(request.time)}</div>
+                        </div>
                     </div>
 
                     <div>
-                        <label class="font-normal text-gray-600">Activity Name:</label>
+                        <label class="font-normal text-gray-600">Activity Name/Title/Purpose:</label>
                         <div class="read-only-field">${val(request.activityName)}</div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-4 md:items-end">
+                        <div class="w-full md:w-1/3 font-normal text-gray-600">Expected # of Participants:</div>
+                        <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span>
+                            <div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div>
+                        </div>
+                        <div class="flex-1 flex items-center"><span class="mr-2">External:</span>
+                            <div class="read-only-field w-20 text-center">${val(request.externalParticipants)}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-black border-t-0 flex flex-col md:flex-row text-black">
+                    <div class="w-full md:w-40 font-bold p-2 bg-gray-50 border-b md:border-b-0 md:border-r border-black flex items-center">Venue Reservation</div>
+                    <div class="flex-1 p-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Gym Stage / Court')} class="accent-black"> <span class="${isChecked(venues, 'Gym Stage / Court') ? 'font-bold' : ''}">Gym Stage / Court</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Multi-Purpose Hall')} class="accent-black"> <span class="${isChecked(venues, 'Multi-Purpose Hall') ? 'font-bold' : ''}">Multi-Purpose Hall</span></label>
+                        
+                        <div class="flex items-center space-x-2">
+                             <input type="checkbox" disabled ${venues.some(v => v.includes('Classroom')) ? 'checked' : ''}> 
+                             <span>Classroom #</span> 
+                             <div class="read-only-field w-16 text-center">${(venues.find(v => v.includes('Classroom')) || '').replace('Classroom', '').trim()}</div>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                             <input type="checkbox" disabled ${venues.some(v => v.includes('Laboratory')) ? 'checked' : ''}> 
+                             <span>Laboratory #</span> 
+                             <div class="read-only-field w-16 text-center">${(venues.find(v => v.includes('Laboratory')) || '').replace('Laboratory', '').trim()}</div>
+                        </div>
+
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Library')} class="accent-black"> <span class="${isChecked(venues, 'Library') ? 'font-bold' : ''}">Library</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Cafeteria')} class="accent-black"> <span class="${isChecked(venues, 'Cafeteria') ? 'font-bold' : ''}">Cafeteria</span></label>
+                        
+                        <div class="col-span-1 md:col-span-2 flex items-center space-x-2">
+                            <input type="checkbox" disabled ${venues.some(v => v.includes('Others:')) ? 'checked' : ''}> 
+                            <span>Others:</span> 
+                            <div class="read-only-field flex-1">${(venues.find(v => v.includes('Others:')) || '').replace('Others:', '').trim()}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-black border-t-0 flex flex-col md:flex-row text-black">
+                    <div class="w-full md:w-40 font-bold p-2 bg-gray-50 border-b md:border-b-0 md:border-r border-black">
+                        <p>Equipment Reservation</p>
+                        <p class="mt-4 text-xs font-bold">Set-up Details:</p>
+                        <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
+                            <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressDate)}</span></p>
+                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressTime)}</span></p>
+                            <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressDate)}</span></p>
+                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressTime)}</span></p>
+                        </div>
+                    </div>
+                    <div class="flex-1 p-2 text-sm">
+                        <div class="grid grid-cols-1 gap-2 mb-2">
+                            <div class="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" disabled ${getEquip('Chair', 'count') ? 'checked' : ''} class="accent-black"> 
+                                    <span class="${getEquip('Chair', 'count') ? 'font-bold' : ''}">Chair #</span> 
+                                    <div class="read-only-field w-16 text-center font-bold">${getEquip('Chair', 'count')}</div>
+                                </div>
+                                <div class="flex items-center space-x-2 flex-1">
+                                    <span>Type:</span> <div class="read-only-field flex-1 font-bold min-w-[100px]">${getEquip('Chair', 'type')}</div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" disabled ${getEquip('Table', 'count') ? 'checked' : ''} class="accent-black"> 
+                                    <span class="${getEquip('Table', 'count') ? 'font-bold' : ''}">Table #</span> 
+                                    <div class="read-only-field w-16 text-center font-bold">${getEquip('Table', 'count')}</div>
+                                </div>
+                                <div class="flex items-center space-x-2 flex-1">
+                                    <span>Type:</span> <div class="read-only-field flex-1 font-bold min-w-[100px]">${getEquip('Table', 'type')}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Podium/Rostrum')} class="accent-black"> <span class="${isEquipChecked('Podium/Rostrum') ? 'font-bold' : ''}">Podium/Rostrum</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Sound System')} class="accent-black"> <span class="${isEquipChecked('Sound System') ? 'font-bold' : ''}">Sound System</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Electric fans')} class="accent-black"> <span class="${isEquipChecked('Electric fans') ? 'font-bold' : ''}">Electric fans</span></label>
+                            
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" disabled ${getEquip('Microphone', 'count') ? 'checked' : ''} class="accent-black"> 
+                                <span>Microphone #</span> 
+                                <div class="read-only-field w-12 text-center font-bold">${getEquip('Microphone', 'count')}</div>
+                            </div>
+
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Extension Cord')} class="accent-black"> <span class="${isEquipChecked('Extension Cord') ? 'font-bold' : ''}">Extension Cord</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Panel Board / White Board')} class="accent-black"> <span class="${isEquipChecked('Panel Board / White Board') ? 'font-bold' : ''}">Panel/White Board</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Philippine Flag')} class="accent-black"> <span class="${isEquipChecked('Philippine Flag') ? 'font-bold' : ''}">Philippine Flag</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Pamantasan ng Cabuyao Flag')} class="accent-black"> <span class="${isEquipChecked('Pamantasan ng Cabuyao Flag') ? 'font-bold' : ''}">PnC Flag</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Multi-media Projector')} class="accent-black"> <span class="${isEquipChecked('Multi-media Projector') ? 'font-bold' : ''}">Projector</span></label>
+                            
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" disabled ${equipments.some(e => e.name.includes('Others:')) ? 'checked' : ''}> 
+                                <span>Others:</span> 
+                                <div class="read-only-field w-full font-bold">${(equipments.find(e => e.name.includes('Others:'))?.name || '').replace('Others:', '').trim()}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-black border-t-0 flex flex-col md:flex-row text-black">
+                    <div class="w-full md:w-40 font-bold p-2 bg-gray-50 border-b md:border-b-0 md:border-r border-black flex items-center">Manpower Requirement</div>
+                    <div class="flex-1 p-2 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" disabled ${manpower.technical ? 'checked' : ''}> 
+                            <span>Technical</span> 
+                            <div class="read-only-field flex-1 font-bold">${val(manpower.technical)}</div>
+                        </div>
+             
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" disabled ${manpower.housekeeping ? 'checked' : ''}> 
+                            <span>Housekeeping</span> 
+                            <div class="read-only-field flex-1 font-bold">${val(manpower.housekeeping)}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-xs text-gray-600 mt-2 mb-6 space-y-1 italic p-2">
+                    <p>• Request must be submitted at least a week before the activity.</p>
+                    <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required.</p>
+                    <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mt-4 text-black text-xs">
+                    <div>
+                        <p class="font-bold mb-8 text-gray-700">Requested by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">${request.requestedBy}</div>
+                        <p class="mt-1">Signature over Printed Name/Date</p>
+                    </div>
+                    
+                    <div class="opacity-90">
+                        <p class="font-bold mb-8 text-gray-700">Reviewed by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || ''}</div>
+                        <p class="mt-1">Department/Division Head</p>
+                        <div class="text-[10px] font-bold ${getStatusClass(deptHead.status)} rounded-full inline-block px-2 mt-1">${deptHead.status}</div>
+                    </div>
+
+                    <div class="opacity-90">
+                        <p class="font-bold mb-8 text-gray-700">Recommended by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">Mr. Colin B. Garcia</div>
+                        <p class="mt-1">PM Officer</p>
+                        <div class="text-[10px] font-bold ${getStatusClass(pmOfficer.status)} rounded-full inline-block px-2 mt-1">${pmOfficer.status}</div>
+                    </div>
+
+                    <div class="opacity-90">
+                        <p class="font-bold mb-8 text-gray-700">Approved by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">Alfredo Glenn H. Beaño</div>
+                        <p class="mt-1">PMGSD Director</p>
+                        <div class="text-[10px] font-bold ${getStatusClass(pmgsdDirector.status)} rounded-full inline-block px-2 mt-1">${pmgsdDirector.status}</div>
                     </div>
                 </div>
             `;
-        };
+        }
         
-        // (Existing helper functions included in your full script remain here...)
-        // renderRequestList, renderMainCalendar, etc.
-        // I have ensured the containers these functions target are now flex/grid responsive in HTML above.
-        
-        // Function to bind renderForm2Content locally for the injected script
-        function renderForm2Content(request) { return window.renderForm2Content(request); }
-        
-        // Re-attaching necessary render logic for the preview to work
-        window.renderReadOnlyForm = function(request) {
-            document.querySelector('#readOnlyFormContainer .form-container').innerHTML = window.renderForm2Content(request);
+        function renderForm1Content(request) {
+            const deptHeadApproval = request.approvals.deptHead;
+            const ovpasApproval = request.approvals.ovpas || {name: '---', date: '', status: 'Pending'};
+            const oevpApproval = request.approvals.oevp || {name: '---', date: '', status: 'Pending'};
+            const oupApproval = request.approvals.oup || {name: '---', date: '', status: 'Pending'};
+            const logoUrl = 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c8/Pamantasan_ng_Cabuyao_Logo.png/220px-Pamantasan_ng_Cabuyao_Logo.png';
+            
+            function getLetterSignature(title, approval) {
+                const dateStr = approval.date ? new Date(approval.date).toLocaleDateString() : '---';
+                return `
+                    <div class="mt-4 mb-2">
+                        <div class="font-bold uppercase text-black">${approval.name}</div>
+                        <div class="text-xs font-semibold text-gray-600">${title}</div>
+                        <div class="text-[10px] text-green-700 font-bold">APPROVED - ${dateStr}</div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="bg-white p-4 md:p-8 text-gray-900 font-sans leading-relaxed relative">
+                    <div class="relative mb-10 flex flex-col items-center">
+                         <img src="${logoUrl}" alt="PnC Logo" class="w-16 h-16 md:w-24 md:h-24 object-contain mb-4 md:mb-0 md:absolute md:left-0">
+                        <div class="text-center relative z-10">
+                            <p class="text-xs font-serif text-gray-700">Republic of the Philippines</p>
+                            <h1 class="text-3xl md:text-5xl tracking-wide my-1 text-[#005728]" style="font-family: 'UnifrakturMaguntia', cursive;">University of Cabuyao</h1>
+                            <p class="text-sm font-bold tracking-widest text-gray-700 uppercase font-serif">(PAMANTASAN NG CABUYAO)</p>
+                            <p class="text-sm italic text-gray-700 mt-1 font-serif">Property Management and General Service Department</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5 font-serif">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
+                        </div>
+                    </div>
+                    <div class="mb-8"><p class="text-xs text-gray-500">(${request.id})</p><p class="mt-2 text-sm">${new Date(request.filingDate).toLocaleDateString()}</p></div>
+                    <div class="mb-6"><p class="font-bold text-sm">Dr. Roberto F. Rañola Jr.</p><p class="text-sm">OIC-University President</p></div>
+                    <div class="mb-8 pl-8"><p class="text-sm"><span class="font-bold">Thru: Mr. Colin B. Garcia</span></p><p class="text-sm ml-9">Vice President for Administration and Linkages</p></div>
+                    <div class="text-sm text-justify space-y-4">
+                        <p class="indent-8">I am writing to respectfully request your approval for the activity titled 
+                        "<span class="font-bold uppercase">${request.activityName}</span>". The purpose is ${request.form1 ? request.form1.purpose : 'to conduct activity'}.</p>
+                        <p class="indent-8">We would like to reserve <span class="font-bold">${request.venue ?
+                        request.venue.join(' and ') : 'Venue'}</span> on <span class="font-bold">${new Date(request.activityDate).toLocaleDateString()}</span>.</p>
+                        <p class="indent-8">Thank you very much for your favorable response.</p>
+                    </div>
+                    <div class="mt-8"><p class="text-sm mb-4">Respectfully yours,</p><div class="mt-4"><p class="font-bold uppercase">${request.requestedBy}</p><p class="text-sm text-gray-600">Requester / ${request.department}</p></div></div>
+         
+                    <div class="mt-10 pt-4 border-t-2 border-dashed border-gray-200">
+                        <p class="text-xs font-bold text-gray-400 uppercase mb-4">Administrative Action / Signatories</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
+                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Department / Division Head', deptHeadApproval)}</div>
+                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('OVPAS', ovpasApproval)}</div>
+                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Office of the Executive VP', oevpApproval)}</div>
+                            <div><p class="text-xs italic text-gray-500 font-bold">Approved / Disapproved:</p>${getLetterSignature('Office of the University President', oupApproval)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
-        // ... (Remaining logic regarding Firebase listeners matches your original file) ...
-        
-        // Utility for Custom Alert
-        function customAlert(message) {
-            const modal = document.getElementById('customAlert');
-            document.getElementById('alertMessage').innerText = message;
-            modal.classList.remove('hidden');
-            document.getElementById('alertCloseBtn').onclick = () => modal.classList.add('hidden');
+        function renderApprovalActions(request) {
+            const container = document.getElementById('approvalActionsContainer');
+            const currentStepKey = getCurrentApprovalStep(request);
+            const isMyTurn = currentRoleKey === currentStepKey;
+            
+            container.innerHTML = '';
+            if (isMyTurn) {
+                const approveText = currentStepKey === 'pmgsdDirector' ?
+                'Final Approval & Deployment' : 'Verify & Forward';
+                let actionTitle = `${roleLabels[currentStepKey]}'s Review`;
+                container.innerHTML = `
+                    <div id="approvalActions" class="p-3 md:p-4 bg-green-50 rounded-lg border-2 border-green-200 mb-6">
+                        <p class="font-bold text-[#15803d] mb-2">${actionTitle}</p>
+                        <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-3">
+                            <button onclick="window.processApproval('${request.id}', 'Approved')" class="w-full md:w-auto px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-sm">${approveText}</button>
+                            <button onclick="window.processApproval('${request.id}', 'Rejected')" class="w-full md:w-auto px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition shadow-sm">Reject</button>
+                            <button onclick="window.openAppointmentModal('${request.id}')" class="w-full md:w-auto px-6 py-3 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition shadow-sm">📅 Set Appointment</button>
+                            <input type="text" id="approverRemarks" placeholder="Add optional remarks..." class="w-full md:flex-grow p-2 border rounded-lg focus:ring-green-500 focus:border-green-500 outline-none">
+                        </div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `<div class="p-4 bg-gray-100 border-2 mb-6 font-semibold">Request status: ${request.status}</div>`;
+            }
         }
-        window.customAlert = customAlert;
 
         window.onload = () => { 
             window.showView('landingView');
-            // Firebase listeners setup...
+            const requestRef = window.ref(window.db, 'requests');
+            window.onValue(requestRef, (snapshot) => {
+                const data = snapshot.val();
+                currentRequests = [];
+
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        currentRequests.push(data[key]);
+                    });
+                }
+                if(currentRoleKey) 
+                renderRequestList();
+            });
+            const eventsRef = window.ref(window.db, 'events');
+            window.onValue(eventsRef, (snapshot) => {
+                const data = snapshot.val();
+                calendarEvents = [];
+                if(data) {
+                    Object.keys(data).forEach(key => calendarEvents.push(data[key]));
+                }
+                if(document.getElementById('calendarMainView') && !document.getElementById('calendarMainView').classList.contains('hidden')) {
+                    renderMainCalendar();
+                }
+            });
+        };
+        
+        window.debugFirebase = function() {
+            console.log("=== FIREBASE DATA CHECK ===");
+            const requestsRef = window.ref(window.db, 'requests');
+            window.get(requestsRef).then((snapshot) => {
+                const data = snapshot.val();
+                console.log("Data:", data);
+            });
         };
     </script>
 </body>
