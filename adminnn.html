@@ -878,41 +878,83 @@
             }
         }
 
-        function renderRequestList() {
+       function renderRequestList() {
             const listEl = document.getElementById('requestList');
             const pendingCountEl = document.getElementById('pendingCount');
             listEl.innerHTML = '';
             
-            const myRelevantRequests = currentRequests.filter(r => {
-                const stepKey = getCurrentApprovalStep(r);
-                if (stepKey === null && r.status.includes('Approved')) return true; 
-                return stepKey === currentRoleKey;
+            // 1. Segregate Requests
+            const pending = [];
+            const appointments = [];
+            const approved = [];
+            const rejected = [];
+
+            currentRequests.forEach(r => {
+                if (r.status.includes('Rejected')) {
+                    rejected.push(r);
+                } else if (r.status.includes('Approved (Completed)')) {
+                    approved.push(r);
+                } else if (r.status.includes('Appointment')) {
+                    appointments.push(r);
+                } else {
+                    // Only show pending if it's for the current user
+                    const stepKey = getCurrentApprovalStep(r);
+                    if (stepKey === currentRoleKey) {
+                        pending.push(r);
+                    }
+                }
             });
 
-            const pendingForMe = myRelevantRequests.filter(r => getCurrentApprovalStep(r) === currentRoleKey);
-            pendingCountEl.innerText = pendingForMe.length;
+            // 2. Update Counter (Actionable items only)
+            const actionableAppointments = appointments.filter(r => getCurrentApprovalStep(r) === currentRoleKey);
+            pendingCountEl.innerText = pending.length + actionableAppointments.length;
 
-            if (myRelevantRequests.length === 0) {
-                 listEl.innerHTML = `<p class="text-gray-500 italic p-4">No requests require your action at this time.</p>`;
-            }
-
-            myRelevantRequests.forEach(request => {
-                const stepKey = getCurrentApprovalStep(request);
-                const isActionable = stepKey === currentRoleKey;
-                const actionableClass = isActionable ? 'bg-white hover:border-[#15803d] border border-gray-200' : 'bg-gray-100 opacity-80';
-                let statusText = request.status.includes('Appointment') ? '📅 Appointment Set' : `Review Logistics`;
-
+            // 3. Render Helper Function
+            const renderSection = (title, items, icon) => {
+                if (items.length === 0) return;
+                
                 listEl.innerHTML += `
-                    <div class="request-item p-3 rounded-lg shadow-sm ${actionableClass} transition active:ring-2 ring-green-500"
-                         onclick="loadRequest('${request.id}')">
-                        <p class="text-base font-bold text-gray-800">${request.activityName}</p>
-                        <p class="text-xs text-gray-500">Date: ${request.activityDate}</p>
-                        <div class="mt-2 flex justify-between items-center">
-                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${getStatusClass(request.status)}">${isActionable ? statusText : request.status}</span>
+                    <div class="sticky top-0 bg-gray-50 z-10 py-2 border-b border-gray-200 mb-2 mt-2">
+                        <h3 class="text-xs font-black text-gray-500 uppercase tracking-wider flex items-center">
+                            ${icon} <span class="ml-1">${title}</span> 
+                            <span class="bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full text-[10px] ml-auto">${items.length}</span>
+                        </h3>
+                    </div>`;
+
+                items.forEach(request => {
+                    const stepKey = getCurrentApprovalStep(request);
+                    const isActionable = stepKey === currentRoleKey;
+                    
+                    // Highlight actionable items
+                    const activeClass = isActionable 
+                        ? 'border-l-4 border-green-500 shadow-md ring-1 ring-black/5' 
+                        : 'border-l-4 border-gray-300 opacity-75 grayscale-[0.5] hover:grayscale-0 hover:opacity-100';
+
+                    listEl.innerHTML += `
+                        <div class="request-item bg-white p-3 rounded-r-lg mb-3 cursor-pointer transition-all hover:translate-x-1 ${activeClass}"
+                             onclick="loadRequest('${request.id}')">
+                            <div class="flex justify-between items-start mb-1">
+                                <p class="text-sm font-bold text-gray-800 line-clamp-1 w-3/4">${request.activityName}</p>
+                                <span class="text-[10px] font-mono text-gray-400">${request.activityDate}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] text-gray-500 truncate w-1/2">${request.requestedBy}</span>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full ${getStatusClass(request.status)} truncate max-w-[45%]">${request.status}</span>
+                            </div>
                         </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            };
+
+            // 4. Render Sections in Order
+            renderSection('Pending', pending, '⚡');
+            renderSection('Appointments', appointments, '📅');
+            renderSection('Approved', approved, '✅');
+            renderSection('Rejected', rejected, '❌');
+
+            if (listEl.innerHTML === '') {
+                 listEl.innerHTML = `<p class="text-gray-500 italic p-4 text-center text-sm">No requests found.</p>`;
+            }
         }
 
         function getCurrentApprovalStep(request) {
@@ -1301,6 +1343,7 @@
     </script>
 </body>
 </html>
+
 
 
 
