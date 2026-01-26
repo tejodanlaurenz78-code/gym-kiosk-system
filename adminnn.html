@@ -883,77 +883,80 @@
             const pendingCountEl = document.getElementById('pendingCount');
             listEl.innerHTML = '';
             
-            // 1. Segregate Requests
-            const pending = [];
-            const appointments = [];
-            const approved = [];
-            const rejected = [];
+            // 1. Sort Requests into Categories
+            const categories = {
+                'Pending': [],
+                'Appointments': [],
+                'Approved': [],
+                'Rejected': []
+            };
 
             currentRequests.forEach(r => {
                 if (r.status.includes('Rejected')) {
-                    rejected.push(r);
+                    categories['Rejected'].push(r);
                 } else if (r.status.includes('Approved (Completed)')) {
-                    approved.push(r);
+                    categories['Approved'].push(r);
                 } else if (r.status.includes('Appointment')) {
-                    appointments.push(r);
+                    categories['Appointments'].push(r);
                 } else {
-                    // Only show pending if it's for the current user
+                    // Only show Pending if it is actionable by the current user
                     const stepKey = getCurrentApprovalStep(r);
                     if (stepKey === currentRoleKey) {
-                        pending.push(r);
+                        categories['Pending'].push(r);
                     }
                 }
             });
 
-            // 2. Update Counter (Actionable items only)
-            const actionableAppointments = appointments.filter(r => getCurrentApprovalStep(r) === currentRoleKey);
-            pendingCountEl.innerText = pending.length + actionableAppointments.length;
+            // Update Badge Count (Only Pending items usually require immediate attention)
+            pendingCountEl.innerText = categories['Pending'].length;
 
-            // 3. Render Helper Function
-            const renderSection = (title, items, icon) => {
+            // 2. Helper to Render Collapsible Sections
+            const renderCollapsibleSection = (title, items, icon, colorClass) => {
                 if (items.length === 0) return;
                 
+                // Create unique ID for toggle
+                const sectionId = `list-${title.toLowerCase()}`;
+                
+                // Section Header (Clickable)
                 listEl.innerHTML += `
-                    <div class="sticky top-0 bg-gray-50 z-10 py-2 border-b border-gray-200 mb-2 mt-2">
-                        <h3 class="text-xs font-black text-gray-500 uppercase tracking-wider flex items-center">
-                            ${icon} <span class="ml-1">${title}</span> 
-                            <span class="bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full text-[10px] ml-auto">${items.length}</span>
-                        </h3>
-                    </div>`;
+                    <div onclick="document.getElementById('${sectionId}').classList.toggle('hidden')" 
+                         class="cursor-pointer bg-white border border-gray-200 hover:bg-gray-50 p-3 rounded-lg mb-2 shadow-sm flex justify-between items-center transition select-none">
+                        <div class="flex items-center font-bold text-gray-700 text-sm">
+                            <span class="mr-2 text-lg">${icon}</span> ${title}
+                        </div>
+                        <span class="${colorClass} text-white text-[10px] font-bold px-2 py-1 rounded-full">${items.length}</span>
+                    </div>
+                `;
 
-                items.forEach(request => {
-                    const stepKey = getCurrentApprovalStep(request);
-                    const isActionable = stepKey === currentRoleKey;
-                    
-                    // Highlight actionable items
-                    const activeClass = isActionable 
-                        ? 'border-l-4 border-green-500 shadow-md ring-1 ring-black/5' 
-                        : 'border-l-4 border-gray-300 opacity-75 grayscale-[0.5] hover:grayscale-0 hover:opacity-100';
-
-                    listEl.innerHTML += `
-                        <div class="request-item bg-white p-3 rounded-r-lg mb-3 cursor-pointer transition-all hover:translate-x-1 ${activeClass}"
-                             onclick="loadRequest('${request.id}')">
-                            <div class="flex justify-between items-start mb-1">
-                                <p class="text-sm font-bold text-gray-800 line-clamp-1 w-3/4">${request.activityName}</p>
-                                <span class="text-[10px] font-mono text-gray-400">${request.activityDate}</span>
-                            </div>
+                // Section List (Hidden by default)
+                let listHtml = `<div id="${sectionId}" class="hidden pl-2 mb-4 space-y-2 animate-fade-in-down">`;
+                
+                items.forEach(r => {
+                    const statusClass = getStatusClass(r.status);
+                    listHtml += `
+                        <div class="p-3 bg-white border-l-4 ${title === 'Pending' ? 'border-green-500' : 'border-gray-300'} rounded shadow-sm hover:shadow-md cursor-pointer transition border-t border-r border-b border-gray-100"
+                             onclick="loadRequest('${r.id}')">
+                            <p class="font-bold text-sm text-gray-800 mb-1">${r.activityName}</p>
                             <div class="flex justify-between items-center">
-                                <span class="text-[10px] text-gray-500 truncate w-1/2">${request.requestedBy}</span>
-                                <span class="text-[9px] px-2 py-0.5 rounded-full ${getStatusClass(request.status)} truncate max-w-[45%]">${request.status}</span>
+                                <span class="text-xs text-gray-500 truncate w-24">${r.requestedBy}</span>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">${r.activityDate}</span>
                             </div>
                         </div>
                     `;
                 });
+                
+                listHtml += `</div>`;
+                listEl.innerHTML += listHtml;
             };
 
-            // 4. Render Sections in Order
-            renderSection('Pending', pending, '⚡');
-            renderSection('Appointments', appointments, '📅');
-            renderSection('Approved', approved, '✅');
-            renderSection('Rejected', rejected, '❌');
+            // 3. Render the Sections
+            renderCollapsibleSection('Pending', categories['Pending'], '⚡', 'bg-yellow-500');
+            renderCollapsibleSection('Appointments', categories['Appointments'], '📅', 'bg-blue-500');
+            renderCollapsibleSection('Approved', categories['Approved'], '✅', 'bg-green-600');
+            renderCollapsibleSection('Rejected', categories['Rejected'], '❌', 'bg-red-500');
 
             if (listEl.innerHTML === '') {
-                 listEl.innerHTML = `<p class="text-gray-500 italic p-4 text-center text-sm">No requests found.</p>`;
+                 listEl.innerHTML = `<p class="text-gray-400 italic text-center text-sm mt-10">No requests found.</p>`;
             }
         }
 
@@ -1343,6 +1346,7 @@
     </script>
 </body>
 </html>
+
 
 
 
