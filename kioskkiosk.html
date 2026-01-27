@@ -110,6 +110,10 @@
                         <div class="max-w-4xl mx-auto bg-gray-50 p-4 rounded-lg border border-gray-200">
                             <div class="flex justify-between items-center mb-4">
                                 <div class="text-2xl font-extrabold text-[#15803d]" id="landingMonthDisplay"></div>
+                                <div class="space-x-2">
+                                    <button class="px-3 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 font-bold" onclick="changeMonth(-1)">Prev</button>
+                                    <button class="px-3 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 font-bold" onclick="changeMonth(1)">Next</button>
+                                </div>
                             </div>
                             <div id="landingCalendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
                             <div class="pt-4 flex justify-center gap-4 text-xs">
@@ -431,6 +435,46 @@
         };
 
         // --- FUNCTIONS (Attached to Window for HTML access) ---
+
+        window.resetKioskData = function() {
+            // 1. Reset Global Variables
+            selectedReservationDate = null;
+            globalSelectedPersonnel = {};
+            stampingStep = 0;
+            
+            // 2. Reset File Upload Section
+            const fileInput = document.getElementById('requestLetterFile');
+            if(fileInput) fileInput.value = ''; // Clear actual file
+            const fileLabel = document.getElementById('fileInputLabel');
+            if(fileLabel) {
+                fileLabel.classList.remove('bg-green-100');
+                // Reset label text but keep the input element inside
+                fileLabel.innerHTML = `Browse / Scan <input type="file" id="requestLetterFile" class="hidden" onchange="updateFileName(this)">`;
+            }
+        
+            // 3. Reset All Form Inputs (Text, Date, Time, Checkboxes)
+            const formInputs = document.querySelectorAll('#formView input');
+            formInputs.forEach(input => {
+                if (input.type === 'checkbox') {
+                    input.checked = false;
+                } else if (input.type !== 'button' && input.type !== 'submit' && !input.readOnly) {
+                    // Don't clear readOnly fields like Transaction Number
+                    input.value = '';
+                }
+            });
+        
+            // 4. Reset Personnel Selection Arrays & UI
+            document.getElementById('finalSelectedList_main').innerHTML = '<p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>';
+            document.getElementById('finalSelectedList_sub').innerHTML = '<p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>';
+            document.getElementById('personnelChecklistContainer').innerHTML = '';
+            document.getElementById('selectedDepartmentName').innerText = '--';
+        
+            // 5. Reset Verification Input
+            const verifyInput = document.getElementById('verificationCodeInput');
+            if(verifyInput) verifyInput.value = '';
+        
+            console.log("Kiosk data has been reset.");
+        };
 
         window.getDaysInMonth = function(year, month) { return new Date(year, month + 1, 0).getDate(); };
 
@@ -816,6 +860,7 @@
     </script>
 </body>
 </html>
+
 
 
 
