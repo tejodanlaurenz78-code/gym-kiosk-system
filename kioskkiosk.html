@@ -596,9 +596,11 @@
             const daysInMonth = window.getDaysInMonth(currentYear, currentMonth);
             for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
             for (let i = 1; i <= daysInMonth; i++) {
-                const dayDate = new Date(currentYear, currentMonth, i);
-                dayDate.setHours(0, 0, 0, 0);
-                const dateString = dayDate.toISOString().split('T')[0];
+                // FIX: Manually format date to avoid TimeZone shifts caused by toISOString()
+                const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                
+                // We still need dayDate for the 'isCurrentDay' logic if you used it for other logic, 
+                // but for matching the event, strictly use dateString above.
                 const event = globalEvents.find(e => e.date === dateString);
                 const isCurrentDay = (i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear());
                 let dayClass = 'readonly-day border border-gray-200';
@@ -621,7 +623,10 @@
             for (let i = 1; i <= daysInMonth; i++) {
                 const dayDate = new Date(currentYear, currentMonth, i);
                 dayDate.setHours(0, 0, 0, 0);
-                const dateString = dayDate.toISOString().split('T')[0];
+                
+                // FIX: Manually format date to avoid TimeZone shifts
+                const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                
                 const event = globalEvents.find(e => e.date === dateString);
                 const isEligible = dayDate >= minReservationDate;
                 const isCurrentDay = (i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear());
@@ -860,6 +865,7 @@
     </script>
 </body>
 </html>
+
 
 
 
