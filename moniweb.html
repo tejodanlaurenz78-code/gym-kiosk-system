@@ -1,43 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+    <script type="module">
+        // 1. IMPORT: Standardized to match your working Kiosk/Admin files
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // 2. CONFIG: Your specific project keys
+        const firebaseConfig = {
+            apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
+            authDomain: "group4-ee960.firebaseapp.com",
+            projectId: "group4-ee960",
+            storageBucket: "group4-ee960.firebasestorage.app",
+            messagingSenderId: "453765398844",
+            appId: "1:453765398844:web:219433f771cfd33b311e39",
+            measurementId: "G-41DZ3175NX"
+        };
+        // 3. INITIALIZE
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // 4. EXPORT: Make these tools available to the tracking script
+        window.db = db;
+        window.ref = ref;
+        window.get = get;
+        window.child = child; 
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PnC Request Monitoring</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Great+Vibes&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --pnc-primary: #15803d;
-            --pnc-yellow: #FCD34D;
-        }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #f3f4f6; 
-        }
-        
+        :root { --pnc-primary: #15803d; --pnc-yellow: #FCD34D; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         /* --- TIMELINE STYLES --- */
-        .timeline-line {
-            position: absolute;
-            left: 1.25rem;
-            top: 2.5rem;
-            bottom: -1rem;
-            width: 4px;
-            background-color: #e5e7eb;
-            z-index: 0;
-        }
+        .timeline-line { position: absolute; left: 1.25rem; top: 2.5rem; bottom: -1rem; width: 4px; background-color: #e5e7eb; z-index: 0; }
         .step-completed .timeline-line { background-color: #15803d; }
         .timeline-item:last-child .timeline-line { display: none; }
-
-        .animate-pulse-slow {
-            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: .7; }
-        }
-
+        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .7; } }
         /* --- FORM STYLES --- */
         .form-container { background: white; border: 1px solid #000; padding: 2rem; max-width: 1000px; margin: 0 auto; }
         .form-header { text-align: center; margin-bottom: 1.5rem; }
@@ -47,12 +50,11 @@
         .form-border { border: 2px solid black; }
         .form-border-r { border-right: 2px solid black; }
         .form-border-b { border-bottom: 2px solid black; }
-        
         .filled-data { font-weight: bold; color: black; text-align: center; display: inline-block; width: 100%; }
-        
         .tab-btn.active { border-bottom: 4px solid #15803d; color: #15803d; font-weight: 800; }
     </style>
 </head>
+
 <body class="min-h-screen flex flex-col">
 
     <header class="bg-[#15803d] p-4 shadow-lg sticky top-0 z-50">
@@ -69,7 +71,7 @@
     </header>
 
     <main class="flex-grow p-4 md:p-8">
-        
+
         <div id="searchView" class="max-w-lg mx-auto bg-white rounded-2xl shadow-xl overflow-hidden mt-10">
             <div class="bg-green-50 p-8 text-center border-b border-green-100">
                 <div class="w-20 h-20 bg-white rounded-2xl mx-auto flex items-center justify-center shadow-md mb-4">
@@ -90,14 +92,11 @@
                         </svg>
                     </button>
                 </div>
-                <button onclick="trackRequest()" class="w-full bg-[#15803d] text-white font-bold py-4 rounded-lg mt-6 shadow-lg hover:bg-green-800 transition transform active:scale-95">
-                    Track Status
-                </button>
+                <button onclick="trackRequest()" class="w-full bg-[#15803d] text-white font-bold py-4 rounded-lg mt-6 shadow-lg hover:bg-green-800 transition transform active:scale-95">Track Status</button>
             </div>
         </div>
 
         <div id="statusView" class="hidden max-w-3xl mx-auto space-y-6">
-            
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden border-t-8" id="statusCardBorder">
                 <div class="p-6 md:p-8">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
@@ -105,9 +104,7 @@
                             <p class="text-gray-500 font-mono text-sm" id="displayId">ID: --</p>
                             <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900 mt-1 leading-tight" id="displayActivity">Activity Name</h2>
                         </div>
-                        <div id="statusBadge" class="mt-4 md:mt-0 px-4 py-2 rounded-full font-bold text-sm bg-gray-100 text-gray-600">
-                            Loading...
-                        </div>
+                        <div id="statusBadge" class="mt-4 md:mt-0 px-4 py-2 rounded-full font-bold text-sm bg-gray-100 text-gray-600">Loading...</div>
                     </div>
 
                     <div id="notificationArea" class="hidden mb-8 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
@@ -140,30 +137,17 @@
                     </div>
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <div>
-                            <p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Date</p>
-                            <p class="font-semibold text-gray-800" id="displayDate">--</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Time</p>
-                            <p class="font-semibold text-gray-800" id="displayTime">--</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Venue</p>
-                            <p class="font-semibold text-gray-800 truncate" id="displayVenue">--</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Filed By</p>
-                            <p class="font-semibold text-gray-800" id="displayUser">--</p>
-                        </div>
+                        <div><p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Date</p><p class="font-semibold text-gray-800" id="displayDate">--</p></div>
+                        <div><p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Time</p><p class="font-semibold text-gray-800" id="displayTime">--</p></div>
+                        <div><p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Venue</p><p class="font-semibold text-gray-800 truncate" id="displayVenue">--</p></div>
+                        <div><p class="text-gray-500 text-xs uppercase tracking-wide font-bold">Filed By</p><p class="font-semibold text-gray-800" id="displayUser">--</p></div>
                     </div>
                 </div>
             </div>
 
             <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8">
                 <h3 class="text-lg font-bold text-gray-800 mb-6 border-b pb-2">Approval Progress</h3>
-                <div class="space-y-0" id="timelineContainer">
-                    </div>
+                <div class="space-y-0" id="timelineContainer"></div>
             </div>
 
             <div id="downloadArea" class="hidden text-center">
@@ -207,18 +191,9 @@
                     <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                         <h4 class="text-xs font-bold text-gray-500 uppercase mb-3">Logistics & Venue</h4>
                         <div class="space-y-3 text-sm">
-                            <div class="flex justify-between border-b pb-2">
-                                <span class="text-gray-600">Date & Time</span>
-                                <span class="font-bold text-right"><span id="modalDate"></span> <br> <span id="modalTime" class="text-xs text-gray-500"></span></span>
-                            </div>
-                            <div class="flex justify-between border-b pb-2">
-                                <span class="text-gray-600">Venue(s)</span>
-                                <span class="font-bold text-right" id="modalVenues">--</span>
-                            </div>
-                            <div class="flex justify-between border-b pb-2">
-                                <span class="text-gray-600">Participants</span>
-                                <span class="font-bold text-right"><span id="modalInternal">0</span> Internal / <span id="modalExternal">0</span> External</span>
-                            </div>
+                            <div class="flex justify-between border-b pb-2"><span class="text-gray-600">Date & Time</span><span class="font-bold text-right"><span id="modalDate"></span> <br> <span id="modalTime" class="text-xs text-gray-500"></span></span></div>
+                            <div class="flex justify-between border-b pb-2"><span class="text-gray-600">Venue(s)</span><span class="font-bold text-right" id="modalVenues">--</span></div>
+                            <div class="flex justify-between border-b pb-2"><span class="text-gray-600">Participants</span><span class="font-bold text-right"><span id="modalInternal">0</span> Internal / <span id="modalExternal">0</span> External</span></div>
                         </div>
                     </div>
                     <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
@@ -236,80 +211,51 @@
         <p>&copy; 2025 Pamantasan ng Cabuyao - PMGSD. All rights reserved.</p>
     </footer>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
-            authDomain: "group4-ee960.firebaseapp.com",
-            projectId: "group4-ee960",
-            storageBucket: "group4-ee960.firebasestorage.app",
-            messagingSenderId: "453765398844",
-            appId: "1:453765398844:web:219433f771cfd33b311e39",
-            measurementId: "G-41DZ3175NX"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        
-        // Export needed functions to window
-        window.db = db;
-        window.ref = ref;
-        window.get = get;
-        window.child = child;
-
+    <script>
         let currentRequestData = null;
         const workflow = [
             { key: 'pmOfficer', label: 'VP Admin & Linkages' },
             { key: 'pmgsdDirector', label: 'OIC-Director PMGSD (Final)' }
         ];
 
-        // --- TRACKING FUNCTION ---
-        window.trackRequest = function() {
+        function trackRequest() {
             const inputId = document.getElementById('trackInput').value.trim();
-            if(!inputId) return alert("Please enter a Transaction ID.");
+            if (!inputId) return alert("Please enter a Transaction ID.");
 
-            const dbRef = window.ref(window.db);
+            // FIX: Simplified Firebase call matching your working files
+            const requestsRef = window.ref(window.db, 'requests/' + inputId);
+            window.get(requestsRef)
+                .then((snapshot) => {
+                    if (snapshot.exists()) {
+                        currentRequestData = snapshot.val();
+                        renderStatusView(currentRequestData);
+                    } else {
+                        alert("No request found with this ID.");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error fetching data:", error);
+                    alert("Network error. Please try again.");
+                });
+        }
+
+        function renderStatusView(request) {
+            // FIX: Handle Arrays vs Objects safety (Prevents Crash)
+            const venueArray = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
             
-            window.get(window.child(dbRef, `requests/${inputId}`))
-            .then((snapshot) => {
-                if (snapshot.exists()) {
-                    currentRequestData = snapshot.val();
-                    window.renderStatusView(currentRequestData);
-                } else {
-                    alert("No request found with this ID.");
-                }
-            })
-            .catch((error) => {
-                console.error(error);
-                alert("Network error or permission denied.");
-            });
-        };
-
-        window.resetView = function() {
-            document.getElementById('searchView').classList.remove('hidden');
-            document.getElementById('statusView').classList.add('hidden');
-            document.getElementById('backBtn').style.display = 'none';
-            document.getElementById('trackInput').value = '';
-            currentRequestData = null;
-        };
-
-        // --- UI RENDER FUNCTIONS ---
-        window.renderStatusView = function(request) {
             document.getElementById('displayId').innerText = `Transaction ID: ${request.id}`;
-            document.getElementById('displayActivity').innerText = request.activityName || 'Activity';
-            document.getElementById('displayDate').innerText = request.activityDate || '--';
-            document.getElementById('displayTime').innerText = request.time || '--';
-            document.getElementById('displayVenue').innerText = request.venue ? request.venue.join(', ') : '--';
-            document.getElementById('displayUser').innerText = request.requestedBy || '--';
+            document.getElementById('displayActivity').innerText = request.activityName;
+            document.getElementById('displayDate').innerText = request.activityDate;
+            document.getElementById('displayTime').innerText = request.time;
+            document.getElementById('displayVenue').innerText = venueArray.join(', ');
+            document.getElementById('displayUser').innerText = request.requestedBy;
 
             const statusBadge = document.getElementById('statusBadge');
             const border = document.getElementById('statusCardBorder');
             const dlArea = document.getElementById('downloadArea');
             const notifArea = document.getElementById('notificationArea');
             const cancelBtn = document.getElementById('cancelRequestBtn');
-            
+
             statusBadge.className = "mt-4 md:mt-0 px-4 py-2 rounded-full font-bold text-sm";
             border.className = "bg-white rounded-2xl shadow-xl overflow-hidden border-t-8";
             dlArea.classList.add('hidden');
@@ -350,19 +296,19 @@
                 cancelBtn.classList.remove('hidden');
             }
 
-            window.renderTimeline(request);
+            renderTimeline(request);
             document.getElementById('searchView').classList.add('hidden');
             document.getElementById('statusView').classList.remove('hidden');
             document.getElementById('backBtn').style.display = 'block';
-        };
+        }
 
-        window.renderTimeline = function(request) {
+        function renderTimeline(request) {
             const container = document.getElementById('timelineContainer');
             container.innerHTML = '';
-            let previousCompleted = true; 
+            let previousCompleted = true;
             workflow.forEach((step, index) => {
                 const approvalData = request.approvals[step.key];
-                const status = approvalData.status; 
+                const status = approvalData.status;
                 let icon = ''; let colorClass = ''; let textColor = ''; let subText = approvalData.name || 'Waiting...';
                 let dateText = approvalData.date ? new Date(approvalData.date).toLocaleDateString() : '';
 
@@ -371,7 +317,7 @@
                     colorClass = 'bg-[#15803d]'; textColor = 'text-gray-800';
                 } else if (status === 'Appointment Set') {
                     icon = `<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-                    colorClass = 'bg-yellow-500'; textColor = 'text-gray-800'; subText = `<span class="text-yellow-600 font-bold">Appointment Required</span>`; previousCompleted = false; 
+                    colorClass = 'bg-yellow-500'; textColor = 'text-gray-800'; subText = `<span class="text-yellow-600 font-bold">Appointment Required</span>`; previousCompleted = false;
                 } else if (status === 'Rejected') {
                     icon = `<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
                     colorClass = 'bg-red-600'; textColor = 'text-red-600'; previousCompleted = false;
@@ -379,7 +325,7 @@
                     icon = `<div class="w-2 h-2 bg-gray-400 rounded-full"></div>`;
                     colorClass = previousCompleted && !request.status.includes('Cancelled') ? 'bg-blue-100 border-2 border-blue-500 animate-pulse-slow' : 'bg-gray-200';
                     textColor = 'text-gray-400';
-                    if(previousCompleted && !request.status.includes('Cancelled')) { icon = `<div class="w-2 h-2 bg-blue-500 rounded-full"></div>`; textColor = 'text-blue-600 font-bold'; subText = 'In Review...'; }
+                    if (previousCompleted && !request.status.includes('Cancelled')) { icon = `<div class="w-2 h-2 bg-blue-500 rounded-full"></div>`; textColor = 'text-blue-600 font-bold'; subText = 'In Review...'; }
                     previousCompleted = false;
                 }
 
@@ -394,26 +340,31 @@
                         </div>
                     </div>`;
             });
-        };
+        }
 
         // --- DETAILS MODAL FUNCTIONS ---
-        window.showDetailsModal = function() {
-            if(!currentRequestData) return;
+
+        function showDetailsModal() {
+            if (!currentRequestData) return;
+            // FIX: Handle Arrays vs Objects safety for Venue & Equipment
+            const venueArray = Array.isArray(currentRequestData.venue) ? currentRequestData.venue : (currentRequestData.venue ? Object.values(currentRequestData.venue) : []);
+            const equipArray = Array.isArray(currentRequestData.equipment) ? currentRequestData.equipment : (currentRequestData.equipment ? Object.values(currentRequestData.equipment) : []);
+
             document.getElementById('modalId').innerText = currentRequestData.id;
-            document.getElementById('modalFilingDate').innerText = currentRequestData.filingDate || '--';
+            document.getElementById('modalFilingDate').innerText = currentRequestData.filingDate;
             document.getElementById('modalActivityName').innerText = currentRequestData.activityName;
             document.getElementById('modalDept').innerText = currentRequestData.department;
             document.getElementById('modalRequester').innerText = currentRequestData.requestedBy;
             document.getElementById('modalDate').innerText = currentRequestData.activityDate;
             document.getElementById('modalTime').innerText = currentRequestData.time;
-            document.getElementById('modalVenues').innerText = currentRequestData.venue ? currentRequestData.venue.join(', ') : '--';
+            document.getElementById('modalVenues').innerText = venueArray.join(', ');
             document.getElementById('modalInternal').innerText = currentRequestData.internalParticipants || 0;
             document.getElementById('modalExternal').innerText = currentRequestData.externalParticipants || 0;
-            
+
             const list = document.getElementById('modalEquipmentList');
             list.innerHTML = '';
-            if (currentRequestData.equipment && currentRequestData.equipment.length > 0) {
-                currentRequestData.equipment.forEach(item => {
+            if (equipArray.length > 0) {
+                equipArray.forEach(item => {
                     let text = typeof item === 'object' ? `${item.count}x ${item.name} (${item.type || ''})` : item;
                     list.innerHTML += `<li>${text}</li>`;
                 });
@@ -421,68 +372,189 @@
                 list.innerHTML = '<li class="text-gray-400 italic">No equipment requested</li>';
             }
 
-            document.getElementById('form1Container').innerHTML = window.renderForm1Content(currentRequestData);
-            document.getElementById('form2Container').innerHTML = window.renderForm2Content(currentRequestData);
+            document.getElementById('form1Container').innerHTML = renderForm1Content(currentRequestData);
+            document.getElementById('form2Container').innerHTML = renderForm2Content(currentRequestData);
 
-            window.switchModalTab('summary');
+            switchModalTab('summary');
             document.getElementById('detailsModal').classList.remove('hidden');
-        };
+        }
 
-        window.closeDetailsModal = function() {
-            document.getElementById('detailsModal').classList.add('hidden');
-        };
+        function closeDetailsModal() { document.getElementById('detailsModal').classList.add('hidden'); }
 
-        window.switchModalTab = function(tabName) {
+        function switchModalTab(tabName) {
             ['summary', 'form1', 'form2'].forEach(t => {
                 document.getElementById(`content-${t}`).classList.add('hidden');
                 document.getElementById(`tab-${t}`).classList.remove('active');
             });
             document.getElementById(`content-${tabName}`).classList.remove('hidden');
             document.getElementById(`tab-${tabName}`).classList.add('active');
-        };
+        }
 
-        window.cancelRequest = function() {
+        function cancelRequest() {
             if (!confirm("Are you sure you want to CANCEL this request? This action cannot be undone.")) return;
-            alert("This feature would update the database status to 'Cancelled'.");
-            // In real usage: update firebase here
-        };
+            currentRequestData.status = 'Cancelled by User';
+            alert("Request has been cancelled.");
+            renderStatusView(currentRequestData);
+        }
 
-        // --- HELPER FUNCTIONS FOR FORMS ---
-        window.getStatusClass = function(status) {
+        function resetView() {
+            document.getElementById('searchView').classList.remove('hidden');
+            document.getElementById('statusView').classList.add('hidden');
+            document.getElementById('backBtn').style.display = 'none';
+            document.getElementById('trackInput').value = '';
+            currentRequestData = null;
+        }
+
+        // --- FORM GENERATORS ---
+
+        function getStatusClass(status) {
             if (status.includes('Approved') || status.includes('Submitted') || status.includes('Verified')) return 'bg-green-100 text-green-800';
             if (status.includes('Rejected')) return 'bg-red-100 text-red-800';
             if (status.includes('Appointment')) return 'bg-yellow-200 text-yellow-900 border border-yellow-400';
             if (status.includes('Pending')) return 'bg-yellow-100 text-yellow-800';
             return 'bg-gray-100 text-gray-800';
-        };
+        }
 
-        window.formatApprovalBox = function(approval) {
+        function formatApprovalBox(approval) {
             let name = approval ? (approval.name || '---') : '---';
             let date = (approval && approval.date) ? new Date(approval.date).toLocaleDateString() : '---';
             let status = approval ? approval.status : 'Pending';
-            let statusClass = window.getStatusClass(status);
-            return `<div class="text-center p-2 rounded ${status === 'Approved' ? 'bg-green-50' : 'bg-yellow-50'} border border-gray-300"><p class="text-sm font-semibold">${name}</p><p class="text-xs italic">${date}</p><span class="inline-block mt-1 px-2 text-xs font-bold rounded-full ${statusClass}">${status}</span></div>`;
-        };
+            let statusClass = getStatusClass(status);
+            return `
+                <div class="text-center p-2 rounded ${status === 'Approved' || status === 'Verified' || status === 'Submitted' ? 'bg-green-50' : status === 'Rejected' ? 'bg-red-50' : 'bg-yellow-50'} border border-gray-300">
+                    <p class="text-sm font-semibold">${name}</p>
+                    <p class="text-xs italic">${date}</p>
+                    <span class="inline-block mt-1 px-2 text-xs font-bold rounded-full ${statusClass}">${status}</span>
+                </div>
+            `;
+        }
 
-        window.renderForm1Content = function(request) {
+        function renderForm1Content(request) {
+            // FIX: Array Safe venue for Form 1
+            const venueArray = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
+            
+            const deptHeadApproval = request.approvals.deptHead;
+            const ovpasApproval = request.approvals.ovpas;
+            const oevpApproval = request.approvals.oevp;
+            const oupApproval = request.approvals.oup;
             const logoUrl = 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c8/Pamantasan_ng_Cabuyao_Logo.png/220px-Pamantasan_ng_Cabuyao_Logo.png';
             const purpose = request.form1 ? request.form1.purpose : "Purpose not specified.";
-            return `<div class="bg-white p-8 text-gray-900 font-sans leading-relaxed relative"><div class="relative mb-10"><img src="${logoUrl}" alt="PnC Logo" class="w-24 h-24 object-contain absolute left-0"><div class="text-center relative z-10"><h1 class="text-5xl tracking-wide my-1 text-[#005728]" style="font-family: 'UnifrakturMaguntia', cursive;">University of Cabuyao</h1></div></div><div class="mb-8"><p class="text-xs text-gray-500">(${request.id})</p></div><div class="text-sm text-justify space-y-4"><p class="indent-8">I am writing to respectfully request your approval for the activity titled "<span class="font-bold uppercase">${request.activityName}</span>". Purpose: ${purpose}</p></div></div>`;
-        };
+            
+            function getLetterSignature(title, approval) {
+                return `
+                    <div class="mt-4 mb-2">
+                        <div class="font-bold uppercase text-black">${approval.name}</div>
+                        <div class="text-xs font-semibold text-gray-600">${title}</div>
+                        <div class="text-[10px] text-green-700 font-bold">APPROVED - ${new Date(approval.date).toLocaleDateString()}</div>
+                    </div>
+                `;
+            }
 
-        window.renderForm2Content = function(request) {
-            const pmOfficer = request.approvals.pmOfficer; 
+            return `
+                <div class="bg-white p-8 text-gray-900 font-sans leading-relaxed relative">
+                    <div class="relative mb-10">
+                         <img src="${logoUrl}" alt="PnC Logo" class="w-24 h-24 object-contain absolute left-0">
+                         <div class="text-center relative z-10">
+                            <p class="text-xs font-serif text-gray-700">Republic of the Philippines</p>
+                            <h1 class="text-5xl tracking-wide my-1 text-[#005728]" style="font-family: 'UnifrakturMaguntia', cursive;">University of Cabuyao</h1>
+                            <p class="text-sm font-bold tracking-widest text-gray-700 uppercase font-serif">(PAMANTASAN NG CABUYAO)</p>
+                            <p class="text-sm italic text-gray-700 mt-1 font-serif">Property Management and General Service Department</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5 font-serif">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
+                        </div>
+                    </div>
+                    <div class="mb-8"><p class="text-xs text-gray-500">(${request.id})</p><p class="mt-2 text-sm">${new Date(request.filingDate).toLocaleDateString()}</p></div>
+                    <div class="mb-6"><p class="font-bold text-sm">Dr. Roberto F. Rañola Jr.</p><p class="text-sm">OIC-University President</p></div>
+                    <div class="mb-8 pl-8"><p class="text-sm"><span class="font-bold">Thru: Mr. Colin B. Garcia</span></p><p class="text-sm ml-9">Vice President for Administration and Linkages</p></div>
+                    <div class="text-sm text-justify space-y-4">
+                        <p class="indent-8">I am writing to respectfully request your approval for the activity titled "<span class="font-bold uppercase">${request.activityName}</span>". The purpose is ${purpose.toLowerCase()}.</p>
+                        <p class="indent-8">We would like to reserve <span class="font-bold">${venueArray.join(' and ')}</span> on <span class="font-bold">${new Date(request.activityDate).toLocaleDateString()}</span>.</p>
+                        <p class="indent-8">Thank you very much for your favorable response.</p>
+                    </div>
+                    <div class="mt-8"><p class="text-sm mb-4">Respectfully yours,</p><div class="mt-4"><p class="font-bold uppercase">${request.requestedBy}</p><p class="text-sm text-gray-600">Requester / ${request.department}</p></div></div>
+                    <div class="mt-10 pt-4 border-t-2 border-dashed border-gray-200">
+                        <p class="text-xs font-bold text-gray-400 uppercase mb-4">Administrative Action / Signatories</p>
+                        <div class="grid grid-cols-2 gap-y-6 gap-x-8">
+                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Department / Division Head', deptHeadApproval)}</div>
+                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('OVPAS', ovpasApproval)}</div>
+                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Office of the Executive VP', oevpApproval)}</div>
+                            <div><p class="text-xs italic text-gray-500 font-bold">Approved / Disapproved:</p>${getLetterSignature('Office of the University President', oupApproval)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderForm2Content(request) {
+            // FIX: Array Safe venue & equipment for Form 2
+            const venueArray = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
+            const equipArray = Array.isArray(request.equipment) ? request.equipment : (request.equipment ? Object.values(request.equipment) : []);
+
+            const deptHeadApproval = request.approvals.deptHead;
+            const pmOfficer = request.approvals.pmOfficer;
             const pmgsdDirector = request.approvals.pmgsdDirector;
-            return `<div class="form-title text-black text-center font-bold text-lg mb-4">EQUIPMENT AND VENUE RESERVATION</div><div class="p-0 space-y-4 text-sm text-black"><div class="flex flex-wrap gap-4"><div class="flex-1"><label>Transaction Number</label><div class="line-input input-disabled filled-data">${request.id}</div></div></div></div><div class="grid grid-cols-4 gap-4 text-center mt-8 text-xs"><div><p class="font-bold mb-8">Requested by:</p><div class="border-b border-black font-bold uppercase text-black">${request.requestedBy}</div></div><div><p class="font-bold mb-8">Recommended by:</p>${window.formatApprovalBox(pmOfficer)}<p class="mt-1">Mr. Colin B. Garcia</p></div><div><p class="font-bold mb-8">Approved by:</p>${window.formatApprovalBox(pmgsdDirector)}<p class="mt-1">Alfredo Glenn H. Beaño</p></div></div>`;
-        };
 
-        // 4. INITIALIZATION
+            const chairData = equipArray.find(e => typeof e === 'object' && e.name === 'Chair');
+            const tableData = equipArray.find(e => typeof e === 'object' && e.name === 'Table');
+            const venues = ['Gym Stage / Court', 'Multi-Purpose Hall', 'Library', 'Cafeteria', 'Classroom #', 'Laboratory #', 'Others:'];
+            
+            return `
+                <div class="form-header flex items-center justify-center space-x-4 mb-2">
+                    <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-500">[LOGO]</div>
+                    <div class="text-center">
+                         <p class="text-[10px] text-right w-full mb-2">PNC:AF-FO-15 rev.0 02012023</p>
+                        <h2 class="text-xl font-bold text-black font-sans">Pamantasan ng Cabuyao</h2>
+                        <p class="text-xs font-bold">(University of Cabuyao)</p>
+                        <p class="font-bold text-gray-800 mt-1 text-sm italic">Property Management and General Services Department</p>
+                    </div>
+                </div>
+                <div class="form-title text-black text-center font-bold text-lg mb-4">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
+                <div class="p-0 space-y-4 text-sm text-black">
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div class="flex-1"><label class="font-normal">Transaction Number</label><div class="line-input input-disabled filled-data">${request.id}</div></div>
+                        <div class="flex-1"><label class="font-normal">Date of Filing</label><div class="line-input input-disabled filled-data">${request.filingDate}</div></div>
+                        <div class="flex-1"><label class="font-normal">Department</label><div class="line-input input-disabled filled-data">${request.department}</div></div>
+                    </div>
+                    <div class="flex flex-wrap gap-4">
+                         <div class="flex-1"><label class="font-normal">Activity Date</label><div class="line-input input-disabled filled-data">${request.activityDate}</div></div>
+                         <div class="flex-1"><label class="font-normal">Time</label><div class="line-input input-disabled filled-data">${request.time}</div></div>
+                    </div>
+                     <div><label class="font-normal">Activity Name</label><div class="line-input input-disabled filled-data">${request.activityName}</div></div>
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div class="w-1/3">Participants:</div>
+                        <div class="flex-1 flex items-center"><span class="mr-2">Internal</span><div class="line-input input-disabled w-20 text-center filled-data">${request.internalParticipants || 0}</div></div>
+                        <div class="flex-1 flex items-center"><span class="mr-2">External</span><div class="line-input input-disabled w-20 text-center filled-data">${request.externalParticipants || 0}</div></div>
+                    </div>
+                </div>
+                <div class="form-border form-border-b mt-4 flex">
+                    <div class="w-48 font-bold p-2 form-border-r">Venue Reservation</div>
+                    <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                         ${venues.map(v => `<label class="flex items-center space-x-2"><input type="checkbox" disabled ${venueArray.includes(v) ? 'checked' : ''} class="form-checkbox h-3 w-3 accent-black"> <span class="${venueArray.includes(v) ? 'font-bold text-black' : ''}">${v}</span></label>`).join('')}
+                    </div>
+                </div>
+                <div class="form-border flex mb-4">
+                    <div class="w-48 font-bold p-2 form-border-r">Equipment</div>
+                    <div class="flex-1 p-2 text-sm">
+                        <p class="flex items-center gap-2">Chair # <span class="border-b border-black w-16 text-center font-bold text-black">${chairData ? chairData.count : ''}</span></p>
+                        <p class="flex items-center gap-2">Table # <span class="border-b border-black w-16 text-center font-bold text-black">${tableData ? tableData.count : ''}</span></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-4 text-center mt-8 text-xs">
+                    <div><p class="font-bold mb-8">Requested by:</p><div class="border-b border-black font-bold uppercase text-black">${request.requestedBy}</div></div>
+                    <div><p class="font-bold mb-8">Reviewed by:</p><div class="border-b border-black font-bold uppercase text-black">${deptHeadApproval.name}</div><p class="mt-1">Dept Head</p></div>
+                    <div><p class="font-bold mb-8">Recommended by:</p>${formatApprovalBox(pmOfficer)}<p class="mt-1">Mr. Colin B. Garcia</p></div>
+                    <div><p class="font-bold mb-8">Approved by:</p>${formatApprovalBox(pmgsdDirector)}<p class="mt-1">Alfredo Glenn H. Beaño</p></div>
+                </div>
+            `;
+        }
+
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
             const idFromUrl = urlParams.get('id');
             if (idFromUrl) {
                 document.getElementById('trackInput').value = idFromUrl;
-                window.trackRequest(); 
+                trackRequest();
+            } else {
+                document.getElementById('searchView').classList.remove('hidden');
             }
         };
     </script>
