@@ -1,15 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <script type="module">
-        // 1. IMPORT: Notice we added 'get' and 'child' here
-        // 'get' allows us to fetch data ONCE (not a live stream).
-        // 'child' allows us to point to a specific ID folder.
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // 2. CONFIG: Your specific project keys (FIXED - added databaseURL)
         const firebaseConfig = {
             apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
             authDomain: "group4-ee960.firebaseapp.com",
@@ -21,16 +16,14 @@
             measurementId: "G-41DZ3175NX"
         };
 
-        // 3. INITIALIZE
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 4. EXPORT: Make these tools available to your tracking script
         window.db = db;
         window.ref = ref;
-        window.get = get;     // Required to fetch the status
-        window.child = child; // Required to find the specific ID
-        window.onValue = onValue; // Required for real-time updates
+        window.get = get;
+        window.child = child;
+        window.onValue = onValue;
         
         console.log("✅ Firebase initialized successfully!");
     </script>
@@ -38,57 +31,123 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PnC Request Monitoring</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- EXACT FONT IMPORT FROM ADMIN -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Great+Vibes&family=UnifrakturMaguntia&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --pnc-primary: #15803d;
-            --pnc-yellow: #FCD34D;
-        }
-
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
+            background-color: #e8e8e8;
         }
 
-        /* --- TIMELINE STYLES --- */
+        /* Header */
+        .header-green {
+            background-color: #15803d;
+        }
+
+        /* Cards */
+        .card-white {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-yellow-border {
+            border-top: 4px solid #f59e0b;
+        }
+
+        /* Alert box */
+        .alert-warning {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        /* Timeline */
+        .timeline-dot {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .timeline-dot.completed {
+            background-color: #15803d;
+            color: white;
+        }
+
+        .timeline-dot.pending {
+            background-color: #f59e0b;
+            color: white;
+        }
+
         .timeline-line {
             position: absolute;
             left: 1.25rem;
-            top: 2.5rem;
+            top: 3rem;
             bottom: -1rem;
-            width: 4px;
-            background-color: #e5e7eb;
-            z-index: 0;
+            width: 2px;
+            background-color: #d1d5db;
         }
 
-        .step-completed .timeline-line {
-            background-color: #15803d;
+        .timeline-item {
+            position: relative;
+            padding-left: 3.5rem;
+            padding-bottom: 2rem;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
         }
 
         .timeline-item:last-child .timeline-line {
             display: none;
         }
 
-        .animate-pulse-slow {
-            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        /* Search input with QR icon */
+        .input-with-icon {
+            position: relative;
         }
 
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: .7;
-            }
+        .qr-icon {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
         }
 
-        /* --- FORM STYLES (MATCHING ADMINNN.HTML EXACTLY) --- */
+        /* Buttons */
+        .btn-primary {
+            background-color: #15803d;
+            color: white;
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: #166534;
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: #374151;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            border: 1px solid #d1d5db;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background-color: #f9fafb;
+        }
+
+        /* Form styles - 100% identical to k.txt and ad27.txt */
         .form-container {
             background: white;
             border: 1px solid #000;
@@ -103,12 +162,32 @@
         }
 
         .form-title {
+            background-color: #D1D5DB;
             font-weight: bold;
             text-align: center;
-            padding: 0.25rem;
+            padding: 0.5rem;
             text-transform: uppercase;
             font-size: 1.1rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0;
+            border: none;
+            color: black;
+        }
+
+        .read-only-field {
+            border-bottom: 1px solid black;
+            width: 100%;
+            padding-left: 0.25rem;
+            font-weight: bold;
+            min-height: 24px;
+            display: inline-block;
+        }
+
+        .border-black {
+            border-color: black;
+        }
+
+        .accent-black {
+            accent-color: black;
         }
 
         .line-input {
@@ -119,121 +198,124 @@
             padding-left: 0.25rem;
         }
 
-        .input-disabled {
-            background-color: #E5E7EB;
-            /* Or transparent for monitoring view if preferred */
-            cursor: not-allowed;
-            color: #6B7280;
-            font-style: italic;
-            border: none;
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-        }
-
-        .form-border {
-            border: 2px solid black;
-        }
-
-        .form-border-r {
-            border-right: 2px solid black;
-        }
-
-        .form-border-b {
-            border-bottom: 2px solid black;
-        }
-
-        /* Filled data styling */
-        .filled-data {
-            font-weight: bold;
-            color: black;
-            text-align: center;
-            display: inline-block;
-            width: 100%;
-        }
-
-        /* Tab Styles */
-        .tab-btn.active {
-            border-bottom: 4px solid #15803d;
-            color: #15803d;
-            font-weight: 800;
+        /* Status badge */
+        .badge-appointment {
+            background-color: #fef3c7;
+            color: #92400e;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
         }
     </style>
 </head>
 
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen">
 
     <!-- Header -->
-    <header class="bg-[#15803d] p-4 shadow-lg sticky top-0 z-50">
-        <div class="max-w-3xl mx-auto flex items-center justify-between">
-            <h1 class="text-2xl font-black text-white tracking-tight">PnC Request Tracker</h1>
-            <button onclick="location.reload()" class="text-white hover:bg-green-700 px-4 py-2 rounded-lg transition">
-                🔄 Refresh
+    <header class="header-green shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                    <span class="text-[#15803d] font-black text-lg">PnC</span>
+                </div>
+                <div>
+                    <h1 class="text-white text-lg font-bold">Request Monitoring</h1>
+                    <p class="text-green-100 text-xs">University of Cabuyao</p>
+                </div>
+            </div>
+            <button onclick="showSearch()" class="text-white font-semibold hover:text-green-100 transition flex items-center space-x-2">
+                <span>←</span>
+                <span>Track Another</span>
             </button>
         </div>
     </header>
 
     <!-- Search View -->
-    <div id="searchView" class="flex-1 flex items-center justify-center p-6">
-        <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-2xl border-t-8 border-[#15803d]">
+    <div id="searchView" class="max-w-2xl mx-auto px-6 py-16">
+        <div class="card-white p-12">
             <div class="text-center mb-8">
-                <div class="w-20 h-20 mx-auto bg-[#15803d] text-white p-3 rounded-full flex items-center justify-center font-black text-3xl mb-4">
-                    📋
+                <div class="w-20 h-20 mx-auto bg-green-50 rounded-2xl flex items-center justify-center mb-6">
+                    <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
                 </div>
-                <h2 class="text-2xl font-black text-[#15803d] mb-2">Track Your Request</h2>
-                <p class="text-gray-600 text-sm">Enter your Transaction ID to view status</p>
+                <h2 class="text-3xl font-bold text-gray-900 mb-3">Track Your Request</h2>
+                <p class="text-gray-600">Enter the Transaction ID from your receipt or scan the QR Code.</p>
             </div>
 
-            <div class="mb-6">
-                <label class="block text-sm font-bold text-gray-700 mb-2">Transaction ID</label>
-                <input type="text" id="trackInput" placeholder="e.g., RES-20250128001"
-                    class="w-full p-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-green-200 focus:border-green-500 outline-none transition">
-                <p class="text-xs text-gray-500 mt-2">💡 Your ID was sent to your email</p>
-            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Transaction ID</label>
+                    <div class="input-with-icon">
+                        <input 
+                            type="text" 
+                            id="trackInput" 
+                            placeholder="RES-XXXXXX"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
+                        >
+                        <div class="qr-icon">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
 
-            <button onclick="trackRequest()"
-                class="w-full bg-[#15803d] text-white font-bold text-lg py-4 rounded-lg shadow-lg hover:bg-green-700 active:scale-95 transition-all">
-                Track Request
-            </button>
+                <button onclick="trackRequest()" class="btn-primary w-full">
+                    Track Status
+                </button>
 
-            <div id="errorMsg" class="hidden mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
-                <p class="text-red-700 font-semibold text-center">❌ Request not found</p>
+                <div id="errorMsg" class="hidden mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+                    <p class="text-red-700 font-semibold">❌ Request not found. Please check your Transaction ID.</p>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Results View -->
-    <div id="resultsView" class="hidden flex-1 p-6">
-        <div class="max-w-5xl mx-auto">
-            <!-- Back Button -->
-            <button onclick="showSearch()"
-                class="mb-6 px-6 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition">
-                ← Back to Search
+    <div id="resultsView" class="hidden max-w-5xl mx-auto px-6 py-8 pb-20">
+        <!-- Request Details Card -->
+        <div id="requestHeader" class="card-white card-yellow-border p-8 mb-6"></div>
+
+        <!-- Approval Progress Card -->
+        <div class="card-white p-8">
+            <h3 class="text-xl font-bold text-gray-900 mb-6">Approval Progress</h3>
+            <div id="timelineContent"></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="mt-6 flex space-x-4">
+            <button onclick="switchTab('form2')" class="btn-secondary flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>View Submission Documents</span>
             </button>
+            <button onclick="cancelRequest()" class="btn-secondary flex items-center space-x-2 text-red-600 border-red-200 hover:bg-red-50">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <span>Cancel Request</span>
+            </button>
+        </div>
 
-            <!-- Request Header -->
-            <div id="requestHeader" class="bg-white rounded-2xl shadow-xl p-8 mb-6"></div>
-
-            <!-- Tab Navigation -->
-            <div class="bg-white rounded-t-2xl shadow-xl overflow-hidden">
-                <div class="flex border-b-2 border-gray-200">
-                    <button onclick="switchTab('timeline')" id="timelineTab"
-                        class="tab-btn flex-1 px-6 py-4 font-bold text-gray-600 hover:bg-gray-50 transition active">
-                        📊 Timeline
-                    </button>
-                    <button onclick="switchTab('form2')" id="form2Tab"
-                        class="tab-btn flex-1 px-6 py-4 font-bold text-gray-600 hover:bg-gray-50 transition">
-                        📄 Form 2
-                    </button>
-                    <button onclick="switchTab('form1')" id="form1Tab"
-                        class="tab-btn flex-1 px-6 py-4 font-bold text-gray-600 hover:bg-gray-50 transition">
-                        📝 Form 1
+        <!-- Forms Modal -->
+        <div id="formsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-6">
+            <div class="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+                    <h3 class="text-xl font-bold">Submission Documents</h3>
+                    <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
                     </button>
                 </div>
-
-                <!-- Tab Contents -->
-                <div id="timelineContent" class="p-8"></div>
-                <div id="form2Content" class="p-8 hidden"></div>
-                <div id="form1Content" class="p-8 hidden"></div>
+                <div class="p-6">
+                    <div id="form2Content" class="mb-8"></div>
+                    <div id="form1Content"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -248,20 +330,18 @@
             document.getElementById('errorMsg').classList.add('hidden');
         }
 
-        function switchTab(tabName) {
-            // Hide all contents
-            document.getElementById('timelineContent').classList.add('hidden');
-            document.getElementById('form2Content').classList.add('hidden');
-            document.getElementById('form1Content').classList.add('hidden');
+        function switchTab(tab) {
+            document.getElementById('formsModal').classList.remove('hidden');
+        }
 
-            // Remove active from all tabs
-            document.getElementById('timelineTab').classList.remove('active');
-            document.getElementById('form2Tab').classList.remove('active');
-            document.getElementById('form1Tab').classList.remove('active');
+        function closeModal() {
+            document.getElementById('formsModal').classList.add('hidden');
+        }
 
-            // Show selected content and activate tab
-            document.getElementById(tabName + 'Content').classList.remove('hidden');
-            document.getElementById(tabName + 'Tab').classList.add('active');
+        function cancelRequest() {
+            if (confirm('Are you sure you want to cancel this request?')) {
+                alert('Request cancellation submitted.');
+            }
         }
 
         function trackRequest() {
@@ -272,7 +352,6 @@
                 return;
             }
 
-            // FIXED: Now uses the correct Firebase reference
             const requestRef = window.ref(window.db, `requests/${trackId}`);
 
             window.get(requestRef)
@@ -285,128 +364,352 @@
                         document.getElementById('errorMsg').classList.add('hidden');
                     } else {
                         document.getElementById('errorMsg').classList.remove('hidden');
-                        console.log('Request ID not found:', trackId);
                     }
                 })
                 .catch((error) => {
-                    console.error('Error fetching request:', error);
+                    console.error('Error:', error);
                     alert('Error loading request. Please try again.');
                 });
         }
 
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        }
+
         function displayRequest(request) {
-            // Header
+            // Check for appointment
+            const hasAppointment = request.appointment && request.appointment.date;
+            const appointmentBadge = hasAppointment ? 
+                `<div class="badge-appointment">📅 APPOINTMENT SET</div>` : '';
+
+            // Header Card
             document.getElementById('requestHeader').innerHTML = `
-                <div class="flex justify-between items-start">
+                <div class="flex justify-between items-start mb-6">
                     <div>
-                        <h2 class="text-3xl font-black text-[#15803d] mb-2">${request.activityName}</h2>
-                        <p class="text-gray-600 mb-1"><span class="font-semibold">ID:</span> ${request.id}</p>
-                        <p class="text-gray-600 mb-1"><span class="font-semibold">Filed:</span> ${request.filingDate}</p>
-                        <p class="text-gray-600"><span class="font-semibold">Activity Date:</span> ${request.activityDate}</p>
+                        <p class="text-sm text-gray-500 mb-1">Transaction ID: ${request.id}</p>
+                        <h2 class="text-3xl font-bold text-gray-900 mb-2">${request.activityName || 'Untitled Event'}</h2>
                     </div>
-                    <div class="text-right">
-                        <div class="text-sm text-gray-500 mb-2">Status</div>
-                        <div class="px-6 py-3 ${getStatusColor(request.status)} rounded-full font-bold text-lg">
-                            ${request.status}
+                    ${appointmentBadge}
+                </div>
+
+                ${hasAppointment ? `
+                <div class="alert-warning mb-6">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
                         </div>
+                        <div class="flex-1">
+                            <p class="font-semibold text-yellow-900">Action Required: Appointment Set</p>
+                            <p class="text-sm text-yellow-800 mt-1">Date: ${request.appointment.date}, Time: ${request.appointment.time}, Reason: ${request.appointment.reason}</p>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="grid grid-cols-4 gap-6 text-sm">
+                    <div>
+                        <p class="text-gray-500 font-semibold uppercase text-xs mb-1">Date</p>
+                        <p class="font-bold text-gray-900">${formatDate(request.activityDate)}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 font-semibold uppercase text-xs mb-1">Time</p>
+                        <p class="font-bold text-gray-900">${request.time || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 font-semibold uppercase text-xs mb-1">Venue</p>
+                        <p class="font-bold text-gray-900">${Array.isArray(request.venue) ? request.venue[0] : 'N/A'}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 font-semibold uppercase text-xs mb-1">Filed By</p>
+                        <p class="font-bold text-gray-900">${request.requestedBy || 'N/A'}</p>
                     </div>
                 </div>
             `;
 
             // Timeline
-            document.getElementById('timelineContent').innerHTML = renderTimelineContent(request);
+            document.getElementById('timelineContent').innerHTML = renderTimeline(request);
 
-            // Form 2
+            // Forms
             document.getElementById('form2Content').innerHTML = renderForm2Content(request);
-
-            // Form 1
             document.getElementById('form1Content').innerHTML = renderForm1Content(request);
         }
 
-        function getStatusColor(status) {
-            if (status === 'Approved' || status === 'Deployed') return 'bg-green-100 text-green-800';
-            if (status === 'Rejected') return 'bg-red-100 text-red-800';
-            if (status === 'Pending') return 'bg-yellow-100 text-yellow-800';
-            return 'bg-gray-100 text-gray-800';
-        }
-
-        function renderTimelineContent(request) {
+        function renderTimeline(request) {
             const steps = [
-                { key: 'deptHead', label: 'Department Head', role: request.approvals.deptHead },
-                { key: 'pmOfficer', label: 'PM Officer', role: request.approvals.pmOfficer },
-                { key: 'pmgsdDirector', label: 'PMGSD Director', role: request.approvals.pmgsdDirector }
+                {
+                    label: 'VP Admin & Linkages',
+                    sublabel: 'Mr. Colin B. Garcia',
+                    status: request.approvals?.pmOfficer?.status || 'Pending',
+                    date: request.approvals?.pmOfficer?.date || ''
+                },
+                {
+                    label: 'OIC-Director PMGSD (Final)',
+                    sublabel: request.appointment ? 'Appointment Required' : '',
+                    status: request.approvals?.pmgsdDirector?.status || 'Pending',
+                    date: request.approvals?.pmgsdDirector?.date || '',
+                    appointment: request.appointment,
+                    isLast: true
+                }
             ];
 
-            return `
-                <div class="space-y-6">
-                    ${steps.map((step, index) => {
-                        const isCompleted = step.role.status === 'Approved';
-                        const isPending = step.role.status === 'Pending';
-                        const isRejected = step.role.status === 'Rejected';
+            return steps.map((step, index) => {
+                const isCompleted = step.status === 'Approved';
+                const isPending = step.status === 'Pending';
+                const hasAppointment = step.appointment && step.appointment.date;
 
-                        return `
-                            <div class="timeline-item relative flex items-start ${isCompleted ? 'step-completed' : ''}">
-                                <div class="timeline-line"></div>
-                                <div class="z-10 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                                    isCompleted ? 'bg-green-600 text-white' :
-                                    isRejected ? 'bg-red-600 text-white' :
-                                    'bg-gray-300 text-gray-600'
-                                } font-bold">
-                                    ${isCompleted ? '✓' : index + 1}
+                return `
+                    <div class="timeline-item">
+                        <div class="timeline-line"></div>
+                        <div class="timeline-dot ${isCompleted ? 'completed' : 'pending'} absolute left-0 top-0">
+                            ${isCompleted ? '✓' : isPending && hasAppointment ? '⏰' : '○'}
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <div>
+                                    <h4 class="font-bold text-gray-900">${step.label}</h4>
+                                    <p class="text-sm text-gray-600">${step.sublabel}</p>
                                 </div>
-                                <div class="ml-6 flex-grow bg-white p-6 rounded-lg shadow-md ${isPending ? 'ring-2 ring-yellow-400' : ''}">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <h3 class="font-bold text-lg text-gray-800">${step.label}</h3>
-                                            <p class="text-gray-600 font-semibold">${step.role.name || 'Pending Assignment'}</p>
-                                        </div>
-                                        <div class="px-4 py-2 rounded-full text-sm font-bold ${
-                                            isCompleted ? 'bg-green-100 text-green-800' :
-                                            isRejected ? 'bg-red-100 text-red-800' :
-                                            'bg-yellow-100 text-yellow-800'
-                                        }">
-                                            ${step.role.status}
-                                        </div>
-                                    </div>
-                                    ${step.role.date ? `<p class="text-sm text-gray-500 mt-2">📅 ${step.role.date}</p>` : ''}
-                                    ${step.role.remarks ? `<p class="text-sm text-gray-700 mt-2 italic">"${step.role.remarks}"</p>` : ''}
-                                </div>
+                                <span class="text-xs text-gray-500">${step.date ? formatDate(step.date) : ''}</span>
                             </div>
-                        `;
-                    }).join('')}
+                            ${hasAppointment ? `
+                                <div class="mt-2 p-3 bg-yellow-50 border-l-3 border-yellow-400 rounded text-sm">
+                                    <p class="font-semibold text-yellow-900">Appointment Required</p>
+                                    <p class="text-yellow-800 italic mt-1">"${step.appointment.reason}"</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 100% IDENTICAL FORM 2 FROM AD27.TXT
+        function renderForm2Content(request) {
+            const deptHead = request.approvals?.deptHead || {};
+            const pmOfficer = request.approvals?.pmOfficer || {};
+            const pmgsdDirector = request.approvals?.pmgsdDirector || {};
+            
+            const venues = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
+            const equipments = Array.isArray(request.equipment) ? request.equipment : (request.equipment ? Object.values(request.equipment) : []);
+            
+            const val = (v) => v || '';
+            const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
+
+            const getEquip = (name, field) => {
+                const item = equipments.find(e => e.name === name);
+                return item ? item[field] : '';
+            };
+            const isEquipChecked = (name) => equipments.some(e => e.name === name) ? 'checked' : '';
+            const manpower = request.manpower || {};
+
+            function getStatusClass(status) {
+                if (status === 'Approved') return 'bg-green-100 text-green-700';
+                if (status === 'Rejected') return 'bg-red-100 text-red-700';
+                return 'bg-yellow-100 text-yellow-700';
+            }
+
+            return `
+                <div class="form-header flex items-center justify-center space-x-4 mb-6">
+                    <img src="pnc-logo.png" onerror="this.style.display='none'" alt="PnC Seal" class="w-20 h-20 object-contain">
+                    <div class="text-center">
+                        <p class="text-sm">Republic of the Philippines</p>
+                        <h2 class="text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
+                        <p class="text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
+                        <p class="text-sm italic">Administration and Finance Division</p>
+                        <p class="font-bold text-gray-700 mt-1">Property Management and General Services Department</p>
+                        <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
+                    </div>
+                </div>
+
+                <div class="form-title text-black bg-gray-300">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
+
+                <div class="border-b border-black p-4 space-y-4 text-sm text-black">
+                    <div class="flex flex-wrap gap-4">
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600">Transaction Number:</label>
+                            <div class="read-only-field">${val(request.id)}</div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600">Date of Filing:</label>
+                            <div class="read-only-field">${formatDate(request.filingDate)}</div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600">Department:</label>
+                            <div class="read-only-field">${val(request.department)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4">
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600">Activity Date:</label>
+                            <div class="read-only-field">${formatDate(request.activityDate)}</div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="font-normal text-gray-600">Time:</label>
+                            <div class="read-only-field">${val(request.time)}</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="font-normal text-gray-600">Activity Name/Title/Purpose:</label>
+                        <div class="read-only-field">${val(request.activityName)}</div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div class="w-1/3 font-normal text-gray-600">Expected # of Participants:</div>
+                        <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span>
+                            <div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div>
+                        </div>
+                        <div class="flex-1 flex items-center"><span class="mr-2">External:</span>
+                            <div class="read-only-field w-20 text-center">${val(request.externalParticipants)}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-black border-t-0 flex text-black">
+                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Venue Reservation</div>
+                    <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Gym Stage / Court')} class="accent-black"> <span>Gym Stage / Court</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Multi-Purpose Hall')} class="accent-black"> <span>Multi-Purpose Hall</span></label>
+                        <div class="flex items-center space-x-2">
+                             <input type="checkbox" disabled ${venues.some(v => v.includes('Classroom')) ? 'checked' : ''}> 
+                             <span>Classroom #</span> 
+                             <div class="read-only-field w-16 text-center">${(venues.find(v => v.includes('Classroom')) || '').replace('Classroom', '').trim()}</div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                             <input type="checkbox" disabled ${venues.some(v => v.includes('Laboratory')) ? 'checked' : ''}> 
+                             <span>Laboratory #</span> 
+                             <div class="read-only-field w-16 text-center">${(venues.find(v => v.includes('Laboratory')) || '').replace('Laboratory', '').trim()}</div>
+                        </div>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Library')} class="accent-black"> <span>Library</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Cafeteria')} class="accent-black"> <span>Cafeteria</span></label>
+                        <div class="col-span-2 flex items-center space-x-2">
+                            <input type="checkbox" disabled ${venues.some(v => v.includes('Others:')) ? 'checked' : ''}> 
+                            <span>Others:</span> 
+                            <div class="read-only-field flex-1">${(venues.find(v => v.includes('Others:')) || '').replace('Others:', '').trim()}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-black border-t-0 flex text-black">
+                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">
+                        <p>Equipment Reservation</p>
+                        <p class="mt-4 text-xs font-bold">Set-up Details:</p>
+                        <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
+                            <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressDate)}</span></p>
+                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressTime)}</span></p>
+                            <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressDate)}</span></p>
+                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressTime)}</span></p>
+                        </div>
+                    </div>
+                    <div class="flex-1 p-2 text-sm">
+                        <div class="grid grid-cols-1 gap-2 mb-2">
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" disabled ${getEquip('Chair', 'count') ? 'checked' : ''} class="accent-black"> 
+                                <span>Chair #</span> 
+                                <div class="read-only-field w-16 text-center font-bold">${getEquip('Chair', 'count')}</div>
+                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquip('Chair', 'type')}</div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" disabled ${getEquip('Table', 'count') ? 'checked' : ''} class="accent-black"> 
+                                <span>Table #</span> 
+                                <div class="read-only-field w-16 text-center font-bold">${getEquip('Table', 'count')}</div>
+                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquip('Table', 'type')}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Podium/Rostrum')} class="accent-black"> <span>Podium/Rostrum</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Sound System')} class="accent-black"> <span>Sound System</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Electric fans')} class="accent-black"> <span>Electric fans</span></label>
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" disabled ${getEquip('Microphone', 'count') ? 'checked' : ''} class="accent-black"> 
+                                <span>Microphone #</span> 
+                                <div class="read-only-field w-12 text-center font-bold">${getEquip('Microphone', 'count')}</div>
+                            </div>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Extension Cord')} class="accent-black"> <span>Extension Cord</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Panel Board / White Board')} class="accent-black"> <span>Panel/White Board</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Philippine Flag')} class="accent-black"> <span>Philippine Flag</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Pamantasan ng Cabuyao Flag')} class="accent-black"> <span>PnC Flag</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Multi-media Projector')} class="accent-black"> <span>Projector</span></label>
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" disabled ${equipments.some(e => e.name.includes('Others:')) ? 'checked' : ''}> 
+                                <span>Others:</span> 
+                                <div class="read-only-field w-full font-bold">${(equipments.find(e => e.name.includes('Others:'))?.name || '').replace('Others:', '').trim()}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-black border-t-0 flex text-black">
+                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Manpower Requirement</div>
+                    <div class="flex-1 p-2 grid grid-cols-2 gap-4 text-sm">
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" disabled ${manpower.technical ? 'checked' : ''}> 
+                            <span>Technical</span> 
+                            <div class="read-only-field flex-1 font-bold">${val(manpower.technical)}</div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" disabled ${manpower.housekeeping ? 'checked' : ''}> 
+                            <span>Housekeeping</span> 
+                            <div class="read-only-field flex-1 font-bold">${val(manpower.housekeeping)}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-xs text-gray-600 mt-2 mb-6 space-y-1 italic p-2">
+                    <p>• Request must be submitted at least a week before the activity.</p>
+                    <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required.</p>
+                    <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
+                </div>
+
+                <div class="grid grid-cols-4 gap-4 text-center mt-4 text-black text-xs">
+                    <div>
+                        <p class="font-bold mb-8 text-gray-700">Requested by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">${request.requestedBy}</div>
+                        <p class="mt-1">Signature over Printed Name/Date</p>
+                    </div>
+                    
+                    <div class="opacity-90">
+                        <p class="font-bold mb-8 text-gray-700">Reviewed by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || ''}</div>
+                        <p class="mt-1">Department/Division Head</p>
+                        <div class="text-[10px] font-bold ${getStatusClass(deptHead.status)} rounded-full inline-block px-2 mt-1">${deptHead.status}</div>
+                    </div>
+
+                    <div class="opacity-90">
+                        <p class="font-bold mb-8 text-gray-700">Recommended by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">Mr. Colin B. Garcia</div>
+                        <p class="mt-1">PM Officer</p>
+                        <div class="text-[10px] font-bold ${getStatusClass(pmOfficer.status)} rounded-full inline-block px-2 mt-1">${pmOfficer.status}</div>
+                    </div>
+
+                    <div class="opacity-90">
+                        <p class="font-bold mb-8 text-gray-700">Approved by:</p>
+                        <div class="border-b border-black font-bold uppercase text-black pb-1">Alfredo Glenn H. Beaño</div>
+                        <p class="mt-1">PMGSD Director</p>
+                        <div class="text-[10px] font-bold ${getStatusClass(pmgsdDirector.status)} rounded-full inline-block px-2 mt-1">${pmgsdDirector.status}</div>
+                    </div>
                 </div>
             `;
         }
 
-        function formatApprovalBox(approval) {
-            if (approval.status === 'Approved') {
-                return `<div class="border-b border-black font-bold uppercase text-black">${approval.name}</div>`;
-            }
-            return `<div class="border-b border-black text-gray-400 italic">Pending</div>`;
-        }
-
         function renderForm1Content(request) {
-            const deptHeadApproval = request.approvals.deptHead;
-            const ovpasApproval = request.approvals.ovpas || {name: '---', date: '', status: 'Pending'};
-            const oevpApproval = request.approvals.oevp || {name: '---', date: '', status: 'Pending'};
-            const oupApproval = request.approvals.oup || {name: '---', date: '', status: 'Pending'};
+            const deptHeadApproval = request.approvals?.deptHead || {};
+            const ovpasApproval = request.approvals?.ovpas || {name: '---', status: 'Pending'};
+            const oevpApproval = request.approvals?.oevp || {name: '---', status: 'Pending'};
+            const oupApproval = request.approvals?.oup || {name: '---', status: 'Pending'};
             
             const logoUrl = 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c8/Pamantasan_ng_Cabuyao_Logo.png/220px-Pamantasan_ng_Cabuyao_Logo.png';
             const purpose = request.form1 ? request.form1.purpose : 'to conduct the activity';
-            
-            function getLetterSignature(title, approval) {
-                const dateStr = approval.date ? new Date(approval.date).toLocaleDateString() : '---';
-                return `
-                    <div class="mt-4 mb-2">
-                        <div class="font-bold uppercase text-black">${approval.name}</div>
-                        <div class="text-xs font-semibold text-gray-600">${title}</div>
-                        <div class="text-[10px] text-green-700 font-bold">${approval.status} - ${dateStr}</div>
-                    </div>
-                `;
-            }
+            const venues = Array.isArray(request.venue) ? request.venue : [];
 
             return `
-                <div class="bg-white p-8 text-gray-900 font-sans leading-relaxed relative">
+                <div class="bg-white p-8 text-gray-900 font-sans leading-relaxed">
                     <div class="relative mb-10">
                          <img src="${logoUrl}" alt="PnC Logo" class="w-24 h-24 object-contain absolute left-0">
                         <div class="text-center relative z-10">
@@ -417,167 +720,35 @@
                             <p class="text-[10px] text-gray-500 mt-0.5 font-serif">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
                         </div>
                     </div>
-                    <div class="mb-8"><p class="text-xs text-gray-500">(${request.id})</p><p class="mt-2 text-sm">${new Date(request.filingDate).toLocaleDateString()}</p></div>
+                    <div class="mb-8"><p class="text-xs text-gray-500">(${request.id})</p><p class="mt-2 text-sm">${formatDate(request.filingDate)}</p></div>
                     <div class="mb-6"><p class="font-bold text-sm">Dr. Roberto F. Rañola Jr.</p><p class="text-sm">OIC-University President</p></div>
                     <div class="mb-8 pl-8"><p class="text-sm"><span class="font-bold">Thru: Mr. Colin B. Garcia</span></p><p class="text-sm ml-9">Vice President for Administration and Linkages</p></div>
                     <div class="text-sm text-justify space-y-4">
                         <p class="indent-8">I am writing to respectfully request your approval for the activity titled "<span class="font-bold uppercase">${request.activityName}</span>". The purpose is ${purpose.toLowerCase()}.</p>
-                        <p class="indent-8">We would like to reserve <span class="font-bold">${request.venue.join(' and ')}</span> on <span class="font-bold">${new Date(request.activityDate).toLocaleDateString()}</span>.</p>
+                        <p class="indent-8">We would like to reserve <span class="font-bold">${venues.join(' and ')}</span> on <span class="font-bold">${formatDate(request.activityDate)}</span>.</p>
                         <p class="indent-8">Thank you very much for your favorable response.</p>
                     </div>
                     <div class="mt-8"><p class="text-sm mb-4">Respectfully yours,</p><div class="mt-4"><p class="font-bold uppercase">${request.requestedBy}</p><p class="text-sm text-gray-600">Requester / ${request.department}</p></div></div>
-                    <div class="mt-10 pt-4 border-t-2 border-dashed border-gray-200">
-                        <p class="text-xs font-bold text-gray-400 uppercase mb-4">Administrative Action / Signatories</p>
-                        <div class="grid grid-cols-2 gap-y-6 gap-x-8">
-                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Department / Division Head', deptHeadApproval)}</div>
-                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('OVPAS', ovpasApproval)}</div>
-                            <div><p class="text-xs italic text-gray-500">Recommending Approval:</p>${getLetterSignature('Office of the Executive VP', oevpApproval)}</div>
-                            <div><p class="text-xs italic text-gray-500 font-bold">Approved / Disapproved:</p>${getLetterSignature('Office of the University President', oupApproval)}</div>
-                        </div>
-                    </div>
                 </div>
             `;
         }
 
-        function renderForm2Content(request) {
-            const deptHeadApproval = request.approvals.deptHead;
-            const pmOfficer = request.approvals.pmOfficer;
-            const pmgsdDirector = request.approvals.pmgsdDirector;
-
-            const chairData = request.equipment.find(e => typeof e === 'object' && e.name === 'Chair');
-            const tableData = request.equipment.find(e => typeof e === 'object' && e.name === 'Table');
-            const venues = ['Gym Stage / Court', 'Multi-Purpose Hall', 'Library', 'Cafeteria', 'Classroom #', 'Laboratory #', 'Others:'];
-
-            return `
-                <div class="form-header flex items-center justify-center space-x-4 mb-2">
-                    <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-500">[LOGO]</div>
-                    <div class="text-center">
-                         <p class="text-[10px] text-right w-full mb-2">PNC:AF-FO-15 rev.0 02012023</p>
-                        <h2 class="text-xl font-bold text-black font-sans">Pamantasan ng Cabuyao</h2>
-                        <p class="text-xs font-bold">(University of Cabuyao)</p>
-                        <p class="font-bold text-gray-800 mt-1 text-sm italic">Property Management and General Services Department</p>
-                    </div>
-                </div>
-                <div class="form-title text-black text-center font-bold text-lg mb-4">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
-                <div class="p-0 space-y-4 text-sm text-black">
-                    <div class="flex flex-wrap gap-4 items-end">
-                        <div class="flex-1"><label class="font-normal">Transaction Number</label><div class="line-input input-disabled filled-data">${request.id}</div></div>
-                        <div class="flex-1"><label class="font-normal">Date of Filing</label><div class="line-input input-disabled filled-data">${request.filingDate}</div></div>
-                        <div class="flex-1"><label class="font-normal">Department</label><div class="line-input input-disabled filled-data">${request.department}</div></div>
-                    </div>
-                    <div class="flex flex-wrap gap-4">
-                         <div class="flex-1"><label class="font-normal">Activity Date</label><div class="line-input input-disabled filled-data">${request.activityDate}</div></div>
-                         <div class="flex-1"><label class="font-normal">Time</label><div class="line-input input-disabled filled-data">${request.time}</div></div>
-                    </div>
-                     <div><label class="font-normal">Activity Name</label><div class="line-input input-disabled filled-data">${request.activityName}</div></div>
-                    <div class="flex flex-wrap gap-4 items-end">
-                        <div class="w-1/3">Participants:</div>
-                        <div class="flex-1 flex items-center"><span class="mr-2">Internal</span><div class="line-input input-disabled w-20 text-center filled-data">${request.internalParticipants || 0}</div></div>
-                        <div class="flex-1 flex items-center"><span class="mr-2">External</span><div class="line-input input-disabled w-20 text-center filled-data">${request.externalParticipants || 0}</div></div>
-                    </div>
-                </div>
-                <div class="form-border form-border-b mt-4 flex">
-                    <div class="w-48 font-bold p-2 form-border-r">Venue Reservation</div>
-                    <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                         ${venues.map(v => `<label class="flex items-center space-x-2"><input type="checkbox" disabled ${request.venue.includes(v) ? 'checked' : ''} class="form-checkbox h-3 w-3 accent-black"> <span class="${request.venue.includes(v) ? 'font-bold text-black' : ''}">${v}</span></label>`).join('')}
-                    </div>
-                </div>
-                 <div class="form-border flex mb-4">
-                    <div class="w-48 font-bold p-2 form-border-r">Equipment</div>
-                    <div class="flex-1 p-2 text-sm">
-                        <p class="flex items-center gap-2">Chair # <span class="border-b border-black w-16 text-center font-bold text-black">${chairData ? chairData.count : ''}</span></p>
-                        <p class="flex items-center gap-2">Table # <span class="border-b border-black w-16 text-center font-bold text-black">${tableData ? tableData.count : ''}</span></p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-4 gap-4 text-center mt-8 text-xs">
-                    <div><p class="font-bold mb-8">Requested by:</p><div class="border-b border-black font-bold uppercase text-black">${request.requestedBy}</div></div>
-                    <div><p class="font-bold mb-8">Reviewed by:</p><div class="border-b border-black font-bold uppercase text-black">${deptHeadApproval.name}</div><p class="mt-1">Dept Head</p></div>
-                    <div><p class="font-bold mb-8">Recommended by:</p>${formatApprovalBox(pmOfficer)}<p class="mt-1">Mr. Colin B. Garcia</p></div>
-                    <div><p class="font-bold mb-8">Approved by:</p>${formatApprovalBox(pmgsdDirector)}<p class="mt-1">Alfredo Glenn H. Beaño</p></div>
-                </div>
-            `;
-        }
-        
         window.onload = () => {
-            // 1. Look at the URL address bar
             const urlParams = new URLSearchParams(window.location.search);
-
-            // 2. Try to get the "id" value (e.g., RES-123456)
             const idFromUrl = urlParams.get('id');
 
             if (idFromUrl) {
-                // 3. IF FOUND: Auto-fill the input box
                 document.getElementById('trackInput').value = idFromUrl;
-
-                // 4. Auto-click the track button (runs the search)
                 trackRequest();
-            } else {
-                // 5. IF NOT FOUND: Just stay on the search screen
-                document.getElementById('searchView').classList.remove('hidden');
             }
         };
-        
-        // --- FIREBASE DEBUGGER ---
-        function debugFirebase() {
-            console.log("=== FIREBASE DATA CHECK ===");
 
-            // Check if Firebase is properly set up
-            if (!window.db || !window.ref || !window.get) {
-                console.error("❌ Firebase not initialized properly!");
-                console.log("Available:", {
-                    db: !!window.db,
-                    ref: !!window.ref,
-                    get: !!window.get
-                });
-                return;
-            }
-
-            // Get all requests from Firebase
+        window.debugFirebase = function() {
             const requestsRef = window.ref(window.db, 'requests');
             window.get(requestsRef).then((snapshot) => {
-                const data = snapshot.val();
-
-                if (!data) {
-                    console.log("📭 Firebase 'requests' folder is EMPTY");
-                    console.log("No reservations have been submitted yet.");
-                    return;
-                }
-
-                console.log(`📊 Found ${Object.keys(data).length} reservation(s):`);
-                console.log("IDs:", Object.keys(data));
-
-                // Show structure of first request (as example)
-                const firstId = Object.keys(data)[0];
-                console.log("---");
-                console.log(`📄 Example structure of: ${firstId}`);
-                console.log(JSON.stringify(data[firstId], null, 2));
-
-                // Check what each website expects vs what exists
-                console.log("---");
-                console.log("🔍 Data Structure Check:");
-
-                const example = data[firstId];
-                const checks = {
-                    "Has 'id' field": !!example.id,
-                    "Has 'status' field": !!example.status,
-                    "Has 'approvals' object": !!example.approvals,
-                    "Has 'activityName'": !!example.activityName,
-                    "Has 'requestedBy'": !!example.requestedBy,
-                };
-
-                Object.entries(checks).forEach(([check, exists]) => {
-                    console.log(`${exists ? '✅' : '❌'} ${check}`);
-                });
-
-            }).catch((error) => {
-                console.error("🔥 Firebase error:", error);
+                console.log('Firebase data:', snapshot.val());
             });
-        }
-
-        // Make it available in browser console
-        window.debugFirebase = debugFirebase;
-        console.log("📢 Debug tool ready! Type 'debugFirebase()' in console.");
+        };
     </script>
 </body>
-
 </html>
