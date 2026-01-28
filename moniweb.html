@@ -363,21 +363,7 @@
             });
         }
 
-        // Check URL parameters on page load
-        function checkURLParams() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const trackingId = urlParams.get('id');
-            
-            if (trackingId) {
-                // Automatically load the request from QR code scan
-                console.log('🔍 QR Code detected! Loading request:', trackingId);
-                document.getElementById('trackInput').value = trackingId;
-                
-                // Add a small delay to ensure Firebase is initialized
-                setTimeout(() => {
-                    trackRequest();
-                }, 500);
-            }
+
         }
 
         // Call checkURLParams when page loads
@@ -875,15 +861,31 @@
             `;
         }
 
-        window.onload = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const idFromUrl = urlParams.get('id');
+        // Wait for Firebase to initialize before checking URL params
+        window.addEventListener('DOMContentLoaded', () => {
+            const checkFirebaseAndLoad = () => {
+                // Check if Firebase is initialized
+                if (window.db && window.ref && window.onValue) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const idFromUrl = urlParams.get('id');
 
-            if (idFromUrl) {
-                document.getElementById('trackInput').value = idFromUrl;
-                trackRequest();
-            }
-        };
+                    if (idFromUrl) {
+                        console.log('🔍 QR Code detected! Loading request:', idFromUrl);
+                        document.getElementById('trackInput').value = idFromUrl;
+                        
+                        // Small delay to ensure everything is ready
+                        setTimeout(() => {
+                            trackRequest();
+                        }, 500);
+                    }
+                } else {
+                    // Firebase not ready yet, try again in 100ms
+                    setTimeout(checkFirebaseAndLoad, 100);
+                }
+            };
+            
+            checkFirebaseAndLoad();
+        });
 
         window.debugFirebase = function() {
             const requestsRef = window.ref(window.db, 'requests');
