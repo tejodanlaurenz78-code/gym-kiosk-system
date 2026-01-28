@@ -815,7 +815,7 @@
             // --- 6. Send to Firebase ---
             window.set(window.ref(window.db, 'requests/' + trackingId), formData)
                 .then(() => {
-                    const moniwebUrl = `${window.location.origin}/moniweb.html`;
+                    const moniwebUrl = `${window.location.origin}/gym-kiosk-system/moniweb.html`;
                     const qrData = `${moniwebUrl}?id=${trackingId}`;
                     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
                     
