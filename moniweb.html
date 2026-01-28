@@ -242,6 +242,9 @@
 
     <!-- Results View -->
     <div id="resultsView" class="hidden max-w-7xl mx-auto px-6 py-8 pb-20">
+        <!-- Status Alert Banner -->
+        <div id="statusAlert" class="hidden mb-6 p-4 rounded-lg border-l-4"></div>
+        
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <!-- Left Card - Request Details -->
             <div class="lg:col-span-2">
@@ -330,22 +333,29 @@
 
             const requestRef = window.ref(window.db, `requests/${trackId}`);
 
-            window.get(requestRef)
-                .then((snapshot) => {
-                    if (snapshot.exists()) {
-                        currentRequest = snapshot.val();
-                        displayRequest(currentRequest);
-                        document.getElementById('searchView').classList.add('hidden');
-                        document.getElementById('resultsView').classList.remove('hidden');
-                        document.getElementById('errorMsg').classList.add('hidden');
-                    } else {
-                        document.getElementById('errorMsg').classList.remove('hidden');
-                    }
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                    alert('Error loading request. Please try again.');
-                });
+            // Use onValue for real-time updates
+            window.onValue(requestRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    currentRequest = snapshot.val();
+                    displayRequest(currentRequest);
+                    document.getElementById('searchView').classList.add('hidden');
+                    document.getElementById('resultsView').classList.remove('hidden');
+                    document.getElementById('errorMsg').classList.add('hidden');
+                    
+                    // Update "Last updated" timestamp
+                    const now = new Date().toLocaleString('en-US', { 
+                        hour: 'numeric', 
+                        minute: 'numeric', 
+                        hour12: true 
+                    });
+                    document.getElementById('lastUpdated').textContent = `Last updated: ${now}`;
+                } else {
+                    document.getElementById('errorMsg').classList.remove('hidden');
+                }
+            }, (error) => {
+                console.error('Error:', error);
+                alert('Error loading request. Please try again.');
+            });
         }
 
         function formatDate(dateStr) {
@@ -354,7 +364,86 @@
             return date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
         }
 
+        function showStatusAlert(request) {
+            const alertDiv = document.getElementById('statusAlert');
+            const status = request.status || '';
+            
+            if (status.includes('Rejected')) {
+                alertDiv.className = 'mb-6 p-4 rounded-lg border-l-4 bg-red-50 border-red-500';
+                alertDiv.innerHTML = `
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-red-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                        <div>
+                            <h4 class="font-bold text-red-900">Request Rejected</h4>
+                            <p class="text-sm text-red-700 mt-1">Your request has been rejected. Please check the timeline below for details.</p>
+                        </div>
+                    </div>
+                `;
+                alertDiv.classList.remove('hidden');
+            } else if (status.includes('Appointment')) {
+                alertDiv.className = 'mb-6 p-4 rounded-lg border-l-4 bg-yellow-50 border-yellow-500';
+                alertDiv.innerHTML = `
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-yellow-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                        <div>
+                            <h4 class="font-bold text-yellow-900">📅 Appointment Required</h4>
+                            <p class="text-sm text-yellow-700 mt-1">An appointment has been set. Please check the timeline below for appointment details.</p>
+                        </div>
+                    </div>
+                `;
+                alertDiv.classList.remove('hidden');
+            } else if (status.includes('Approved') || status.includes('Completed')) {
+                alertDiv.className = 'mb-6 p-4 rounded-lg border-l-4 bg-green-50 border-green-500';
+                alertDiv.innerHTML = `
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <div>
+                            <h4 class="font-bold text-green-900">✅ Request Approved</h4>
+                            <p class="text-sm text-green-700 mt-1">Your request has been approved. You can now proceed to document stamping.</p>
+                        </div>
+                    </div>
+                `;
+                alertDiv.classList.remove('hidden');
+            } else {
+                alertDiv.classList.add('hidden');
+            }
+        }
+
+        function getStatusBadge(status) {
+            if (!status) status = 'Processing';
+            
+            let bgClass = 'bg-blue-100 border-blue-300';
+            let textClass = 'text-blue-700';
+            
+            if (status.includes('Rejected')) {
+                bgClass = 'bg-red-100 border-red-300';
+                textClass = 'text-red-700';
+            } else if (status.includes('Appointment')) {
+                bgClass = 'bg-yellow-100 border-yellow-300';
+                textClass = 'text-yellow-700';
+            } else if (status.includes('Approved') || status.includes('Completed')) {
+                bgClass = 'bg-green-100 border-green-300';
+                textClass = 'text-green-700';
+            } else if (status.includes('Pending')) {
+                bgClass = 'bg-blue-100 border-blue-300';
+                textClass = 'text-blue-700';
+            }
+            
+            return `<div class="inline-block px-4 py-2 rounded-full ${bgClass} border-2">
+                        <p class="text-sm font-bold ${textClass} uppercase">${status}</p>
+                    </div>`;
+        }
+
                 function displayRequest(request) {
+            // Show status alerts
+            showStatusAlert(request);
+            
             // Request Details Card (Left)
             const venueList = Array.isArray(request.venue) ? request.venue.join(', ') : request.venue || 'Not specified';
             
@@ -382,9 +471,7 @@
                     
                     <div class="pt-4 border-t">
                         <p class="text-xs text-gray-500 mb-2">Overall Status</p>
-                        <div class="inline-block px-4 py-2 rounded-full bg-blue-100 border-2 border-blue-300">
-                            <p class="text-sm font-bold text-blue-700 uppercase">${request.status || 'Processing'}</p>
-                        </div>
+                        ${getStatusBadge(request.status)}
                     </div>
                 </div>
             `;
@@ -410,6 +497,7 @@
                     sublabel: 'Successfully processed by Department Head.',
                     status: request.approvals?.deptHead?.status || 'Approved',
                     date: request.approvals?.deptHead?.date || '',
+                    remarks: request.approvals?.deptHead?.remarks || '',
                     icon: '✓'
                 },
                 {
@@ -417,14 +505,20 @@
                     sublabel: 'Currently with the PM Officer for action.',
                     status: request.approvals?.pmOfficer?.status || 'Pending',
                     date: request.approvals?.pmOfficer?.date || '',
-                    icon: request.approvals?.pmOfficer?.status === 'Approved' ? '✓' : '⏱'
+                    remarks: request.approvals?.pmOfficer?.remarks || '',
+                    icon: request.approvals?.pmOfficer?.status === 'Approved' ? '✓' : 
+                          request.approvals?.pmOfficer?.status === 'Appointment Set' ? '📅' :
+                          request.approvals?.pmOfficer?.status === 'Rejected' ? '✕' : '⏱'
                 },
                 {
                     label: 'Final Approval',
                     sublabel: '',
                     status: request.approvals?.pmgsdDirector?.status || 'Pending',
                     date: request.approvals?.pmgsdDirector?.date || '',
-                    icon: request.approvals?.pmgsdDirector?.status === 'Approved' ? '✓' : '○'
+                    remarks: request.approvals?.pmgsdDirector?.remarks || '',
+                    icon: request.approvals?.pmgsdDirector?.status === 'Approved' ? '✓' :
+                          request.approvals?.pmgsdDirector?.status === 'Appointment Set' ? '📅' :
+                          request.approvals?.pmgsdDirector?.status === 'Rejected' ? '✕' : '○'
                 },
                 {
                     label: 'Document Stamping',
@@ -437,6 +531,8 @@
 
             return steps.map((step, index) => {
                 const isCompleted = step.status === 'Approved';
+                const isAppointment = step.status === 'Appointment Set';
+                const isRejected = step.status === 'Rejected';
                 const isInProgress = step.status === 'Pending' && index > 0 && steps[index - 1].status === 'Approved';
                 const isPending = step.status === 'Pending' && !isInProgress;
                 
@@ -444,12 +540,35 @@
                 let textClass = 'text-gray-400';
                 let statusText = '';
                 let statusDate = '';
+                let remarksHTML = '';
                 
                 if (isCompleted) {
                     dotClass = 'bg-green-600 text-white';
                     textClass = 'text-gray-900';
                     statusText = `<span class="text-xs font-semibold text-green-600">Completed</span>`;
                     statusDate = step.date ? `<span class="text-xs text-gray-500">on ${formatDate(step.date)}</span>` : '';
+                } else if (isAppointment) {
+                    dotClass = 'bg-yellow-500 text-white';
+                    textClass = 'text-gray-900';
+                    statusText = `<span class="text-xs font-semibold text-yellow-600">Appointment Set</span>`;
+                    statusDate = step.date ? `<span class="text-xs text-gray-500">on ${formatDate(step.date)}</span>` : '';
+                    remarksHTML = step.remarks ? `
+                        <div class="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                            <p class="text-xs font-semibold text-yellow-900">📅 Appointment Details:</p>
+                            <p class="text-xs text-yellow-800 mt-1 whitespace-pre-line">${step.remarks}</p>
+                        </div>
+                    ` : '';
+                } else if (isRejected) {
+                    dotClass = 'bg-red-600 text-white';
+                    textClass = 'text-gray-900';
+                    statusText = `<span class="text-xs font-semibold text-red-600">Rejected</span>`;
+                    statusDate = step.date ? `<span class="text-xs text-gray-500">on ${formatDate(step.date)}</span>` : '';
+                    remarksHTML = step.remarks ? `
+                        <div class="mt-2 p-3 bg-red-50 border-l-4 border-red-400 rounded">
+                            <p class="text-xs font-semibold text-red-900">❌ Rejection Reason:</p>
+                            <p class="text-xs text-red-800 mt-1">${step.remarks}</p>
+                        </div>
+                    ` : '';
                 } else if (isInProgress) {
                     dotClass = 'bg-yellow-500 text-white';
                     textClass = 'text-gray-900';
@@ -464,10 +583,11 @@
                         </div>
                         <div class="flex-1 pt-1">
                             <div class="flex items-start justify-between">
-                                <div>
+                                <div class="w-full">
                                     <h4 class="font-bold ${textClass} text-base">${step.label}</h4>
                                     <p class="text-sm ${textClass === 'text-gray-900' ? 'text-gray-600' : 'text-gray-400'} mt-1">${step.sublabel}</p>
                                     ${statusText ? `<div class="mt-2 flex items-center space-x-2">${statusText} ${statusDate}</div>` : ''}
+                                    ${remarksHTML}
                                 </div>
                             </div>
                         </div>
