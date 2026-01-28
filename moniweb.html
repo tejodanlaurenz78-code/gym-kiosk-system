@@ -303,6 +303,11 @@
         let currentRequest = null;
 
         function showSearch() {
+            // Clear URL parameters
+            if (window.history.replaceState) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            
             document.getElementById('searchView').classList.remove('hidden');
             document.getElementById('resultsView').classList.add('hidden');
             document.getElementById('trackInput').value = '';
@@ -357,6 +362,34 @@
                 alert('Error loading request. Please try again.');
             });
         }
+
+        // Check URL parameters on page load
+        function checkURLParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const trackingId = urlParams.get('id');
+            
+            if (trackingId) {
+                // Automatically load the request from QR code scan
+                console.log('🔍 QR Code detected! Loading request:', trackingId);
+                document.getElementById('trackInput').value = trackingId;
+                
+                // Add a small delay to ensure Firebase is initialized
+                setTimeout(() => {
+                    trackRequest();
+                }, 500);
+            }
+        }
+
+        // Call checkURLParams when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            // Wait for Firebase to initialize
+            const checkFirebase = setInterval(() => {
+                if (window.db) {
+                    clearInterval(checkFirebase);
+                    checkURLParams();
+                }
+            }, 100);
+        });
 
         function formatDate(dateStr) {
             if (!dateStr) return '';
