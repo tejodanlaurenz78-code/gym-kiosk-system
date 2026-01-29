@@ -363,13 +363,6 @@
             });
         }
 
-            // Wait for Firebase to initialize
-            const checkFirebase = setInterval(() => {
-                if (window.db) {
-                    clearInterval(checkFirebase);
-                }
-            }, 100);
-        });
 
         function formatDate(dateStr) {
             if (!dateStr) return '';
