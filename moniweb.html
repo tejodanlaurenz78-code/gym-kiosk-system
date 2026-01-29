@@ -363,16 +363,10 @@
             });
         }
 
-
-        }
-
-        // Call checkURLParams when page loads
-        window.addEventListener('DOMContentLoaded', () => {
             // Wait for Firebase to initialize
             const checkFirebase = setInterval(() => {
                 if (window.db) {
                     clearInterval(checkFirebase);
-                    checkURLParams();
                 }
             }, 100);
         });
@@ -861,31 +855,42 @@
             `;
         }
 
-        // Wait for Firebase to initialize before checking URL params
-        window.addEventListener('DOMContentLoaded', () => {
-            const checkFirebaseAndLoad = () => {
-                // Check if Firebase is initialized
-                if (window.db && window.ref && window.onValue) {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const idFromUrl = urlParams.get('id');
-
-                    if (idFromUrl) {
-                        console.log('🔍 QR Code detected! Loading request:', idFromUrl);
-                        document.getElementById('trackInput').value = idFromUrl;
-                        
-                        // Small delay to ensure everything is ready
-                        setTimeout(() => {
-                            trackRequest();
-                        }, 500);
-                    }
-                } else {
-                    // Firebase not ready yet, try again in 100ms
-                    setTimeout(checkFirebaseAndLoad, 100);
-                }
-            };
+        // AUTO-LOAD FROM QR CODE - Wait for Firebase to be ready
+        function autoLoadFromQR() {
+            console.log('🔍 Checking for QR code parameter...');
             
-            checkFirebaseAndLoad();
-        });
+            // Get URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const idFromUrl = urlParams.get('id');
+            
+            if (idFromUrl) {
+                console.log('✅ QR Code detected! Transaction ID:', idFromUrl);
+                
+                // Check if Firebase is ready
+                if (window.db && window.ref && window.onValue) {
+                    console.log('✅ Firebase ready, loading request...');
+                    document.getElementById('trackInput').value = idFromUrl;
+                    
+                    // Give a small delay for DOM to be fully ready
+                    setTimeout(() => {
+                        trackRequest();
+                    }, 500);
+                } else {
+                    console.log('⏳ Firebase not ready yet, waiting...');
+                    setTimeout(autoLoadFromQR, 200);
+                }
+            } else {
+                console.log('ℹ️ No QR code parameter found in URL');
+            }
+        }
+        
+        // Start checking when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', autoLoadFromQR);
+        } else {
+            // Document already loaded
+            autoLoadFromQR();
+        }
 
         window.debugFirebase = function() {
             const requestsRef = window.ref(window.db, 'requests');
