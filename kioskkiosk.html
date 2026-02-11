@@ -196,12 +196,17 @@
             <div id="uploadView" class="view-panel hidden text-center max-w-3xl mx-auto pt-10">
                 <h2 class="text-3xl font-bold text-gray-700 mb-8">Step 1: Request Letter</h2>
                 
-                <div class="bg-black rounded-xl overflow-hidden shadow-2xl mb-4 relative aspect-video flex items-center justify-center">
-                    <img id="kioskCameraStream" src="http://192.168.100.57:5000/video_feed" class="w-full h-full object-cover" alt="Camera Feed">
+                <div class="bg-black rounded-xl overflow-hidden shadow-2xl mb-4 relative flex items-center justify-center mx-auto" 
+                     style="width: 340px; height: 520px;">
                     
-                    <div class="absolute inset-0 border-2 border-dashed border-white/30 pointer-events-none m-8 rounded-lg"></div>
+                    <img id="kioskCameraStream" 
+                         src="http://192.168.100.57:5000/video_feed" 
+                         class="w-full h-full object-cover" 
+                         alt="Camera Feed">
+                    
+                    <div class="absolute inset-0 border-2 border-dashed border-white/30 pointer-events-none m-4 rounded-lg"></div>
                 </div>
-            
+                
                 <div class="flex flex-col items-center gap-4 mb-8">
                     <button id="captureBtn" class="kiosk-btn !bg-red-600 hover:!bg-red-700 flex items-center gap-2" onclick="captureAndUpload()">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -210,7 +215,6 @@
                         </svg>
                         Capture Document
                     </button>
-                    
                     <p class="text-sm text-gray-500 italic">Position your Request Letter within the frame and click Capture.</p>
                 </div>
             
@@ -218,7 +222,7 @@
             
                 <div id="scanPreviewContainer" class="hidden mb-8">
                     <p class="text-green-700 font-bold mb-2">✓ Captured Successfully</p>
-                    <img id="scanPreviewImage" class="mx-auto h-48 border-2 border-green-500 rounded shadow-md">
+                    <img id="scanPreviewImage" class="mx-auto border-2 border-green-500 rounded shadow-md" style="width: 120px; height: 184px; object-fit: cover;">
                 </div>
             
                 <button id="fileNextBtn" class="kiosk-btn opacity-50 cursor-not-allowed" onclick="showView('formView')" disabled>Next: Fill Reservation Form &rarr;</button>
@@ -906,29 +910,34 @@
             const previewContainer = document.getElementById('scanPreviewContainer');
             const captureBtn = document.getElementById('captureBtn');
         
-            // Set canvas to camera resolution
-            canvas.width = videoImg.naturalWidth || 640;
-            canvas.height = videoImg.naturalHeight || 480;
+            // Set canvas to a high-resolution Portrait Long Bond Paper ratio (approx 1:1.53)
+            // Using 1000px width for a sharp scan
+            canvas.width = 1000; 
+            canvas.height = 1530; 
         
-            // 1. Draw the current frame from the MJPEG stream
-            ctx.drawImage(videoImg, 0, 0, canvas.width, canvas.height);
+            // Draw the image. object-fit: cover is simulated here by cropping the center
+            // This ensures we don't get black bars in the saved file
+            const streamWidth = videoImg.naturalWidth || 640;
+            const streamHeight = videoImg.naturalHeight || 480;
+            
+            // Calculate cropping to fit portrait ratio from landscape stream
+            const renderWidth = streamHeight * (8.5 / 13);
+            const offsetX = (streamWidth - renderWidth) / 2;
         
-            // 2. Convert to blob and upload
+            ctx.drawImage(videoImg, offsetX, 0, renderWidth, streamHeight, 0, 0, canvas.width, canvas.height);
+        
             canvas.toBlob((blob) => {
                 if (!blob) return alert("Capture failed. Try again.");
         
-                // Show local preview
                 previewImg.src = URL.createObjectURL(blob);
                 previewContainer.classList.remove('hidden');
                 
-                // Disable button while uploading
                 captureBtn.innerText = "Uploading...";
                 captureBtn.disabled = true;
         
                 const formData = new FormData();
-                formData.append('document', blob, 'request_letter.jpg');
+                formData.append('document', blob, 'request_letter_long.jpg');
         
-                // Send to your Flask backend
                 fetch('http://192.168.100.57:5000/api/upload_scan', {
                     method: 'POST',
                     body: formData
@@ -938,8 +947,6 @@
                     console.log("Upload Success:", data);
                     captureBtn.innerText = "Retake Capture";
                     captureBtn.disabled = false;
-                    
-                    // Enable the 'Next' button now that we have a scan
                     nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                     nextBtn.disabled = false;
                 })
@@ -949,14 +956,14 @@
                     captureBtn.innerText = "Capture Document";
                     captureBtn.disabled = false;
                 });
-        
-            }, 'image/jpeg', 0.90);
+            }, 'image/jpeg', 0.95);
         };
     </script>
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
