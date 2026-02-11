@@ -323,7 +323,7 @@
                     </div>
                 </div>
                 <div class="max-w-4xl mx-auto mt-8 flex justify-end space-x-4 pb-10">
-                    <button class="px-6 py-3 bg-gray-400 text-white rounded hover:bg-gray-500" onclick="showView('uploadView')">Cancel</button>
+                    <button class="px-6 py-3 bg-gray-400 text-white rounded hover:bg-gray-500" onclick="showView('')">Cancel</button>
                     <button class="kiosk-btn" onclick="proceedToSubmissionChoice()">SUBMIT FORM &rarr;</button>
                 </div>
             </div>
@@ -929,7 +929,7 @@
                 formData.append('document', blob, 'request_letter.jpg');
         
                 // Send to your Flask backend
-                fetch('http://localhost:5000/api/upload_scan', {
+                fetch('http://192.168.100.57:5000/video_feed', {
                     method: 'POST',
                     body: formData
                 })
@@ -957,6 +957,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
