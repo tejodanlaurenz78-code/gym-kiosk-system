@@ -1056,15 +1056,51 @@
         //   This avoids ALL cross-origin canvas issues.
         // Strategy 2 (fallback): draw the <img> stream to canvas (requires CORS headers
         //   on the Flask server; crossorigin="anonymous" is already set on the img tag).
+      // ── Core snapshot function (FIXED – no canvas fallback) ──
         async function grabSnapshot() {
-            // Strategy 1 – dedicated snapshot endpoint
+            // Test that the Pi server is reachable first, giving a clear
+            // error message if the server is down rather than a CORS error.
+            let resp;
             try {
-                const resp = await fetch(PI_BASE + '/api/snapshot', { cache: 'no-store' });
-                if (resp.ok) {
-                    const blob = await resp.blob();
-                    if (blob.size > 0) return blob;
-                }
-            } catch (_) { /* fall through */ }
+                resp = await fetch(PI_BASE + '/api/snapshot', {
+                    method: 'GET',
+                    cache:  'no-store'
+                });
+            } catch (networkErr) {
+                // Server not reachable at all (wrong IP, server not running, etc.)
+                throw new Error(
+                    'Cannot reach Pi Camera server at ' + PI_BASE + '.\n\n' +
+                    'Checklist:\n' +
+                    '  1. Run:  python3 camera_server.py  on the Raspberry Pi\n' +
+                    '  2. Pi IP is still 192.168.100.57\n' +
+                    '  3. Kiosk and Pi are on the same Wi-Fi network'
+                );
+            }
+
+            if (!resp.ok) {
+                // Server reachable but returned an error (e.g. camera warming up)
+                let detail = '';
+                try {
+                    const json = await resp.json();
+                    detail = json.error || '';
+                } catch (_) {}
+                throw new Error(
+                    'Pi Camera server returned HTTP ' + resp.status + '. ' +
+                    (detail || 'Check the terminal where camera_server.py is running.')
+                );
+            }
+
+            const blob = await resp.blob();
+
+            if (!blob || blob.size === 0) {
+                throw new Error(
+                    '/api/snapshot returned an empty file.\n' +
+                    'Check the camera_server.py terminal for errors.'
+                );
+            }
+
+            return blob;   // clean JPEG blob — no canvas, no CORS issue
+        }
 
             // Strategy 2 – canvas drawImage from the MJPEG <img>
             const videoImg = document.getElementById('kioskCameraStream');
@@ -1181,3 +1217,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
