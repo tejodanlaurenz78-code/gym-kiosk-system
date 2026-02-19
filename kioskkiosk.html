@@ -193,39 +193,100 @@
                 </div>
             </div>
 
-            <div id="uploadView" class="view-panel hidden text-center max-w-3xl mx-auto pt-10">
-                <h2 class="text-3xl font-bold text-gray-700 mb-8">Step 1: Request Letter</h2>
-                
-                <div class="bg-black rounded-xl overflow-hidden shadow-2xl mb-4 relative flex items-center justify-center mx-auto" 
+            <div id="uploadView" class="view-panel hidden text-center max-w-3xl mx-auto pt-6 pb-10">
+                <h2 class="text-3xl font-bold text-gray-700 mb-1">Step 1: Request Letter</h2>
+                <p class="text-sm text-gray-400 mb-5 italic">Place the document flat under the camera, then press <strong>Capture Document</strong>.</p>
+
+                <!-- ── Camera Viewfinder ── -->
+                <div id="cameraViewfinder"
+                     class="relative bg-black rounded-2xl overflow-hidden shadow-2xl mx-auto mb-5"
                      style="width: 340px; height: 520px;">
-                    
-                    <img id="kioskCameraStream" 
-                         src="http://192.168.100.57:5000/video_feed" 
-                         class="w-full h-full object-cover" 
+
+                    <!-- Live stream (crossorigin needed so canvas.drawImage won't taint) -->
+                    <img id="kioskCameraStream"
+                         src="http://192.168.100.57:5000/video_feed"
+                         crossorigin="anonymous"
+                         class="w-full h-full object-cover"
                          alt="Camera Feed">
-                    
-                    <div class="absolute inset-0 border-2 border-dashed border-white/30 pointer-events-none m-4 rounded-lg"></div>
-                </div>
-                
-                <div class="flex flex-col items-center gap-4 mb-8">
-                    <button id="captureBtn" class="kiosk-btn !bg-red-600 hover:!bg-red-700 flex items-center gap-2" onclick="captureAndUpload()">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+
+                    <!-- Document alignment guide -->
+                    <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                        <div class="border-2 border-dashed border-white/40 rounded-lg" style="width:290px;height:430px;"></div>
+                    </div>
+                    <!-- Corner markers -->
+                    <div class="absolute top-10 left-6  w-7 h-7 border-t-4 border-l-4 border-yellow-300 rounded-tl pointer-events-none"></div>
+                    <div class="absolute top-10 right-6  w-7 h-7 border-t-4 border-r-4 border-yellow-300 rounded-tr pointer-events-none"></div>
+                    <div class="absolute bottom-10 left-6  w-7 h-7 border-b-4 border-l-4 border-yellow-300 rounded-bl pointer-events-none"></div>
+                    <div class="absolute bottom-10 right-6  w-7 h-7 border-b-4 border-r-4 border-yellow-300 rounded-br pointer-events-none"></div>
+
+                    <!-- Countdown overlay -->
+                    <div id="captureCountdown"
+                         class="hidden absolute inset-0 flex items-center justify-center bg-black/50 pointer-events-none">
+                        <span id="countdownNum" class="text-white font-black" style="font-size:6rem;text-shadow:0 0 20px rgba(0,0,0,0.8);"></span>
+                    </div>
+
+                    <!-- Shutter flash overlay -->
+                    <div id="shutterFlash"
+                         class="hidden absolute inset-0 bg-white pointer-events-none"
+                         style="transition:opacity 0.25s ease-out;"></div>
+
+                    <!-- Camera offline notice -->
+                    <div id="cameraOffline"
+                         class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gray-950 text-white rounded-2xl p-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87V15.13a1 1 0 01-1.447.9L15 14M3 8h11a2 2 0 012 2v4a2 2 0 01-2 2H3a2 2 0 01-2-2V10a2 2 0 012-2z"/>
                         </svg>
-                        Capture Document
+                        <p class="font-bold text-lg">Camera Offline</p>
+                        <p class="text-xs text-gray-400 mt-1 text-center">Ensure the Pi Camera service is running at<br><span class="font-mono text-yellow-300">192.168.100.57:5000</span></p>
+                        <button onclick="retryCameraFeed()" class="mt-4 px-4 py-2 bg-yellow-400 text-black rounded font-bold text-sm hover:bg-yellow-300">Retry</button>
+                    </div>
+                </div>
+
+                <!-- ── Capture Button ── -->
+                <div id="captureSection" class="flex flex-col items-center gap-3 mb-6">
+                    <button id="captureBtn"
+                            class="kiosk-btn !bg-red-600 hover:!bg-red-700 flex items-center gap-2 text-lg px-10"
+                            onclick="captureAndUpload()">
+                        <!-- Camera icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span id="captureBtnLabel">Capture Document</span>
                     </button>
-                    <p class="text-sm text-gray-500 italic">Position your Request Letter within the frame and click Capture.</p>
+                    <p class="text-xs text-gray-400 italic">Position your Request Letter within the yellow corners and press Capture.</p>
                 </div>
-            
+
+                <!-- Hidden canvas for image processing -->
                 <canvas id="scanCanvas" style="display:none;"></canvas>
-            
-                <div id="scanPreviewContainer" class="hidden mb-8">
-                    <p class="text-green-700 font-bold mb-2">✓ Captured Successfully</p>
-                    <img id="scanPreviewImage" class="mx-auto border-2 border-green-500 rounded shadow-md" style="width: 120px; height: 184px; object-fit: cover;">
+
+                <!-- ── Capture Preview ── -->
+                <div id="scanPreviewContainer" class="hidden mb-6 mx-auto max-w-xs">
+                    <div class="bg-green-50 border border-green-300 rounded-xl p-4">
+                        <div class="flex items-center justify-center gap-2 text-green-700 font-bold mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span id="previewStatusLabel">Captured Successfully</span>
+                        </div>
+                        <img id="scanPreviewImage"
+                             class="mx-auto border-2 border-green-400 rounded shadow"
+                             style="width:120px;height:184px;object-fit:cover;"
+                             alt="Document preview">
+                        <p id="uploadStatusMsg" class="text-xs text-gray-500 mt-2 italic text-center"></p>
+                        <button onclick="retakeCapture()"
+                                class="mt-3 w-full py-2 border border-red-400 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 transition">
+                            ↺ Retake Photo
+                        </button>
+                    </div>
                 </div>
-            
-                <button id="fileNextBtn" class="kiosk-btn opacity-50 cursor-not-allowed" onclick="showView('formView')" disabled>Next: Fill Reservation Form &rarr;</button>
+
+                <button id="fileNextBtn"
+                        class="kiosk-btn opacity-50 cursor-not-allowed"
+                        onclick="showView('formView')"
+                        disabled>
+                    Next: Fill Reservation Form &rarr;
+                </button>
             </div>
             
             <div id="formView" class="view-panel hidden">
@@ -477,6 +538,7 @@
             
             const captureBtn = document.getElementById('captureBtn');
             if (captureBtn) captureBtn.innerText = "Capture Document";
+            if (typeof window.resetUploadView === 'function') window.resetUploadView();
             
             // 2. Reset File Upload Section
             const fileInput = document.getElementById('requestLetterFile');
@@ -899,64 +961,201 @@
             });
         };
 
-        // --- DOCUMENT SCANNING INTEGRATION ---
+        // ─────────────────────────────────────────────────────────────────
+        //  DOCUMENT SCANNING  –  Pi Cam v2 via Flask at 192.168.100.57:5000
+        // ─────────────────────────────────────────────────────────────────
+        const PI_BASE = 'http://192.168.100.57:5000';
 
-        window.captureAndUpload = function() {
+        // ── Camera health: show offline panel if stream fails to load ──
+        (function watchCameraStream() {
+            const img = document.getElementById('kioskCameraStream');
+            if (!img) return;
+            img.addEventListener('error', () => {
+                img.classList.add('hidden');
+                document.getElementById('cameraOffline')?.classList.remove('hidden');
+            });
+        })();
+
+        window.retryCameraFeed = function() {
+            const img    = document.getElementById('kioskCameraStream');
+            const offline = document.getElementById('cameraOffline');
+            img.classList.remove('hidden');
+            offline.classList.add('hidden');
+            // Bust the cache so the browser re-requests the stream
+            img.src = PI_BASE + '/video_feed?t=' + Date.now();
+        };
+
+        // ── Reset upload view to initial state (called by resetKioskData too) ──
+        window.resetUploadView = function() {
+            const captureBtn     = document.getElementById('captureBtn');
+            const captureLbl     = document.getElementById('captureBtnLabel');
+            const preview        = document.getElementById('scanPreviewContainer');
+            const nextBtn        = document.getElementById('fileNextBtn');
+            const uploadStatusMsg = document.getElementById('uploadStatusMsg');
+            const previewLbl     = document.getElementById('previewStatusLabel');
+
+            if (captureBtn)  { captureBtn.disabled = false; captureBtn.classList.remove('opacity-50','cursor-not-allowed'); }
+            if (captureLbl)  { captureLbl.innerText = 'Capture Document'; }
+            if (preview)     { preview.classList.add('hidden'); }
+            if (nextBtn)     { nextBtn.disabled = true; nextBtn.classList.add('opacity-50','cursor-not-allowed'); }
+            if (uploadStatusMsg) { uploadStatusMsg.innerText = ''; }
+            if (previewLbl)  { previewLbl.innerText = 'Captured Successfully'; }
+        };
+
+        window.retakeCapture = function() {
+            window.resetUploadView();
+        };
+
+        // ── Shutter flash + countdown helpers ──
+        function runShutterFlash() {
+            return new Promise(resolve => {
+                const flash = document.getElementById('shutterFlash');
+                if (!flash) { resolve(); return; }
+                flash.style.opacity = '1';
+                flash.classList.remove('hidden');
+                setTimeout(() => {
+                    flash.style.opacity = '0';
+                    setTimeout(() => { flash.classList.add('hidden'); resolve(); }, 260);
+                }, 60);
+            });
+        }
+
+        function runCountdown(seconds) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('captureCountdown');
+                const numEl   = document.getElementById('countdownNum');
+                if (!overlay || !numEl) { resolve(); return; }
+                overlay.classList.remove('hidden');
+                let count = seconds;
+                numEl.innerText = count;
+                const tick = setInterval(() => {
+                    count--;
+                    if (count <= 0) {
+                        clearInterval(tick);
+                        overlay.classList.add('hidden');
+                        resolve();
+                    } else {
+                        numEl.innerText = count;
+                    }
+                }, 1000);
+            });
+        }
+
+        // ── Core snapshot function ──
+        // Strategy 1 (preferred): GET /api/snapshot → Pi returns a JPEG blob directly.
+        //   This avoids ALL cross-origin canvas issues.
+        // Strategy 2 (fallback): draw the <img> stream to canvas (requires CORS headers
+        //   on the Flask server; crossorigin="anonymous" is already set on the img tag).
+        async function grabSnapshot() {
+            // Strategy 1 – dedicated snapshot endpoint
+            try {
+                const resp = await fetch(PI_BASE + '/api/snapshot', { cache: 'no-store' });
+                if (resp.ok) {
+                    const blob = await resp.blob();
+                    if (blob.size > 0) return blob;
+                }
+            } catch (_) { /* fall through */ }
+
+            // Strategy 2 – canvas drawImage from the MJPEG <img>
             const videoImg = document.getElementById('kioskCameraStream');
-            const canvas = document.getElementById('scanCanvas');
-            const ctx = canvas.getContext('2d');
-            const nextBtn = document.getElementById('fileNextBtn');
-            const previewImg = document.getElementById('scanPreviewImage');
-            const previewContainer = document.getElementById('scanPreviewContainer');
-            const captureBtn = document.getElementById('captureBtn');
-        
-            // Set canvas to a high-resolution Portrait Long Bond Paper ratio (approx 1:1.53)
-            // Using 1000px width for a sharp scan
-            canvas.width = 1000; 
-            canvas.height = 1530; 
-        
-            // Draw the image. object-fit: cover is simulated here by cropping the center
-            // This ensures we don't get black bars in the saved file
-            const streamWidth = videoImg.naturalWidth || 640;
-            const streamHeight = videoImg.naturalHeight || 480;
-            
-            // Calculate cropping to fit portrait ratio from landscape stream
-            const renderWidth = streamHeight * (8.5 / 13);
-            const offsetX = (streamWidth - renderWidth) / 2;
-        
-            ctx.drawImage(videoImg, offsetX, 0, renderWidth, streamHeight, 0, 0, canvas.width, canvas.height);
-        
-            canvas.toBlob((blob) => {
-                if (!blob) return alert("Capture failed. Try again.");
-        
-                previewImg.src = URL.createObjectURL(blob);
-                previewContainer.classList.remove('hidden');
-                
-                captureBtn.innerText = "Uploading...";
-                captureBtn.disabled = true;
-        
-                const formData = new FormData();
-                formData.append('document', blob, 'request_letter_long.jpg');
-        
-                fetch('http://192.168.100.57:5000/api/upload_scan', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Upload Success:", data);
-                    captureBtn.innerText = "Retake Capture";
-                    captureBtn.disabled = false;
-                    nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    nextBtn.disabled = false;
-                })
-                .catch(err => {
-                    console.error("Upload error:", err);
-                    alert("Could not connect to Camera Service. Is the Pi script running?");
-                    captureBtn.innerText = "Capture Document";
-                    captureBtn.disabled = false;
-                });
-            }, 'image/jpeg', 0.95);
+            const canvas   = document.getElementById('scanCanvas');
+            const ctx      = canvas.getContext('2d');
+
+            // Long bond paper portrait ratio  8.5 × 13 in
+            canvas.width  = 1000;
+            canvas.height = 1530;
+
+            const sw = videoImg.naturalWidth  || 640;
+            const sh = videoImg.naturalHeight || 480;
+
+            // Centre-crop the landscape stream to portrait ratio
+            const cropW   = Math.min(sw, sh * (8.5 / 13));
+            const cropH   = cropW / (8.5 / 13);
+            const offsetX = (sw - cropW) / 2;
+            const offsetY = (sh - cropH) / 2;
+
+            try {
+                ctx.drawImage(videoImg, offsetX, offsetY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+            } catch (corsErr) {
+                throw new Error('Canvas blocked by CORS. Add the /api/snapshot endpoint to your Pi Flask server (see console).');
+            }
+
+            return new Promise((resolve, reject) => {
+                canvas.toBlob(blob => {
+                    blob ? resolve(blob) : reject(new Error('canvas.toBlob() returned null.'));
+                }, 'image/jpeg', 0.92);
+            });
+        }
+
+        // ── Main capture + upload handler (called by the red button) ──
+        window.captureAndUpload = async function() {
+            const captureBtn      = document.getElementById('captureBtn');
+            const captureLbl      = document.getElementById('captureBtnLabel');
+            const nextBtn         = document.getElementById('fileNextBtn');
+            const previewImg      = document.getElementById('scanPreviewImage');
+            const previewSection  = document.getElementById('scanPreviewContainer');
+            const statusMsg       = document.getElementById('uploadStatusMsg');
+            const previewLbl      = document.getElementById('previewStatusLabel');
+
+            // ── 1. Countdown (gives user a moment to hold still) ──
+            captureBtn.disabled = true;
+            captureLbl.innerText = 'Get ready…';
+            await runCountdown(3);
+
+            // ── 2. Shutter flash ──
+            captureLbl.innerText = 'Capturing…';
+            await runShutterFlash();
+
+            // ── 3. Grab the frame ──
+            let blob;
+            try {
+                blob = await grabSnapshot();
+            } catch (err) {
+                console.error('[Scan] Snapshot failed:', err);
+                alert('Could not capture photo.\n\n' + err.message);
+                captureBtn.disabled = false;
+                captureLbl.innerText = 'Capture Document';
+                return;
+            }
+
+            // ── 4. Show preview immediately ──
+            previewImg.src = URL.createObjectURL(blob);
+            previewLbl.innerText  = 'Captured – uploading…';
+            statusMsg.innerText   = 'Sending to Pi Camera service…';
+            previewSection.classList.remove('hidden');
+
+            // ── 5. Upload to Pi Flask server ──
+            const ts       = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = 'request_letter_' + ts + '.jpg';
+            const fd       = new FormData();
+            fd.append('document', blob, filename);
+
+            try {
+                const resp = await fetch(PI_BASE + '/api/upload_scan', { method: 'POST', body: fd });
+                const data = await resp.json();
+                console.log('[Scan] Upload success:', data);
+
+                previewLbl.innerText = '✓ Captured & Saved';
+                statusMsg.innerText  = 'Saved as ' + filename;
+
+                // Unlock the Next button
+                nextBtn.disabled = false;
+                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                captureLbl.innerText = 'Capture Document';
+                captureBtn.disabled  = false;
+
+            } catch (uploadErr) {
+                console.error('[Scan] Upload error:', uploadErr);
+                previewLbl.innerText = '✓ Captured (upload failed)';
+                statusMsg.innerText  = '⚠ Could not reach Pi service – check Flask is running. You can still proceed.';
+                statusMsg.classList.add('text-yellow-600');
+
+                // Still unlock Next – the image was captured locally
+                nextBtn.disabled = false;
+                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                captureLbl.innerText = 'Capture Document';
+                captureBtn.disabled  = false;
+            }
         };
     </script>
     <!-- Bootstrap JS Bundle with Popper -->
