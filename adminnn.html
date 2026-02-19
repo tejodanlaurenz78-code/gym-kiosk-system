@@ -302,6 +302,13 @@
                             </svg>
                             <span>📄 View Approved Proposal Letter (Form 1)</span>
                          </button>
+                         <button id="viewScannedDocBtn" onclick="openScannedDocModal()" class="mt-2 flex items-center space-x-2 text-blue-700 hover:text-blue-900 font-bold bg-blue-50 px-4 py-2 rounded-lg border border-blue-200 w-full justify-center hover:bg-blue-100 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>📷 View Scanned Request Letter (from Kiosk)</span>
+                         </button>
                     </div>
 
                     <div id="readOnlyFormContainer" class="flex-grow overflow-y-auto relative pb-20">
@@ -436,11 +443,54 @@
             </div>
         </div>
 
+        <!-- ══ Scanned Document Viewer Modal ══ -->
+        <div id="scannedDocModal" class="fixed inset-0 bg-black bg-opacity-90 hidden z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl w-full max-w-3xl max-h-[95vh] overflow-hidden flex flex-col shadow-2xl">
+                <div class="bg-[#15803d] p-4 flex justify-between items-center shrink-0">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Scanned Request Letter
+                    </h3>
+                    <button onclick="closeScannedDocModal()" class="text-white hover:text-gray-200 text-3xl font-bold leading-none">&times;</button>
+                </div>
+                <div class="flex-1 overflow-y-auto bg-gray-100 flex items-center justify-center p-4 min-h-[400px]">
+                    <div class="text-center w-full">
+                        <div id="scannedDocLoading" class="text-gray-500">
+                            <svg class="animate-spin h-10 w-10 text-green-600 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            Loading document…
+                        </div>
+                        <img id="scannedDocImage" class="hidden mx-auto rounded shadow-xl max-w-full"
+                             style="max-height: 70vh; object-fit: contain;" alt="Scanned request letter">
+                        <div id="scannedDocError" class="hidden text-red-500 font-semibold p-8">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-red-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"/>
+                            </svg>
+                            <p>No scanned document found for this request.</p>
+                            <p class="text-xs text-gray-400 mt-1">The document may not have been scanned on the kiosk before submission.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 border-t flex justify-between items-center bg-white shrink-0">
+                    <a id="scannedDocDownloadLink" href="#" target="_blank"
+                       class="hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold text-sm transition">
+                        ↓ Open Full Size
+                    </a>
+                    <button onclick="closeScannedDocModal()" class="ml-auto px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-semibold transition">Close</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, update, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getStorage, ref as storageRef, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
         // 1. CONFIGURATION
         const firebaseConfig = {
@@ -456,9 +506,11 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const storage = getStorage(app);
         
         // Export to window for debugging if needed
         window.db = db;
+        window.storage = storage;
         window.set = set;
         window.ref = ref;
         window.update = update;
@@ -716,6 +768,28 @@
                 document.getElementById('supportingDocTrigger').classList.add('hidden');
             }
 
+            // Update scanned doc button to reflect availability
+            const scanBtn = document.getElementById('viewScannedDocBtn');
+            if (activeRequest.scannedDocumentUrl) {
+                scanBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>📷 View Scanned Request Letter <span class="ml-2 bg-green-600 text-white text-[10px] px-2 py-0.5 rounded-full">✓ Available</span></span>
+                `;
+                scanBtn.className = 'mt-2 flex items-center space-x-2 text-blue-700 hover:text-blue-900 font-bold bg-blue-50 px-4 py-2 rounded-lg border border-blue-200 w-full justify-center hover:bg-blue-100 transition';
+            } else {
+                scanBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>📷 View Scanned Request Letter <span class="ml-2 bg-gray-400 text-white text-[10px] px-2 py-0.5 rounded-full">No Scan</span></span>
+                `;
+                scanBtn.className = 'mt-2 flex items-center space-x-2 text-gray-400 font-bold bg-gray-50 px-4 py-2 rounded-lg border border-gray-200 w-full justify-center transition cursor-default';
+            }
+
             renderReadOnlyForm(activeRequest);
             renderApprovalActions(activeRequest);
         };
@@ -758,6 +832,41 @@
                 .catch((err) => {
                     customAlert("Error saving to cloud: " + err.message);
                 });
+        };
+
+        // --- SCANNED DOCUMENT MODAL ---
+        window.openScannedDocModal = function() {
+            if (!activeRequest) return;
+
+            const modal    = document.getElementById('scannedDocModal');
+            const loading  = document.getElementById('scannedDocLoading');
+            const imgEl    = document.getElementById('scannedDocImage');
+            const errEl    = document.getElementById('scannedDocError');
+            const dlLink   = document.getElementById('scannedDocDownloadLink');
+
+            // Reset state
+            loading.classList.remove('hidden');
+            imgEl.classList.add('hidden');
+            errEl.classList.add('hidden');
+            dlLink.classList.add('hidden');
+            modal.classList.remove('hidden');
+
+            const url = activeRequest.scannedDocumentUrl;
+            if (!url) {
+                loading.classList.add('hidden');
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            imgEl.onload  = () => { loading.classList.add('hidden'); imgEl.classList.remove('hidden'); dlLink.href = url; dlLink.classList.remove('hidden'); };
+            imgEl.onerror = () => { loading.classList.add('hidden'); errEl.classList.remove('hidden'); };
+            imgEl.src = url;
+        };
+
+        window.closeScannedDocModal = function() {
+            document.getElementById('scannedDocModal').classList.add('hidden');
+            const imgEl = document.getElementById('scannedDocImage');
+            imgEl.src = '';  // stop loading
         };
 
         // --- FORM 1 MODAL ---
@@ -1353,4 +1462,3 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
