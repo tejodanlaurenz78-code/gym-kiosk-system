@@ -475,6 +475,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
@@ -489,8 +490,13 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const storage = getStorage(app);
         
         window.db = db;
+        window.storage = storage;
+        window.storageRef = storageRef;
+        window.uploadBytes = uploadBytes;
+        window.getDownloadURL = getDownloadURL;
         window.set = set;
         window.ref = ref;
         window.get = get;
@@ -525,6 +531,7 @@
             selectedReservationDate = null;
             globalSelectedPersonnel = {};
             stampingStep = 0;
+            capturedDocumentURL = null;
 
         
             const previewContainer = document.getElementById('scanPreviewContainer');
@@ -899,6 +906,7 @@
                 requestedBy: requestedBy,
                 status: "Pending VP Admin",
                 personnel: globalSelectedPersonnel,
+                scannedDocumentUrl: capturedDocumentURL || null,
                 approvals: {
                     deptHead: { name: "", date: "", status: "Pending" },
                     ovpas: { name: "", date: "", status: "Pending" },
@@ -960,6 +968,8 @@
                 console.log("Data:", data);
             });
         };
+
+        let capturedDocumentURL = null;  // Firebase Storage download URL after capture
 
         // ─────────────────────────────────────────────────────────────────
         //  DOCUMENT SCANNING  –  Pi Cam v2 via Flask at 192.168.100.57:5000
@@ -1097,7 +1107,10 @@
             const statusMsg       = document.getElementById('uploadStatusMsg');
             const previewLbl      = document.getElementById('previewStatusLabel');
 
-            // ── 1. Countdown (gives user a moment to hold still) ──
+            // Reset previous capture URL
+            capturedDocumentURL = null;
+
+            // ── 1. Countdown ──
             captureBtn.disabled = true;
             captureLbl.innerText = 'Get ready…';
             await runCountdown(3);
@@ -1120,59 +1133,51 @@
 
             // ── 4. Show preview immediately ──
             previewImg.src = URL.createObjectURL(blob);
-            previewLbl.innerText  = 'Captured – uploading…';
-            statusMsg.innerText   = 'Sending to Pi Camera service…';
+            previewLbl.innerText  = 'Captured – uploading to cloud…';
+            statusMsg.innerText   = '⏳ Uploading to Firebase Storage…';
+            statusMsg.className   = 'text-xs text-gray-500 mt-2 italic text-center';
             previewSection.classList.remove('hidden');
 
-            // ── 5. Upload to Pi Flask server ──
+            // ── 5. Upload to Firebase Storage ──
             const ts       = new Date().toISOString().replace(/[:.]/g, '-');
-            const filename = 'request_letter_' + ts + '.jpg';
-            const fd       = new FormData();
-            fd.append('document', blob, filename);
+            const filename = 'scanned_documents/request_letter_' + ts + '.jpg';
 
             try {
-                const resp = await fetch(PI_BASE + '/api/upload_scan', { method: 'POST', body: fd });
-                const data = await resp.json();
-                console.log('[Scan] Upload success:', data);
+                const fileRef  = storageRef(storage, filename);
+                const snapshot = await uploadBytes(fileRef, blob, { contentType: 'image/jpeg' });
+                const url      = await getDownloadURL(snapshot.ref);
+                capturedDocumentURL = url;
 
-                previewLbl.innerText = '✓ Captured & Saved';
-                statusMsg.innerText  = 'Saved as ' + filename;
+                previewLbl.innerText = '✅ Captured & Uploaded';
+                statusMsg.innerText  = 'Stored in Firebase: ' + filename.split('/').pop();
+                statusMsg.className  = 'text-xs text-green-600 mt-2 italic text-center font-semibold';
 
-                // Unlock the Next button
-                nextBtn.disabled = false;
-                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                captureLbl.innerText = 'Capture Document';
-                captureBtn.disabled  = false;
+                console.log('[Scan] Firebase Storage upload success:', url);
 
-            } catch (uploadErr) {
-                console.error('[Scan] Upload error:', uploadErr);
-                previewLbl.innerText = '✓ Captured (upload failed)';
-                statusMsg.innerText  = '⚠ Could not reach Pi service – check Flask is running. You can still proceed.';
-                statusMsg.classList.add('text-yellow-600');
+                // Also send to Pi local backup (non-blocking, best-effort)
+                const fd = new FormData();
+                fd.append('document', blob, filename.split('/').pop());
+                fetch(PI_BASE + '/api/upload_scan', { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(d => console.log('[Scan] Pi local backup saved:', d))
+                    .catch(e => console.warn('[Scan] Pi backup failed (ok):', e));
 
-                // Still unlock Next – the image was captured locally
-                nextBtn.disabled = false;
-                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                captureLbl.innerText = 'Capture Document';
-                captureBtn.disabled  = false;
+            } catch (storageErr) {
+                console.error('[Scan] Firebase Storage upload failed:', storageErr);
+                capturedDocumentURL = null;
+                previewLbl.innerText = '✓ Captured (cloud upload failed)';
+                statusMsg.innerText  = '⚠ Firebase upload failed – you can still proceed. Check storage rules.';
+                statusMsg.className  = 'text-xs text-yellow-600 mt-2 italic text-center';
             }
+
+            // ── 6. Unlock Next button regardless ──
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            captureLbl.innerText = 'Capture Document';
+            captureBtn.disabled  = false;
         };
     </script>
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
