@@ -193,77 +193,99 @@
                 </div>
             </div>
 
-            <div id="uploadView" class="view-panel hidden text-center max-w-4xl mx-auto pt-10">
-                <h2 class="text-3xl font-bold text-gray-700 mb-6">Step 1: Request Letter</h2>
+            <!-- uploadView: full-width, aspect-ratio locked to Pi Cam v2 capture sensor (3280x2464)      -->
+            <!-- padding-top: 75.122% = (2464/3280)*100 — every pixel edge of the sensor is visible      -->
+            <!-- The live stream (640x480) is the same sensor FOV, just downscaled for bandwidth          -->
+            <div id="uploadView" class="view-panel hidden w-full pt-6">
 
-                <!-- 4:3 aspect-ratio lock — padding-top:75% = (480/640)*100 matches Pi Cam v2 stream exactly -->
-                <div class="relative w-full mx-auto mb-1 rounded-xl overflow-hidden shadow-2xl bg-black border-2 border-gray-700"
-                     style="padding-top: 75%;">
+                <h2 class="text-3xl font-bold text-gray-700 mb-4 text-center px-6">Step 1: Request Letter</h2>
 
+                <!-- Sensor FOV box — fills full content width, height auto-locks to exact capture ratio -->
+                <div class="relative w-full bg-black border-t-2 border-b-2 border-gray-700 shadow-inner"
+                     style="padding-top: 75.122%;">
+
+                    <!-- MJPEG stream — object-cover fills the box; stream & capture share same sensor FOV -->
                     <img id="kioskCameraStream"
                          src="http://192.168.100.57:5000/video_feed"
-                         class="absolute inset-0 w-full h-full object-contain"
+                         class="absolute inset-0 w-full h-full object-cover"
                          alt="Camera Feed"
                          onerror="this.style.display='none'; document.getElementById('camOffline').style.display='flex';">
 
                     <!-- Offline placeholder -->
                     <div id="camOffline"
                          class="absolute inset-0 hidden flex-col items-center justify-center text-white gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
                         </svg>
-                        <p class="text-sm font-semibold text-white/60">Camera offline</p>
-                        <p class="text-xs text-white/30">Check Pi server at 192.168.100.57:5000</p>
+                        <p class="text-base font-semibold text-white/50">Camera offline</p>
+                        <p class="text-sm text-white/30">Check Pi server at 192.168.100.57:5000</p>
                     </div>
 
-                    <!-- Corner alignment guides -->
-                    <div class="absolute pointer-events-none" style="inset:6%;">
-                        <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white/70 rounded-tl"></div>
-                        <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white/70 rounded-tr"></div>
-                        <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white/70 rounded-bl"></div>
-                        <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white/70 rounded-br"></div>
-                    </div>
+                    <!-- Edge indicators: thin lines exactly at all 4 capture boundaries -->
+                    <!-- Top edge -->
+                    <div class="absolute top-0 left-0 right-0 h-0.5 bg-white/25 pointer-events-none"></div>
+                    <!-- Bottom edge -->
+                    <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-white/25 pointer-events-none"></div>
+                    <!-- Left edge -->
+                    <div class="absolute top-0 bottom-0 left-0 w-0.5 bg-white/25 pointer-events-none"></div>
+                    <!-- Right edge -->
+                    <div class="absolute top-0 bottom-0 right-0 w-0.5 bg-white/25 pointer-events-none"></div>
 
-                    <!-- Live badge -->
-                    <div class="absolute top-2 right-2 bg-black/50 text-white/60 text-xs font-mono px-2 py-0.5 rounded pointer-events-none">
-                        LIVE &middot; 640&times;480
-                    </div>
-                </div>
+                    <!-- Corner L-brackets at each sensor corner -->
+                    <div class="absolute top-3 left-3 w-10 h-10 border-t-4 border-l-4 border-white/80 pointer-events-none"></div>
+                    <div class="absolute top-3 right-3 w-10 h-10 border-t-4 border-r-4 border-white/80 pointer-events-none"></div>
+                    <div class="absolute bottom-3 left-3 w-10 h-10 border-b-4 border-l-4 border-white/80 pointer-events-none"></div>
+                    <div class="absolute bottom-3 right-3 w-10 h-10 border-b-4 border-r-4 border-white/80 pointer-events-none"></div>
 
-                <p class="text-xs text-gray-400 mb-6 text-right">
-                    Preview matches exact camera FOV &bull; 8 MP capture on click
-                </p>
+                    <!-- Corner labels -->
+                    <div class="absolute top-4 left-16 text-white/40 text-xs font-mono pointer-events-none">TOP-LEFT</div>
+                    <div class="absolute top-4 right-16 text-white/40 text-xs font-mono pointer-events-none">TOP-RIGHT</div>
+                    <div class="absolute bottom-4 left-16 text-white/40 text-xs font-mono pointer-events-none">BOTTOM-LEFT</div>
+                    <div class="absolute bottom-4 right-16 text-white/40 text-xs font-mono pointer-events-none">BOTTOM-RIGHT</div>
 
-                <div class="flex flex-col items-center gap-4 mb-8">
-                    <button id="captureBtn" class="kiosk-btn !bg-red-600 hover:!bg-red-700 flex items-center gap-2" onclick="captureAndUpload()">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        Capture Document
-                    </button>
-                    <p class="text-sm text-gray-500 italic">Align your Request Letter within the corner guides, then click Capture.</p>
-                </div>
-
-                <canvas id="scanCanvas" style="display:none;"></canvas>
-
-                <!-- Capture thumbnail — 4:3 to match what was saved (320x240 display) -->
-                <div id="scanPreviewContainer" class="hidden mb-8">
-                    <p class="text-green-700 font-bold mb-3 flex items-center justify-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        Captured &amp; Uploaded Successfully
-                    </p>
-                    <div class="relative mx-auto rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black"
-                         style="width:320px; height:240px;">
-                        <img id="scanPreviewImage"
-                             class="absolute inset-0 w-full h-full object-contain"
-                             alt="Captured document preview">
+                    <!-- Sensor + stream info badge -->
+                    <div class="absolute top-3 left-1/2 -translate-x-1/2 bg-black/60 text-white/70 text-xs font-mono px-3 py-1 rounded-full pointer-events-none flex items-center gap-2">
+                        <span class="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                        LIVE &nbsp;|&nbsp; Capture: 3280&times;2464 &nbsp;|&nbsp; Stream: 640&times;480
                     </div>
                 </div>
 
-                <button id="fileNextBtn" class="kiosk-btn opacity-50 cursor-not-allowed" onclick="showView('formView')" disabled>Next: Fill Reservation Form &rarr;</button>
+                <!-- Controls below the full-width feed -->
+                <div class="px-6 pt-5 pb-4 text-center space-y-4">
+                    <div class="flex flex-col items-center gap-3">
+                        <button id="captureBtn" class="kiosk-btn !bg-red-600 hover:!bg-red-700 flex items-center gap-2" onclick="captureAndUpload()">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Capture Document
+                        </button>
+                        <p class="text-sm text-gray-500 italic">
+                            All 4 edges above show the exact boundary of what will be captured. Position your Request Letter and click Capture.
+                        </p>
+                    </div>
+
+                    <canvas id="scanCanvas" style="display:none;"></canvas>
+
+                    <!-- Post-capture thumbnail (proportional to 3280x2464) -->
+                    <div id="scanPreviewContainer" class="hidden">
+                        <p class="text-green-700 font-bold mb-3 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Captured &amp; Uploaded Successfully
+                        </p>
+                        <!-- Thumbnail: 400px wide, height = 400 * (2464/3280) = 300.4px -->
+                        <div class="relative mx-auto rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black"
+                             style="width:400px; padding-top:300px;">
+                            <img id="scanPreviewImage"
+                                 class="absolute inset-0 w-full h-full object-contain"
+                                 alt="Captured document preview">
+                        </div>
+                    </div>
+
+                    <button id="fileNextBtn" class="kiosk-btn opacity-50 cursor-not-allowed" onclick="showView('formView')" disabled>Next: Fill Reservation Form &rarr;</button>
+                </div>
             </div>
             
             <div id="formView" class="view-panel hidden">
