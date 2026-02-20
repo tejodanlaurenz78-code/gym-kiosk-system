@@ -414,8 +414,11 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
+        // Alias ref as dbRef for the Realtime Database
+        import { getDatabase, ref as dbRef, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        // Import Firebase Storage and alias its ref as storageRef
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
             authDomain: "group4-ee960.firebaseapp.com",
@@ -426,13 +429,17 @@
             appId: "1:453765398844:web:219433f771cfd33b311e39",
             measurementId: "G-41DZ3175NX"
         };
-
+        
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const storage = getStorage(app); // Initialize Storage
+        
+        // Global variable to hold the image URL before the final submission
+        let globalScannedDocumentUrl = null; 
         
         window.db = db;
         window.set = set;
-        window.ref = ref;
+        window.ref = dbRef; // Expose the aliased dbRef to the window
         window.get = get;
         window.onValue = onValue;
 
@@ -464,6 +471,7 @@
             // 1. Reset Global Variables
             selectedReservationDate = null;
             globalSelectedPersonnel = {};
+            globalScannedDocumentUrl = null;
             stampingStep = 0;
 
         
@@ -838,6 +846,7 @@
                 requestedBy: requestedBy,
                 status: "Pending VP Admin",
                 personnel: globalSelectedPersonnel,
+                globalScannedDocumentUrl: globalScannedDocumentUrl,
                 approvals: {
                     deptHead: { name: "", date: "", status: "Pending" },
                     ovpas: { name: "", date: "", status: "Pending" },
@@ -902,68 +911,77 @@
 
         // --- DOCUMENT SCANNING INTEGRATION ---
 
-        window.captureAndUpload = function() {
-            const videoImg = document.getElementById('kioskCameraStream');
-            const canvas = document.getElementById('scanCanvas');
-            const ctx = canvas.getContext('2d');
+       window.captureAndUpload = async function() {
+            const captureBtn = document.getElementById('captureBtn');
             const nextBtn = document.getElementById('fileNextBtn');
             const previewImg = document.getElementById('scanPreviewImage');
             const previewContainer = document.getElementById('scanPreviewContainer');
-            const captureBtn = document.getElementById('captureBtn');
         
-            // Set canvas to a high-resolution Portrait Long Bond Paper ratio (approx 1:1.53)
-            // Using 1000px width for a sharp scan
-            canvas.width = 1000; 
-            canvas.height = 1530; 
+            captureBtn.innerText = "Capturing & Uploading...";
+            captureBtn.disabled = true;
         
-            // Draw the image. object-fit: cover is simulated here by cropping the center
-            // This ensures we don't get black bars in the saved file
-            const streamWidth = videoImg.naturalWidth || 640;
-            const streamHeight = videoImg.naturalHeight || 480;
-            
-            // Calculate cropping to fit portrait ratio from landscape stream
-            const renderWidth = streamHeight * (8.5 / 13);
-            const offsetX = (streamWidth - renderWidth) / 2;
+            try {
+                // 1. Fetch high-res snapshot directly from Pi Camera Server
+                console.log("Attempting to fetch high-res snapshot from Pi...");
+                const response = await fetch('http://192.168.100.57:5000/api/snapshot');
+                
+                if (!response.ok) {
+                    throw new Error(`Camera capture failed with status: ${response.status}`);
+                }
+                
+                console.log("Snapshot fetched successfully. Processing blob...");
+                const blob = await response.blob();
         
-            ctx.drawImage(videoImg, offsetX, 0, renderWidth, streamHeight, 0, 0, canvas.width, canvas.height);
-        
-            canvas.toBlob((blob) => {
-                if (!blob) return alert("Capture failed. Try again.");
-        
+                // 2. Show High-Res Preview to the user
                 previewImg.src = URL.createObjectURL(blob);
                 previewContainer.classList.remove('hidden');
-                
-                captureBtn.innerText = "Uploading...";
-                captureBtn.disabled = true;
         
+                // 3. Upload Blob directly to Firebase Storage
+                console.log("Starting upload to Firebase Storage...");
+                const timestamp = Date.now();
+                const fileName = `scans/request_${timestamp}.jpg`;
+                const fileStorageRef = storageRef(storage, fileName); 
+                
+                await uploadBytes(fileStorageRef, blob);
+                console.log("Upload to Firebase successful.");
+                
+                // 4. Get the public download URL and save to global variable
+                globalScannedDocumentUrl = await getDownloadURL(fileStorageRef);
+                console.log("Document URL obtained:", globalScannedDocumentUrl);
+        
+                // 5. Still send the backup copy to the Raspberry Pi
                 const formData = new FormData();
                 formData.append('document', blob, 'request_letter_long.jpg');
-        
                 fetch('http://192.168.100.57:5000/api/upload_scan', {
                     method: 'POST',
                     body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Upload Success:", data);
-                    captureBtn.innerText = "Retake Capture";
-                    captureBtn.disabled = false;
-                    nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    nextBtn.disabled = false;
-                })
-                .catch(err => {
-                    console.error("Upload error:", err);
-                    alert("Could not connect to Camera Service. Is the Pi script running?");
-                    captureBtn.innerText = "Capture Document";
-                    captureBtn.disabled = false;
-                });
-            }, 'image/jpeg', 0.95);
+                }).then(res => res.json())
+                  .then(data => console.log("Pi Backup Success:", data))
+                  .catch(e => console.log("Pi Backup failed:", e));
+        
+                // Update UI state
+                captureBtn.innerText = "Retake Capture";
+                captureBtn.disabled = false;
+                
+                // Enable the Next button now that upload is complete
+                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                nextBtn.disabled = false;
+        
+            } catch (err) {
+                console.error("Error during capture/upload cycle:", err);
+                alert("Error capturing or uploading document. Is the camera server running?");
+                
+                // Reset UI on error
+                captureBtn.innerText = "Capture Document";
+                captureBtn.disabled = false;
+            }
         };
     </script>
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
