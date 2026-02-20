@@ -414,11 +414,11 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        // Alias ref as dbRef for the Realtime Database
-        import { getDatabase, ref as dbRef, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        // Import Firebase Storage and alias its ref as storageRef
+        // Alias ref as dbRef for Realtime Database to avoid conflict with Storage ref
+        import { getDatabase, ref as dbRef, set, get, onValue, child, update, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        // Import Firebase Storage
         import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-        
+    
         const firebaseConfig = {
             apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
             authDomain: "group4-ee960.firebaseapp.com",
@@ -429,20 +429,24 @@
             appId: "1:453765398844:web:219433f771cfd33b311e39",
             measurementId: "G-41DZ3175NX"
         };
-        
+    
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const storage = getStorage(app); // Initialize Storage
-        
-        // Global variable to hold the image URL before the final submission
-        let globalScannedDocumentUrl = null; 
-        
+    
+        // New global variable to hold the uploaded image URL
+        let globalScannedDocumentUrl = null;
+    
+        // Expose aliased dbRef to window so your existing code works
         window.db = db;
         window.set = set;
-        window.ref = dbRef; // Expose the aliased dbRef to the window
+        window.ref = dbRef; 
         window.get = get;
         window.onValue = onValue;
-
+        window.child = child;
+        window.update = update;
+        window.push = push;
+    
         // --- GLOBAL STATE ---
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -981,6 +985,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
