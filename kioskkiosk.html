@@ -204,10 +204,10 @@
                 <div class="relative w-full bg-black border-t-2 border-b-2 border-gray-700 shadow-inner"
                      style="padding-top: 75.122%;">
 
-                    <!-- MJPEG stream — object-cover fills the box; stream & capture share same sensor FOV -->
+                    <!-- MJPEG stream — object-contain shows full uncropped FOV, same as the captured image -->
                     <img id="kioskCameraStream"
                          src="http://192.168.100.57:5000/video_feed"
-                         class="absolute inset-0 w-full h-full object-cover"
+                         class="absolute inset-0 w-full h-full object-contain"
                          alt="Camera Feed"
                          onerror="this.style.display='none'; document.getElementById('camOffline').style.display='flex';">
 
