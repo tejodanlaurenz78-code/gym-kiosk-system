@@ -193,20 +193,47 @@
                 </div>
             </div>
 
-            <div id="uploadView" class="view-panel hidden text-center max-w-3xl mx-auto pt-10">
-                <h2 class="text-3xl font-bold text-gray-700 mb-8">Step 1: Request Letter</h2>
-                
-                <div class="bg-black rounded-xl overflow-hidden shadow-2xl mb-4 relative flex items-center justify-center mx-auto" 
-                     style="width: 340px; height: 520px;">
-                    
-                    <img id="kioskCameraStream" 
-                         src="http://192.168.100.57:5000/video_feed" 
-                         class="w-full h-full object-cover" 
-                         alt="Camera Feed">
-                    
-                    <div class="absolute inset-0 border-2 border-dashed border-white/30 pointer-events-none m-4 rounded-lg"></div>
+            <div id="uploadView" class="view-panel hidden text-center max-w-4xl mx-auto pt-10">
+                <h2 class="text-3xl font-bold text-gray-700 mb-6">Step 1: Request Letter</h2>
+
+                <!-- 4:3 aspect-ratio lock — padding-top:75% = (480/640)*100 matches Pi Cam v2 stream exactly -->
+                <div class="relative w-full mx-auto mb-1 rounded-xl overflow-hidden shadow-2xl bg-black border-2 border-gray-700"
+                     style="padding-top: 75%;">
+
+                    <img id="kioskCameraStream"
+                         src="http://192.168.100.57:5000/video_feed"
+                         class="absolute inset-0 w-full h-full object-contain"
+                         alt="Camera Feed"
+                         onerror="this.style.display='none'; document.getElementById('camOffline').style.display='flex';">
+
+                    <!-- Offline placeholder -->
+                    <div id="camOffline"
+                         class="absolute inset-0 hidden flex-col items-center justify-center text-white gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+                        </svg>
+                        <p class="text-sm font-semibold text-white/60">Camera offline</p>
+                        <p class="text-xs text-white/30">Check Pi server at 192.168.100.57:5000</p>
+                    </div>
+
+                    <!-- Corner alignment guides -->
+                    <div class="absolute pointer-events-none" style="inset:6%;">
+                        <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white/70 rounded-tl"></div>
+                        <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white/70 rounded-tr"></div>
+                        <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white/70 rounded-bl"></div>
+                        <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white/70 rounded-br"></div>
+                    </div>
+
+                    <!-- Live badge -->
+                    <div class="absolute top-2 right-2 bg-black/50 text-white/60 text-xs font-mono px-2 py-0.5 rounded pointer-events-none">
+                        LIVE &middot; 640&times;480
+                    </div>
                 </div>
-                
+
+                <p class="text-xs text-gray-400 mb-6 text-right">
+                    Preview matches exact camera FOV &bull; 8 MP capture on click
+                </p>
+
                 <div class="flex flex-col items-center gap-4 mb-8">
                     <button id="captureBtn" class="kiosk-btn !bg-red-600 hover:!bg-red-700 flex items-center gap-2" onclick="captureAndUpload()">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -215,16 +242,27 @@
                         </svg>
                         Capture Document
                     </button>
-                    <p class="text-sm text-gray-500 italic">Position your Request Letter within the frame and click Capture.</p>
+                    <p class="text-sm text-gray-500 italic">Align your Request Letter within the corner guides, then click Capture.</p>
                 </div>
-            
+
                 <canvas id="scanCanvas" style="display:none;"></canvas>
-            
+
+                <!-- Capture thumbnail — 4:3 to match what was saved (320x240 display) -->
                 <div id="scanPreviewContainer" class="hidden mb-8">
-                    <p class="text-green-700 font-bold mb-2">✓ Captured Successfully</p>
-                    <img id="scanPreviewImage" class="mx-auto border-2 border-green-500 rounded shadow-md" style="width: 120px; height: 184px; object-fit: cover;">
+                    <p class="text-green-700 font-bold mb-3 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Captured &amp; Uploaded Successfully
+                    </p>
+                    <div class="relative mx-auto rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black"
+                         style="width:320px; height:240px;">
+                        <img id="scanPreviewImage"
+                             class="absolute inset-0 w-full h-full object-contain"
+                             alt="Captured document preview">
+                    </div>
                 </div>
-            
+
                 <button id="fileNextBtn" class="kiosk-btn opacity-50 cursor-not-allowed" onclick="showView('formView')" disabled>Next: Fill Reservation Form &rarr;</button>
             </div>
             
