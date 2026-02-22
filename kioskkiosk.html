@@ -238,31 +238,38 @@
                         </div>
                     </div>
 
+                    
                     <div class="flex flex-col items-center justify-center gap-4 w-[350px] shrink-0">
-                        
-                        <button id="captureBtn" class="kiosk-btn !bg-red-600 hover:!bg-red-700 flex items-center justify-center gap-2 w-full py-3 text-lg" onclick="captureAndUpload()">
+    
+                        <button id="captureBtn" class="kiosk-btn !bg-red-600 hover:!bg-red-700 flex items-center justify-center gap-2 w-full py-3 text-lg" onclick="captureDocument()">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
-                            Capture Document
+                            <span id="captureBtnText">Capture Document</span>
                         </button>
-
+                    
                         <div id="scanPreviewContainer" class="hidden w-full flex-col items-center">
-                            <p class="text-green-700 font-bold mb-2 flex items-center justify-center gap-1 text-sm">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 bg-green-100 rounded-full p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                Uploaded Successfully
+                            <p id="previewStatusText" class="text-blue-700 font-bold mb-2 flex items-center justify-center gap-1 text-sm">
+                                Review Captured Image
                             </p>
-                            <div class="relative rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black w-[200px]"
+                            <div id="previewImageWrapper" class="relative rounded-lg overflow-hidden border-2 border-blue-500 shadow-lg bg-black w-[200px]"
                                  style="aspect-ratio: 3280 / 2464;">
                                 <img id="scanPreviewImage" class="absolute inset-0 w-full h-full object-contain" alt="Captured document preview">
                             </div>
                         </div>
-
+                    
+                        <div id="previewActions" class="hidden w-full flex-col gap-2">
+                            <button class="kiosk-btn !bg-green-600 hover:!bg-green-700 w-full py-2 text-md" onclick="confirmAndUpload()">Confirm & Upload</button>
+                            <button class="kiosk-btn !bg-gray-500 hover:!bg-gray-600 w-full py-2 text-md" onclick="retakeCapture()">Retake Document</button>
+                        </div>
+                    
+                        <div id="uploadLoading" class="hidden w-full text-center text-gray-600 font-bold py-2 animate-pulse">
+                            Uploading... Please wait.
+                        </div>
+                    
                         <canvas id="scanCanvas" style="display:none;"></canvas>
-
+                    
                         <button id="fileNextBtn" class="kiosk-btn w-full py-3 text-lg opacity-50 cursor-not-allowed mt-2" onclick="showView('formView')" disabled>
                             Next Step: Fill Reservation Form &rarr;
                         </button>
@@ -477,6 +484,7 @@
     
         // New global variable to hold the uploaded image URL
         let globalScannedDocumentUrl = null;
+        let pendingCaptureBlob = null;
     
         // Expose aliased dbRef to window so your existing code works
         window.db = db;
@@ -512,17 +520,27 @@
 
         // --- FUNCTIONS (Attached to Window for HTML access) ---
 
-        window.resetKioskData = function() {
+       window.resetKioskData = function() {
             // 1. Reset Global Variables
             selectedReservationDate = null;
             globalSelectedPersonnel = {};
             globalScannedDocumentUrl = null;
+            pendingCaptureBlob = null; // Reset pending blob
             stampingStep = 0;
-
         
+            // 2. Reset Camera UI Elements
             const previewContainer = document.getElementById('scanPreviewContainer');
             if (previewContainer) previewContainer.classList.add('hidden');
             
+            const previewActions = document.getElementById('previewActions');
+            if (previewActions) {
+                previewActions.classList.add('hidden');
+                previewActions.classList.remove('flex');
+            }
+        
+            const uploadLoading = document.getElementById('uploadLoading');
+            if (uploadLoading) uploadLoading.classList.add('hidden');
+        
             const nextBtn = document.getElementById('fileNextBtn');
             if (nextBtn) {
                 nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -530,7 +548,12 @@
             }
             
             const captureBtn = document.getElementById('captureBtn');
-            if (captureBtn) captureBtn.innerText = "Capture Document";
+            if (captureBtn) {
+                captureBtn.classList.remove('hidden');
+                captureBtn.disabled = false;
+            }
+            const captureBtnText = document.getElementById('captureBtnText');
+            if (captureBtnText) captureBtnText.innerText = "Capture Document";
             
             // 2. Reset File Upload Section
             const fileInput = document.getElementById('requestLetterFile');
@@ -956,17 +979,19 @@
 
         // --- DOCUMENT SCANNING INTEGRATION ---
 
-       window.captureAndUpload = async function() {
+       window.captureDocument = async function() {
             const captureBtn = document.getElementById('captureBtn');
-            const nextBtn = document.getElementById('fileNextBtn');
+            const captureBtnText = document.getElementById('captureBtnText');
             const previewImg = document.getElementById('scanPreviewImage');
             const previewContainer = document.getElementById('scanPreviewContainer');
+            const previewActions = document.getElementById('previewActions');
+            const previewStatusText = document.getElementById('previewStatusText');
+            const previewImageWrapper = document.getElementById('previewImageWrapper');
         
-            captureBtn.innerText = "Capturing & Uploading...";
             captureBtn.disabled = true;
+            captureBtnText.innerText = "Capturing...";
         
             try {
-                // 1. Fetch high-res snapshot directly from Pi Camera Server
                 console.log("Attempting to fetch high-res snapshot from Pi...");
                 const response = await fetch('http://192.168.100.57:5000/api/snapshot');
                 
@@ -974,51 +999,104 @@
                     throw new Error(`Camera capture failed with status: ${response.status}`);
                 }
                 
-                console.log("Snapshot fetched successfully. Processing blob...");
-                const blob = await response.blob();
+                console.log("Snapshot fetched successfully. Waiting for review...");
+                pendingCaptureBlob = await response.blob();
         
-                // 2. Show High-Res Preview to the user
-                previewImg.src = URL.createObjectURL(blob);
+                // Show the Preview image
+                previewImg.src = URL.createObjectURL(pendingCaptureBlob);
                 previewContainer.classList.remove('hidden');
+                
+                // Setup UI for the "Review" phase
+                previewStatusText.innerText = "Review Captured Image";
+                previewStatusText.className = "text-blue-700 font-bold mb-2 flex items-center justify-center gap-1 text-sm";
+                previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-blue-500 shadow-lg bg-black w-[200px]";
         
-                // 3. Upload Blob directly to Firebase Storage
+                // Hide Capture button, show Confirm/Retake buttons
+                captureBtn.classList.add('hidden');
+                previewActions.classList.remove('hidden');
+                previewActions.classList.add('flex');
+        
+            } catch (err) {
+                console.error("Error during capture:", err);
+                alert("Error capturing document. Is the camera server running?");
+                captureBtn.disabled = false;
+                captureBtnText.innerText = "Capture Document";
+            }
+        };
+        
+        window.retakeCapture = function() {
+            // Clear the pending image
+            pendingCaptureBlob = null;
+            
+            // Reset UI back to default Capture state
+            document.getElementById('scanPreviewContainer').classList.add('hidden');
+            
+            const previewActions = document.getElementById('previewActions');
+            previewActions.classList.add('hidden');
+            previewActions.classList.remove('flex');
+            
+            const captureBtn = document.getElementById('captureBtn');
+            captureBtn.classList.remove('hidden');
+            captureBtn.disabled = false;
+            document.getElementById('captureBtnText').innerText = "Capture Document";
+        };
+        
+        window.confirmAndUpload = async function() {
+            if (!pendingCaptureBlob) return;
+        
+            const previewActions = document.getElementById('previewActions');
+            const uploadLoading = document.getElementById('uploadLoading');
+            const previewStatusText = document.getElementById('previewStatusText');
+            const previewImageWrapper = document.getElementById('previewImageWrapper');
+            const nextBtn = document.getElementById('fileNextBtn');
+        
+            // Swap buttons for loading text
+            previewActions.classList.add('hidden');
+            previewActions.classList.remove('flex');
+            uploadLoading.classList.remove('hidden');
+        
+            try {
                 console.log("Starting upload to Firebase Storage...");
                 const timestamp = Date.now();
                 const fileName = `scans/request_${timestamp}.jpg`;
                 const fileStorageRef = storageRef(storage, fileName); 
                 
-                await uploadBytes(fileStorageRef, blob);
+                await uploadBytes(fileStorageRef, pendingCaptureBlob);
                 console.log("Upload to Firebase successful.");
                 
-                // 4. Get the public download URL and save to global variable
                 globalScannedDocumentUrl = await getDownloadURL(fileStorageRef);
                 console.log("Document URL obtained:", globalScannedDocumentUrl);
         
-                // 5. Still send the backup copy to the Raspberry Pi
+                // Send backup to Pi
                 const formData = new FormData();
-                formData.append('document', blob, 'request_letter_long.jpg');
+                formData.append('document', pendingCaptureBlob, 'request_letter_long.jpg');
                 fetch('http://192.168.100.57:5000/api/upload_scan', {
                     method: 'POST',
                     body: formData
-                }).then(res => res.json())
-                  .then(data => console.log("Pi Backup Success:", data))
-                  .catch(e => console.log("Pi Backup failed:", e));
+                }).catch(e => console.log("Pi Backup failed:", e));
         
-                // Update UI state
-                captureBtn.innerText = "Retake Capture";
-                captureBtn.disabled = false;
-                
-                // Enable the Next button now that upload is complete
+                // Update UI to Successful state
+                uploadLoading.classList.add('hidden');
+                previewStatusText.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 bg-green-100 rounded-full p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Uploaded Successfully
+                `;
+                previewStatusText.className = "text-green-700 font-bold mb-2 flex items-center justify-center gap-1 text-sm";
+                previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black w-[200px]";
+        
+                // Enable moving to the next step
                 nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 nextBtn.disabled = false;
         
             } catch (err) {
-                console.error("Error during capture/upload cycle:", err);
-                alert("Error capturing or uploading document. Is the camera server running?");
-                
-                // Reset UI on error
-                captureBtn.innerText = "Capture Document";
-                captureBtn.disabled = false;
+                console.error("Error during upload:", err);
+                alert("Upload failed. Please check network connection.");
+                // Revert UI to let them try uploading again
+                uploadLoading.classList.add('hidden');
+                previewActions.classList.remove('hidden');
+                previewActions.classList.add('flex');
             }
         };
     </script>
@@ -1026,6 +1104,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
