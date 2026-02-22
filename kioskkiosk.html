@@ -1028,6 +1028,14 @@
             // Clear the pending image
             pendingCaptureBlob = null;
             
+            // --- NEW FIX: Force the live camera feed to refresh and reset its zoom/crop ---
+            const camStream = document.getElementById('kioskCameraStream');
+            if (camStream) {
+                // Adding a timestamp forces the browser to pull a fresh, un-glitched stream from the Pi
+                camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
+            }
+            // ------------------------------------------------------------------------------
+            
             // Reset UI back to default Capture state
             document.getElementById('scanPreviewContainer').classList.add('hidden');
             
@@ -1104,6 +1112,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
