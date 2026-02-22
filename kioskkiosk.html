@@ -1001,6 +1001,11 @@
                 
                 console.log("Snapshot fetched successfully. Waiting for review...");
                 pendingCaptureBlob = await response.blob();
+
+                const camStream = document.getElementById('kioskCameraStream');
+                if (camStream) {
+                    camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
+                }
         
                 // Show the Preview image
                 previewImg.src = URL.createObjectURL(pendingCaptureBlob);
@@ -1112,6 +1117,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
