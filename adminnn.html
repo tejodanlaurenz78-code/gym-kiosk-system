@@ -302,7 +302,7 @@
     
     <div id="approverView" class="hidden w-full h-full bg-white flex-col overflow-hidden">
         
-        <header class="bg-[#15803d] p-4 border-b-4 border-green-600 flex justify-between items-center sticky top-0 z-20 shadow-md">
+        <header class="bg-[#15803d] p-4 border-b-4 border-green-600 flex flex-col md:flex-row justify-between items-center sticky top-0 z-20 shadow-md gap-4 text-center md:text-left">
             <div class="flex items-center space-x-3">
                 <button onclick="toggleSidebar()" class="text-white p-2 rounded hover:bg-green-700 focus:outline-none mr-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1394,11 +1394,11 @@
                 container.innerHTML = `
                     <div id="approvalActions" class="p-4 bg-green-50 rounded-lg border-2 border-green-200 mb-6">
                         <p class="font-bold text-[#15803d] mb-2">${actionTitle}</p>
-                        <div class="flex space-x-3">
+                        <div class="flex flex-col md:flex-row gap-3">
                             <button onclick="window.processApproval('${request.id}', 'Approved')" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-sm">${approveText}</button>
                             <button onclick="window.processApproval('${request.id}', 'Rejected')" class="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition shadow-sm">Reject</button>
                             <button onclick="window.openAppointmentModal('${request.id}')" class="px-6 py-3 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition shadow-sm">📅 Set Appointment</button>
-                            <input type="text" id="approverRemarks" placeholder="Add optional remarks..." class="flex-grow p-2 border rounded-lg focus:ring-green-500 focus:border-green-500 outline-none">
+                            <input type="text" id="approverRemarks" placeholder="Add optional remarks..." class="w-full md:flex-grow p-2 border rounded-lg focus:ring-green-500 focus:border-green-500 outline-none">
                         </div>
                     </div>
                 `;
@@ -1457,6 +1457,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
