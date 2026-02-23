@@ -190,47 +190,56 @@
             flex-wrap: wrap;
         }
 
-       @media (max-width: 768px) {
-            /* 1. Force the main form rows to stack vertically */
-            .form-container .border-t-0.flex {
-                flex-direction: column !important;
+        @media (max-width: 768px) {
+            /* 1. Shrink the main form padding to the absolute edge */
+            .form-container { 
+                padding: 0.25rem !important; 
             }
             
-            /* 2. Make the left-hand titles (e.g. "Venue Reservation") full width */
+            /* 2. Micro-text: Shrink all fonts so they fit horizontally */
+            .form-container, .form-container * {
+                font-size: 9.5px !important;
+                line-height: 1.1 !important;
+            }
+            
+            /* 3. Keep sections side-by-side, but shrink the left title block */
             .form-container .w-40 {
-                width: 100% !important;
-                border-right: none !important;
-                border-bottom: 2px solid #ccc !important;
-                padding-bottom: 0.5rem !important;
-                margin-bottom: 0.5rem !important;
+                width: 65px !important;
+                min-width: 65px !important;
+                padding: 0.15rem !important;
             }
-        
-            /* 3. Break the 2-column grid into 1 single column */
-            .form-container .grid-cols-2 {
-                display: flex !important;
-                flex-direction: column !important;
-                gap: 0.75rem !important;
+            
+            /* 4. Drastically shrink all gaps and inner paddings */
+            .form-container .p-4 { padding: 0.25rem !important; }
+            .form-container .p-2 { padding: 0.15rem !important; }
+            .form-container .gap-4, 
+            .form-container .gap-x-4, 
+            .form-container .gap-y-2 { 
+                gap: 0.15rem !important; 
             }
-        
-            /* 4. Force checkboxes and text inputs to wrap to the next line if squeezed */
+            
+            /* 5. Allow inner text/inputs to wrap tightly without overlapping margins */
             .form-container .flex.items-center {
                 flex-wrap: wrap !important;
-                gap: 0.5rem !important;
+                gap: 2px !important;
             }
-        
-            /* 5. Kill Tailwind's horizontal spacing that causes overlaps */
-            .form-container .space-x-2 > * + * {
-                margin-left: 0 !important;
+            .form-container .space-x-2 > * + * { 
+                margin-left: 0 !important; 
             }
-        
-            /* 6. Let inputs stretch so they don't disappear */
-            .read-only-field, .line-input {
-                flex-grow: 1 !important;
-                width: 100% !important;
-                min-width: 100px !important;
+            
+            /* 6. Shrink form headers and logos */
+            .form-header img { 
+                width: 35px !important; 
+                height: 35px !important; 
+            }
+            .form-header h2 { font-size: 12px !important; }
+            .form-title { 
+                font-size: 10px !important; 
+                padding: 2px !important;
+                margin-bottom: 4px !important; 
             }
         }
-        
+   
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col items-center justify-center bg-gray-100 overflow-hidden m-0 p-0">
@@ -335,7 +344,7 @@
                 </div>
             </div>
 
-            <div class="flex-1 bg-white p-6 overflow-y-auto h-full relative" id="mainContentArea">
+            <div class="flex-1 bg-white p-2 md:p-6 overflow-y-auto h-full relative" id="mainContentArea">
                 
                 <div id="initialView" class="hidden text-center py-40">
                     </div>
@@ -356,12 +365,19 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <span>📄 View Approved Proposal Letter (Form 1)</span>
+                            <span class="text-sm">📄 View Form 1</span>
                          </button>
                     </div>
 
-                    <div id="readOnlyFormContainer" class="flex-grow overflow-y-auto relative pb-20">
-                        <div class="form-container shadow-xl border-gray-300">
+                    <div class="flex justify-end items-center space-x-2 mb-2 bg-gray-50 p-2 rounded border border-gray-200 shadow-sm">
+                        <span class="text-xs font-bold text-gray-600">🔍 Form Zoom:</span>
+                        <button onclick="window.zoomForm(-0.2)" class="px-3 py-1 bg-white border border-gray-300 text-gray-800 font-bold rounded shadow-sm hover:bg-gray-100">-</button>
+                        <button onclick="window.zoomForm(0)" class="px-3 py-1 bg-white border border-gray-300 text-gray-800 font-bold rounded shadow-sm hover:bg-gray-100 text-xs">Reset</button>
+                        <button onclick="window.zoomForm(0.2)" class="px-3 py-1 bg-white border border-gray-300 text-gray-800 font-bold rounded shadow-sm hover:bg-gray-100">+</button>
+                    </div>
+
+                    <div id="readOnlyFormContainer" class="flex-grow overflow-auto relative pb-20">
+                        <div class="form-container shadow-xl border-gray-300" style="transition: zoom 0.2s ease-in-out;">
                             </div>
                     </div>
                 </div>
@@ -642,6 +658,35 @@
             else editHint.classList.add('hidden');
             renderMainCalendar();
         };
+
+        let currentZoomLevel = 1;
+        
+        window.zoomForm = function(step) {
+            const formContainer = document.querySelector('#readOnlyFormContainer .form-container');
+            if (!formContainer) return;
+            
+            // If step is 0, reset zoom to default
+            if (step === 0) {
+                currentZoomLevel = 1;
+            } else {
+                currentZoomLevel += step;
+            }
+            
+            // Set limits so they can't zoom out into a tiny dot or zoom in too far
+            if (currentZoomLevel < 0.6) currentZoomLevel = 0.6;
+            if (currentZoomLevel > 3.0) currentZoomLevel = 3.0;
+            
+            // Apply the zoom. This automatically handles layout and scrollbars
+            formContainer.style.zoom = currentZoomLevel;
+        };
+        
+        // Reset zoom every time a new request is opened
+        const originalLoadRequest = window.loadRequest;
+        window.loadRequest = function(requestId) {
+            window.zoomForm(0); // Reset zoom
+            originalLoadRequest(requestId);
+        };
+        
 
         window.changeCalendarMonth = function(delta) {
             calendarMonth += delta;
@@ -1392,14 +1437,14 @@
                 let actionTitle = `${roleLabels[currentStepKey]}'s Review`;
                 
                 container.innerHTML = `
-                    <div id="approvalActions" class="p-4 bg-green-50 rounded-lg border-2 border-green-200 mb-6">
-                        <p class="font-bold text-[#15803d] mb-2">${actionTitle}</p>
-                        <div class="flex flex-col md:flex-row gap-3">
-                            <button onclick="window.processApproval('${request.id}', 'Approved')" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-sm">${approveText}</button>
-                            <button onclick="window.processApproval('${request.id}', 'Rejected')" class="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition shadow-sm">Reject</button>
-                            <button onclick="window.openAppointmentModal('${request.id}')" class="px-6 py-3 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition shadow-sm">📅 Set Appointment</button>
-                            <input type="text" id="approverRemarks" placeholder="Add optional remarks..." class="w-full md:flex-grow p-2 border rounded-lg focus:ring-green-500 focus:border-green-500 outline-none">
+                    <div id="approvalActions" class="p-2 md:p-4 bg-green-50 rounded-lg border-2 border-green-200 mb-2">
+                        <p class="font-bold text-[#15803d] text-xs md:text-sm mb-2">${actionTitle}</p>
+                        <div class="flex flex-row gap-1 mb-2">
+                            <button onclick="window.processApproval('${request.id}', 'Approved')" class="flex-1 py-1 md:py-3 bg-green-600 text-white rounded font-bold text-[10px] md:text-base hover:bg-green-700 shadow-sm">Verify</button>
+                            <button onclick="window.processApproval('${request.id}', 'Rejected')" class="flex-1 py-1 md:py-3 bg-red-600 text-white rounded font-bold text-[10px] md:text-base hover:bg-red-700 shadow-sm">Reject</button>
+                            <button onclick="window.openAppointmentModal('${request.id}')" class="flex-1 py-1 md:py-3 bg-yellow-500 text-white rounded font-bold text-[10px] md:text-base hover:bg-yellow-600 shadow-sm">📅 Appt.</button>
                         </div>
+                        <input type="text" id="approverRemarks" placeholder="Add optional remarks..." class="w-full p-1.5 md:p-2 border rounded focus:ring-green-500 focus:border-green-500 outline-none text-xs">
                     </div>
                 `;
             } else {
@@ -1457,6 +1502,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
