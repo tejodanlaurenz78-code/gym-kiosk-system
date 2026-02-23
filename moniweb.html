@@ -178,6 +178,20 @@
             font-size: 0.75rem;
             text-transform: uppercase;
         }
+
+        /* Ensure the body takes up exactly the full screen */
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* Prevents horizontal scrolling/overlapping */
+        }
+
+/* Force flexbox layouts to wrap on smaller screens if they run out of space */
+.flex-wrap-safe {
+    flex-wrap: wrap;
+}
     </style>
 </head>
 
@@ -935,3 +949,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
