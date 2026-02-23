@@ -1,10 +1,472 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PnC Gymnasium Kiosk System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --pnc-blue: #15803d;
+            --pnc-yellow: #FCD34D;
+            --pnc-green-dark: #15803d;
+            --pnc-green-light: #dcfce7;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .font-gothic { font-family: 'UnifrakturMaguntia', serif; letter-spacing: 1px; }
+
+        /* Form Template Styles */
+        .form-container { background: white; border: 1px solid #000; padding: 2rem; max-width: 1000px; margin: 0 auto; }
+        .form-header { text-align: center; margin-bottom: 1.5rem; }
+        .form-title { background-color: #D1D5DB; font-weight: bold; text-align: center; padding: 0.25rem; text-transform: uppercase; }
+        .line-input { border-bottom: 1px solid #000; width: 100%; outline: none; background: transparent; padding-left: 0.25rem; }
+        
+        /* Kiosk specific buttons */
+        .kiosk-btn { background-color: var(--pnc-blue); color: white; padding: 1rem 2rem; font-size: 1.25rem; border-radius: 0.5rem; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .kiosk-btn:hover { background-color: #166534; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
+        .kiosk-btn:active { transform: translateY(0); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+
+        /* Calendar specific */
+        .calendar-day { transition: background-color 0.2s; }
+        .calendar-day.clickable:active { background-color: #bbf7d0; }
+        .calendar-day.clickable { cursor: pointer; }
+        .calendar-day.event { background-color: #FEF3C7; border-color: var(--pnc-yellow); cursor: pointer; }
+        .calendar-day.event:hover { background-color: #FCD34D; }
+        .calendar-day.too-soon { background-color: #FEE2E2 !important; color: #B91C1C !important; cursor: not-allowed; opacity: 0.7; }
+        .calendar-day.occupied { background-color: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .calendar-day.occupied:hover { background-color: #fecaca; }
+        
+        .input-disabled { background-color: #E5E7EB; cursor: not-allowed; color: #6B7280; font-style: italic; }
+
+        /* Read Only Calendar Styling */
+        .readonly-day { background-color: #f3f4f6; color: #9ca3af; }
+        .readonly-day.occupied { background-color: #fee2e2; color: #991b1b; border: 1px solid #ef4444; cursor: help; }
+
+        /* Choice Card Styles */
+        .choice-card { border: 2px solid #e5e7eb; transition: all 0.2s; }
+        .choice-card:hover { border-color: var(--pnc-blue); transform: translateY(-2px); background-color: #f0fdf4; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+
+        /* Flash Message Styling */
+        #flashMessage { position: fixed; top: 50%; left: 50%; transform: translate(-55%, -50%); background-color: rgba(21, 128, 61, 0.95); color: white; padding: 20px 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); z-index: 100; opacity: 0; transition: opacity 0.3s ease-in-out; max-width: 90%; text-align: center; }
+        #flashMessage.show { opacity: 1; }
+
+        /* Stamping Animation */
+        @keyframes stamp { 0% { transform: scale(2); opacity: 0; } 50% { transform: scale(1); opacity: 1; } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .stamp-animate { animation: stamp 0.5s ease-in-out forwards; }
+    </style>
+</head>
+
+<body class="w-screen overflow-hidden bg-gray-100" style="height:100dvh;">
+
+    <div id="kiosk-app" class="w-screen bg-white overflow-hidden flex flex-col" style="height:100dvh;">
+
+        <header class="bg-[#15803d] p-4 border-b-4 border-green-600 flex justify-between items-center sticky top-0 z-20 shadow-md">
+            <div class="flex items-center space-x-3">
+                <img src="pnc-logo.jpg" alt="PnC Logo" class="w-16 h-16 rounded-full border-2 border-white/50 shadow-lg">
+                <h1 class="text-2xl font-extrabold text-white">Gym Reservation Kiosk</h1>
+            </div>
+            <button id="homeButton" class="text-green-100 font-semibold hover:text-white transition" onclick="showView('landingView')">Start Screen</button>
+        </header>
+
+        <main class="flex-grow overflow-y-auto p-6">
+
+            <div id="landingView" class="view-panel text-center flex flex-col items-center justify-center h-full pt-6 pb-20">
+                <div class="w-full flex items-center justify-center mb-6 space-x-4">
+                    <img src="pnc-logo.jpg" alt="PnC Logo" class="w-20 h-20 rounded-full border-2 border-white/50 shadow-lg">
+                    <div class="text-left">
+                        <h1 class="text-4xl md:text-5xl text-[#15803d] font-gothic">University of Cabuyao</h1>
+                        <h2 class="text-base md:text-lg text-gray-700 font-serif font-semibold tracking-[0.2em] mt-1">(PAMANTASAN NG CABUYAO)</h2>
+                    </div>
+                </div>
+
+                <div class="w-full max-w-5xl bg-[#dcfce7] rounded-md py-8 px-4 mb-8 border border-green-200 shadow-sm relative overflow-hidden mx-auto">
+                    <div class="relative z-10">
+                        <h3 class="text-2xl text-[#15803d] mb-1 font-normal">Welcome to</h3>
+                        <div class="text-5xl md:text-6xl font-bold mb-3 flex items-center justify-center gap-1">
+                            <span class="text-[#15803d]">Gym</span>
+                            <span class="text-gray-800">Kiosk</span>
+                        </div>
+                        <p class="text-lg text-[#15803d] font-medium tracking-wide">University of Cabuyao Reservation System</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 max-w-5xl mx-auto text-center">
+                    <p class="text-base text-gray-600 mb-8 max-w-2xl mx-auto">
+                        Use this kiosk to book the Gymnasium.<br>
+                        All reservations require <span class="font-bold text-[#15803d]">1 week advance notice</span> and a signed <span class="font-bold text-[#15803d]">Request Letter</span>.
+                    </p>
+
+                    <div class="flex flex-col md:flex-row justify-center gap-6 mb-12">
+                        <button class="kiosk-btn w-64 shadow-xl" onclick="showView('calendarView')">Start Reservation &rarr;</button>
+                        <button class="kiosk-btn w-64 shadow-xl" onclick="showView('verificationView')">Approved Letter for Stamping &rarr;</button>
+                    </div>
+
+                    <div class="border-t pt-8">
+                        <h3 class="text-xl font-bold text-gray-700 mb-4">Check Schedule Availability</h3>
+                        <p class="text-sm text-gray-500 mb-4">Please check the calendar below for conflicting schedules before creating your Request Letter.</p>
+                        <div class="max-w-4xl mx-auto bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="text-2xl font-extrabold text-[#15803d]" id="landingMonthDisplay"></div>
+                                <div class="space-x-2">
+                                    <button class="px-3 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 font-bold" onclick="changeMonth(-1)">Prev</button>
+                                    <button class="px-3 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 font-bold" onclick="changeMonth(1)">Next</button>
+                                </div>
+                            </div>
+                            <div id="landingCalendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
+                            <div class="pt-4 flex justify-center gap-4 text-xs">
+                                <div class="flex items-center gap-1"><div class="w-4 h-4 bg-white border border-gray-300"></div> Available</div>
+                                <div class="flex items-center gap-1"><div class="w-4 h-4 bg-red-100 border border-red-500"></div> Occupied (Conflict)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="verificationView" class="view-panel hidden text-center flex flex-col items-center justify-center h-full pt-20">
+                <h2 class="text-3xl font-bold text-[#15803d] mb-2">Reservation Status</h2>
+                <p class="text-gray-500 mb-8">Verify if your request letter and form are approved.</p>
+                <div class="max-w-md w-full bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+                    <div class="mb-6">
+                        <label class="block text-left text-gray-700 font-bold mb-2">Enter Request Letter Code</label>
+                        <input type="text" id="verificationCodeInput" placeholder="e.g. RES-123456" class="w-full p-4 border border-gray-300 rounded text-xl text-center tracking-widest font-mono focus:outline-none focus:border-[#15803d] focus:ring-2 focus:ring-green-200">
+                    </div>
+                    <button class="w-full bg-[#15803d] text-white p-4 rounded-lg font-bold text-lg hover:bg-green-800 transition flex justify-center items-center" onclick="verifyReservationCode()">
+                        <span id="verifyBtnText">Check Status</span>
+                        <svg id="verifySpinner" class="animate-spin ml-2 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                    <button class="mt-6 text-gray-500 underline hover:text-gray-800" onclick="showView('landingView')">Cancel</button>
+                </div>
+            </div>
+
+            <div id="stampingActionView" class="view-panel hidden text-center h-full pt-10">
+                <div class="max-w-3xl mx-auto bg-green-50 border-2 border-green-500 p-8 rounded-2xl shadow-xl">
+                    <div class="flex items-center justify-center space-x-3 mb-4">
+                        <div class="bg-green-600 text-white rounded-full p-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                        <h2 class="text-3xl font-bold text-green-800">Status: APPROVED</h2>
+                    </div>
+                    <p class="text-lg text-gray-700 mb-8">The reservation for Letter Code <span class="font-mono font-bold" id="displayVerifiedCode">--</span> is fully approved.</p>
+                    <div class="bg-white p-10 rounded-xl border-2 border-dashed border-gray-400 mb-8">
+                        <div class="mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        </div>
+                        <h3 id="stampingTitle" class="text-2xl font-bold text-gray-800 mb-2">Ready for Stamping</h3>
+                        <p id="stampingDesc" class="text-gray-600">Please insert your documents into the slot below.</p>
+                    </div>
+                    <button id="stampingBtn" class="kiosk-btn w-72 animate-pulse">Start Stamping Process</button>
+                </div>
+            </div>
+
+            <div id="stampingSuccessView" class="view-panel hidden text-center flex flex-col items-center justify-center h-full pt-20">
+                <div class="stamp-animate mb-6 border-4 border-red-700 p-4 rounded inline-block transform -rotate-6 mask-image">
+                    <h2 class="text-5xl font-black text-red-700 uppercase tracking-widest">APPROVED</h2>
+                    <p class="text-red-700 font-bold text-sm mt-1">PMGSD • DATE: <span id="stampDate"></span></p>
+                </div>
+                <h3 class="text-3xl font-bold text-gray-800 mb-4">Documents Stamped Successfully!</h3>
+                <p class="text-lg text-gray-600 mb-10 max-w-md">Please retrieve your stamped documents from the tray. You may now proceed with your event.</p>
+                <button class="kiosk-btn !bg-gray-600 hover:!bg-gray-700" onclick="showView('landingView')">Return to Start Screen</button>
+            </div>
+
+            <div id="calendarView" class="view-panel hidden space-y-6">
+                <h2 class="text-2xl font-bold text-gray-700 border-b pb-2">Schedule Overview (1-Week Minimum Advance)</h2>
+                <div class="flex justify-between items-center">
+                    <div class="text-3xl font-extrabold text-[#15803d]" id="monthDisplay"></div>
+                    <div class="space-x-2">
+                        <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 active:bg-gray-400 transition" onclick="changeMonth(-1)">Prev</button>
+                        <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 active:bg-gray-400 transition" onclick="changeMonth(1)">Next</button>
+                    </div>
+                </div>
+                <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
+                <div class="pt-6 flex justify-center gap-4 border-t border-gray-200 text-xs">
+                    <div class="flex items-center gap-1"><div class="w-4 h-4 bg-white border border-gray-300"></div> Available</div>
+                    <div class="flex items-center gap-1"><div class="w-4 h-4 bg-red-100 border border-red-500"></div> Occupied/Event</div>
+                    <div class="flex items-center gap-1"><div class="w-4 h-4 bg-green-200 border border-green-400"></div> Selected/Today</div>
+                </div>
+            </div>
+
+            <!-- uploadView: full-width, aspect-ratio locked to Pi Cam v2 capture sensor (3280x2464)      -->
+            <!-- padding-top: 75.122% = (2464/3280)*100 — every pixel edge of the sensor is visible      -->
+            <!-- The live stream (640x480) is the same sensor FOV, just downscaled for bandwidth          -->
+            <div id="uploadView" class="view-panel hidden w-full pt-2">
+
+                <h2 class="text-2xl font-bold text-gray-700 mb-1 text-center px-6">Step 1: Request Letter</h2>
+                <p class="text-sm text-gray-500 italic text-center mb-4">
+                    Align your document within the bounds and click Capture.
+                </p>
+
+                <div class="flex flex-row items-center justify-center gap-8 px-4">
+
+                    <div class="relative w-full max-w-[480px] bg-black border-2 border-gray-700 shadow-inner rounded-xl overflow-hidden shrink-0"
+                         style="aspect-ratio: 3280 / 2464;">
+
+                        <img id="kioskCameraStream"
+                             src="http://192.168.100.57:5000/video_feed"
+                             class="absolute inset-0 w-full h-full object-contain"
+                             alt="Camera Feed"
+                             onerror="this.style.display='none'; document.getElementById('camOffline').style.display='flex';">
+
+                        <div id="camOffline"
+                             class="absolute inset-0 hidden flex-col items-center justify-center text-white gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+                            </svg>
+                            <p class="text-sm font-semibold text-white/50">Camera offline</p>
+                        </div>
+
+                        <div class="absolute top-0 left-0 right-0 h-0.5 bg-white/25 pointer-events-none"></div>
+                        <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-white/25 pointer-events-none"></div>
+                        <div class="absolute top-0 bottom-0 left-0 w-0.5 bg-white/25 pointer-events-none"></div>
+                        <div class="absolute top-0 bottom-0 right-0 w-0.5 bg-white/25 pointer-events-none"></div>
+
+                        <div class="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-white/80 pointer-events-none"></div>
+                        <div class="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-white/80 pointer-events-none"></div>
+                        <div class="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-white/80 pointer-events-none"></div>
+                        <div class="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-white/80 pointer-events-none"></div>
+
+                        <div class="absolute top-2 left-1/2 -translate-x-1/2 bg-black/60 text-white/70 text-[10px] font-mono px-2 py-0.5 rounded-full pointer-events-none flex items-center gap-1">
+                            <span class="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                            LIVE
+                        </div>
+                    </div>
+
+                    
+                    <div class="flex flex-col items-center justify-center gap-4 w-[350px] shrink-0">
+    
+                        <button id="captureBtn" class="kiosk-btn !bg-red-600 hover:!bg-red-700 flex items-center justify-center gap-2 w-full py-3 text-lg" onclick="captureDocument()">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span id="captureBtnText">Capture Document</span>
+                        </button>
+                    
+                        <div id="scanPreviewContainer" class="hidden w-full flex-col items-center">
+                            <p id="previewStatusText" class="text-blue-700 font-bold mb-2 flex items-center justify-center gap-1 text-sm">
+                                Review Captured Image
+                            </p>
+                            <div id="previewImageWrapper" class="relative rounded-lg overflow-hidden border-2 border-blue-500 shadow-lg bg-black w-[200px]"
+                                 style="aspect-ratio: 3280 / 2464;">
+                                <img id="scanPreviewImage" class="absolute inset-0 w-full h-full object-contain" alt="Captured document preview">
+                            </div>
+                        </div>
+                    
+                        <div id="previewActions" class="hidden w-full flex-col gap-2">
+                            <button class="kiosk-btn !bg-green-600 hover:!bg-green-700 w-full py-2 text-md" onclick="confirmAndUpload()">Confirm & Upload</button>
+                            <button class="kiosk-btn !bg-gray-500 hover:!bg-gray-600 w-full py-2 text-md" onclick="retakeCapture()">Retake Document</button>
+                        </div>
+                    
+                        <div id="uploadLoading" class="hidden w-full text-center text-gray-600 font-bold py-2 animate-pulse">
+                            Uploading... Please wait.
+                        </div>
+                    
+                        <canvas id="scanCanvas" style="display:none;"></canvas>
+                    
+                        <button id="fileNextBtn" class="kiosk-btn w-full py-3 text-lg opacity-50 cursor-not-allowed mt-2" onclick="showView('formView')" disabled>
+                            Next Step: Fill Reservation Form &rarr;
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="formView" class="view-panel hidden">
+                <div class="flex justify-between items-start mb-4 px-4">
+                    <button class="text-gray-500 hover:text-gray-800" onclick="showView('uploadView')">&larr; Back</button>
+                    <p class="text-sm text-gray-400">PNC:AF-FO-15 rev.0 02012023<br>PMGSD Copy</p>
+                </div>
+                <div class="form-container shadow-lg">
+                    <div class="form-header flex items-center justify-center space-x-4 mb-6">
+                        <img src="pnc-logo.jpg" alt="PnC Logo" class="w-24 h-24 rounded-full border-2 border-white/50 shadow-lg">
+                        <div class="text-center">
+                            <p class="text-sm">Republic of the Philippines</p>
+                            <h2 class="text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
+                            <p class="text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
+                            <p class="text-sm italic">Administration and Finance Division</p>
+                            <p class="font-bold text-gray-700 mt-1">Property Management and General Services Department</p>
+                            <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
+                        </div>
+                    </div>
+                    <div class="form-title text-black bg-gray-300">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
+                    <div class="border-b border-black p-4 space-y-4 text-sm">
+                        <div class="flex flex-wrap gap-4">
+                            <div class="flex-1"><label>Transaction Number:</label><input type="text" class="line-input" placeholder="(Auto-Generated)" readonly></div>
+                            <div class="flex-1"><label>Date of Filing:</label><input type="date" id="filingDateInput" class="line-input input-disabled" readonly></div>
+                            <div class="flex-1"><label>Department:</label><input type="text" class="line-input" placeholder="Department"></div>
+                        </div>
+                        <div class="flex flex-wrap gap-4">
+                            <div class="flex-1"><label>Activity Date (Pre-selected):</label><input type="date" id="activityDateInput" class="line-input input-disabled" readonly></div>
+                            <div class="flex-1"><label>Time:</label><input type="time" class="line-input"></div>
+                        </div>
+                        <div>
+                            <label>Activity Name/Title/Purpose:</label><input type="text" class="line-input" placeholder="Activity Name/Title/Purpose">
+                            <p class="text-xs italic mt-1">Note: Please attach proof of approval of the activity (Upload Step 1)</p>
+                        </div>
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div class="w-1/3"><label>Expected # of Participants:</label></div>
+                            <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span><input type="number" class="line-input w-20" placeholder="Internal"></div>
+                            <div class="flex-1 flex items-center"><span class="mr-2">External:</span><input type="number" class="line-input w-20" placeholder="External"></div>
+                        </div>
+                    </div>
+                    <div class="border border-black border-t-0 flex">
+                        <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">Venue Reservation</div>
+                        <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-2">
+                            <label class="flex items-center space-x-2"><input type="checkbox" checked> <span>Gym Stage / Court</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox"> <span>Multi-Purpose Hall</span></label>
+                            <div class="flex items-center space-x-2"><input type="checkbox"> <span>Classroom #</span> <input type="text" class="line-input w-16"></div>
+                            <div class="flex items-center space-x-2"><input type="checkbox"> <span>Laboratory #</span> <input type="text" class="line-input w-16"></div>
+                            <label class="flex items-center space-x-2"><input type="checkbox"> <span>Library</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox"> <span>Cafeteria</span></label>
+                            <div class="col-span-2 flex items-center space-x-2"><input type="checkbox"> <span>Others:</span> <input type="text" class="line-input"></div>
+                        </div>
+                    </div>
+                    <div class="border border-black border-t-0 flex">
+                        <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">
+                            <p>Equipment Reservation</p><p class="mt-4">Set-up</p>
+                            <div class="mt-2 text-xs font-normal space-y-1">
+                                <p>Ingress Date: <input type="date" class="line-input w-24"></p>
+                                <p>Time: <input type="time" class="line-input w-24"></p>
+                                <p class="mt-1">Egress Date: <input type="date" class="line-input w-24"></p>
+                                <p>Time: <input type="time" class="line-input w-24"></p>
+                            </div>
+                        </div>
+                        <div class="flex-1 p-2">
+                            <div class="grid grid-cols-1 gap-2 mb-2">
+                                <div class="flex items-center space-x-2"><input type="checkbox"> <span>Chair #</span> <input type="number" class="line-input w-16" min="0"><span>Type:</span> <input type="text" class="line-input flex-1"></div>
+                                <div class="flex items-center space-x-2"><input type="checkbox"> <span>Table #</span> <input type="number" class="line-input w-16" min="0"><span>Type:</span> <input type="text" class="line-input flex-1"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Podium/Rostrum</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Sound System</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Electric fans</span></label>
+                                <div class="flex items-center space-x-2"><input type="checkbox"> <span>Microphone #</span> <input type="number" class="line-input w-12"></div>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Extension Cord</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Panel Board / White Board</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Philippine Flag</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Pamantasan ng Cabuyao Flag</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox"> <span>Multi-media Projector</span></label>
+                                <div class="flex items-center space-x-2"><input type="checkbox"> <span>Others:</span> <input type="text" class="line-input w-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border border-black border-t-0 flex">
+                        <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">Manpower Requirement</div>
+                        <div class="flex-1 p-2 grid grid-cols-2 gap-4">
+                            <div class="flex items-center space-x-2"><input type="checkbox"> <span>Technical</span> <input type="text" class="line-input flex-1"></div>
+                            <div class="flex items-center space-x-2"><input type="checkbox"> <span>Housekeeping</span> <input type="text" class="line-input flex-1"></div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-600 mt-2 mb-6 space-y-1 italic">
+                        <p>• Request must be submitted at least a week before the activity. (Note: System enforces **7-day minimum booking** from calendar selection).</p>
+                        <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required. HRMD will compute overtime costs.</p>
+                        <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
+                    </div>
+                    <div class="grid grid-cols-4 gap-4 text-center mt-8">
+                        <div><p class="font-bold text-sm mb-8">Requested by:</p><input type="text" class="line-input text-center font-bold text-[#15803d]" placeholder="[Enter Your Name]"><p class="text-xs border-t border-black mt-1 pt-1">Signature over Printed Name/Date</p></div>
+                        <div class="opacity-70"><p class="font-bold text-sm mb-8">Reviewed by:</p><input type="text" class="line-input input-disabled text-center" value="" disabled><p class="text-xs border-t border-black mt-1 pt-1">Department/Division Head</p></div>
+                        <div class="opacity-70"><p class="font-bold text-sm mb-8">Recommended by:</p><input type="text" class="line-input input-disabled text-center" value="" disabled><p class="text-xs border-t border-black mt-1 pt-1">PM Officer</p></div>
+                        <div class="opacity-70"><p class="font-bold text-sm mb-8">Approved by:</p><input type="text" class="line-input input-disabled text-center" value="" disabled><p class="text-xs border-t border-black mt-1 pt-1">PMGSD Director</p></div>
+                    </div>
+                </div>
+                <div class="max-w-4xl mx-auto mt-8 flex justify-end space-x-4 pb-10">
+                    <button class="px-6 py-3 bg-gray-400 text-white rounded hover:bg-gray-500" onclick="showView('')">Cancel</button>
+                    <button class="kiosk-btn" onclick="proceedToSubmissionChoice()">SUBMIT FORM &rarr;</button>
+                </div>
+            </div>
+
+            <div id="submissionChoiceView" class="view-panel hidden text-center max-w-7xl mx-auto pt-10 px-4">
+                <h2 class="text-3xl font-bold text-[#15803d] mb-4">DEPARTMENTS</h2>
+                <p class="text-gray-600 mb-10">Choose from the following departments for your reservation.</p>
+                <div class="flex flex-col lg:flex-row gap-8 items-start">
+                    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                        <button onclick="selectOffice('Office of the Vice President for Administration & Finance (OVPAF)')" class="choice-card bg-white p-6 rounded-xl shadow flex flex-col items-center justify-center space-y-4 min-h-[200px]">
+                            <div class="w-16 h-16 rounded-full flex items-center justify-center bg-pink-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <div class="text-center"><div class="font-bold text-gray-800 text-lg">Office of the Vice President for Administration & Finance (OVPAF)</div></div>
+                        </button>
+                        <button onclick="selectOffice('Property Management & General Services Department (PMGSD)')" class="choice-card bg-white p-6 rounded-xl shadow flex flex-col items-center justify-center space-y-4 min-h-[200px]">
+                            <div class="w-16 h-16 rounded-full flex items-center justify-center bg-blue-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                            </div>
+                            <div class="text-center"><div class="font-bold text-gray-800 text-lg">Property Management & General Services Department (PMGSD)</div></div>
+                        </button>
+                    </div>
+                    <div class="w-full lg:w-1/3 bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex flex-col relative self-start sticky top-4">
+                        <h3 class="text-xl font-bold text-gray-700 mb-4 text-center border-b pb-4">Selected Personnel</h3>
+                        <div id="finalSelectedList_main" class="flex-1 overflow-y-auto space-y-4 mb-4 text-left text-sm text-gray-600 max-h-[500px]">
+                            <p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <button class="w-full py-3 bg-[#15803d] text-white font-bold rounded-lg hover:bg-green-800 transition shadow-lg text-lg" onclick="submitFinalSelection()">Submit Reservation</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-12">
+                    <button class="text-gray-500 hover:text-gray-800 underline" onclick="showView('formView')">&larr; Back to Form</button>
+                </div>
+            </div>
+
+            <div id="personnelView" class="view-panel hidden text-center max-w-6xl mx-auto pt-10 px-4">
+                <h2 class="text-4xl font-bold text-gray-800 mb-2">PERSONNEL AND SERVICES</h2>
+                <div class="w-24 h-1 bg-[#15803d] mx-auto mb-10"></div>
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <div class="flex-1 text-left">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold text-[#15803d]" id="selectedDepartmentName">--</h3>
+                            <button class="text-sm text-gray-500 hover:text-gray-800 underline" onclick="showView('submissionChoiceView')">Change Department</button>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 h-96 overflow-y-auto" id="personnelChecklistContainer"></div>
+                    </div>
+                    <div class="w-full lg:w-1/3 bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex flex-col h-full relative">
+                        <h3 class="text-xl font-bold text-gray-700 mb-4 text-center border-b pb-4">Selected Personnel</h3>
+                        <div id="finalSelectedList_sub" class="flex-1 overflow-y-auto space-y-4 mb-4 text-left text-sm text-gray-600">
+                            <p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <button class="w-full py-3 bg-[#15803d] text-white font-bold rounded-lg hover:bg-green-800 transition shadow-lg text-lg" onclick="submitFinalSelection()">Submit Reservation</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="trackingView" class="view-panel hidden text-center p-8">
+                <div class="bg-green-50 border-l-4 border-green-400 p-6 rounded-lg text-left w-full shadow-lg mb-8 max-w-4xl mx-auto">
+                    <h3 class="text-2xl font-bold text-[#15803d] mb-2">Reservation Submitted Successfully!</h3>
+                    <p class="text-sm text-gray-600">Sent to: <span id="submittedToDisplay" class="font-bold">--</span></p>
+                    <p class="text-sm text-gray-600 mt-2">Selected Personnel:</p>
+                    <div id="submittedPersonnelDisplay" class="font-bold text-sm text-gray-800 mt-1 max-h-32 overflow-y-auto">--</div>
+                </div>
+                <div class="bg-gray-100 p-6 rounded-xl shadow-inner inline-block mb-8">
+                    <p class="text-sm font-semibold text-gray-600 mb-1">Your Tracking ID:</p>
+                    <p id="trackingIdDisplay" class="text-4xl font-extrabold text-gray-800 tracking-wider font-mono">--</p>
+                    <div class="mt-4 bg-white border mx-auto flex items-center justify-center p-2 rounded">
+                        <img id="qrCodeImage" src="" alt="Tracking QR Code" class="w-32 h-32 object-contain">
+                    </div>
+                </div>
+                <div class="pt-6 space-y-3">
+                    <button class="kiosk-btn !bg-green-600 hover:!bg-green-700" onclick="resetKioskData(); showView('landingView')">Start New Request</button>
+                </div>
+            </div>
+
+        </main>
+        <div id="flashMessage" class="hidden"><h4 class="text-xl font-bold mb-2" id="flashTitle"></h4><p id="flashBody" class="text-sm"></p></div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
+        // Alias ref as dbRef for Realtime Database to avoid conflict with Storage ref
+        import { getDatabase, ref as dbRef, set, get, onValue, child, update, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        // Import Firebase Storage
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+    
         const firebaseConfig = {
             apiKey: "AIzaSyArmkpNiknD7u5vJBd1XFOWm0DjkaZHieQ",
             authDomain: "group4-ee960.firebaseapp.com",
@@ -15,920 +477,640 @@
             appId: "1:453765398844:web:219433f771cfd33b311e39",
             measurementId: "G-41DZ3175NX"
         };
-
+    
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-
+        const storage = getStorage(app); // Initialize Storage
+    
+        // New global variable to hold the uploaded image URL
+        let globalScannedDocumentUrl = null;
+        let pendingCaptureBlob = null;
+    
+        // Expose aliased dbRef to window so your existing code works
         window.db = db;
-        window.ref = ref;
+        window.set = set;
+        window.ref = dbRef; 
         window.get = get;
-        window.child = child;
         window.onValue = onValue;
+        window.child = child;
+        window.update = update;
+        window.push = push;
+    
+        // --- GLOBAL STATE ---
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const minAdvanceDays = 7;
+        const minReservationDate = new Date();
+        minReservationDate.setDate(minReservationDate.getDate() + minAdvanceDays);
+        minReservationDate.setHours(0, 0, 0, 0);
+
+        let currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
+        let selectedReservationDate = null;
+        let globalEvents = [];
+        let globalSelectedPersonnel = {};
+        let stampingStep = 0;
+
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const personnelData = {
+            'Office of the Vice President for Administration & Finance (OVPAF)': ['Barundia, Arnold F.', 'Bondoc, Christian Stephen D.', 'Garcia, Colin B.', 'Mafabo, Renelina D.'],
+            'Property Management & General Services Department (PMGSD)': ['Aragon, Ferdinand G.', 'Aragon, Marcelo N.', 'Beaño, Alfredo Glenn H.', 'Dalisay, Marilyn D.', 'Garcia, Colin B.', 'Teves, Jomar P.']
+        };
+
+        // --- FUNCTIONS (Attached to Window for HTML access) ---
+
+       window.resetKioskData = function() {
+            // 1. Reset Global Variables
+            selectedReservationDate = null;
+            globalSelectedPersonnel = {};
+            globalScannedDocumentUrl = null;
+            pendingCaptureBlob = null; // Reset pending blob
+            stampingStep = 0;
         
-        console.log("✅ Firebase initialized successfully!");
-    </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PnC Request Monitoring</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #e8e8e8;
-        }
-
-        /* Header */
-        .header-green {
-            background-color: #15803d;
-        }
-
-        /* Cards */
-        .card-white {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .card-yellow-border {
-            border-top: 4px solid #f59e0b;
-        }
-
-        /* Alert box */
-        .alert-warning {
-            background-color: #fffbeb;
-            border-left: 4px solid #f59e0b;
-            padding: 1rem;
-            border-radius: 8px;
-        }
-
-        /* Timeline - Updated for cleaner design */
-        .timeline-dot {
-            width: 2.5rem;
-            height: 2.5rem;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Search input with QR icon */
-        .input-with-icon {
-            position: relative;
-        }
-
-        .qr-icon {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6b7280;
-        }
-
-        /* Buttons */
-        .btn-primary {
-            background-color: #15803d;
-            color: white;
-            padding: 0.875rem 2rem;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: background-color 0.2s;
-        }
-
-        .btn-primary:hover {
-            background-color: #166534;
-        }
-
-        .btn-secondary {
-            background-color: white;
-            color: #374151;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            border: 1px solid #d1d5db;
-            transition: all 0.2s;
-        }
-
-        .btn-secondary:hover {
-            background-color: #f9fafb;
-        }
-
-        /* Form styles - 100% identical to k.txt and ad27.txt */
-        .form-container {
-            background: white;
-            border: 1px solid #000;
-            padding: 2rem;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .form-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-title {
-            background-color: #D1D5DB;
-            font-weight: bold;
-            text-align: center;
-            padding: 0.5rem;
-            text-transform: uppercase;
-            font-size: 1.1rem;
-            margin-bottom: 0;
-            border: none;
-            color: black;
-        }
-
-        .read-only-field {
-            border-bottom: 1px solid black;
-            width: 100%;
-            padding-left: 0.25rem;
-            font-weight: bold;
-            min-height: 24px;
-            display: inline-block;
-        }
-
-        .border-black {
-            border-color: black;
-        }
-
-        .accent-black {
-            accent-color: black;
-        }
-
-        .line-input {
-            border-bottom: 1px solid #000;
-            width: 100%;
-            outline: none;
-            background: transparent;
-            padding-left: 0.25rem;
-        }
-
-        /* Status badge */
-        .badge-appointment {
-            background-color: #fef3c7;
-            color: #92400e;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-        }
-    </style>
-</head>
-
-<body class="w-screen overflow-x-hidden" style="min-height:100dvh;">
-
-    <!-- Header -->
-    <header class="header-green shadow-md sticky top-0 z-50">
-        <div class="w-full px-4 sm:px-6 py-4 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <img src="pnc-logo.jpg" alt="PnC Logo" class="w-16 h-16 rounded-full border-2 border-white/50 shadow-lg">
-                <div>
-                    <h1 class="text-white text-lg font-bold">Request Monitoring</h1>
-                    <p class="text-green-100 text-xs">University of Cabuyao</p>
-                </div>
-            </div>
-            <button onclick="showSearch()" class="text-white font-semibold hover:text-green-100 transition flex items-center space-x-2">
-                <span>←</span>
-                <span>Track Another</span>
-            </button>
-        </div>
-    </header>
-
-    <!-- Search View -->
-    <div id="searchView" class="max-w-2xl mx-auto px-6 py-16">
-        <div class="card-white p-12">
-            <div class="text-center mb-8">
-                <div class="w-20 h-20 mx-auto bg-green-50 rounded-2xl flex items-center justify-center mb-6">
-                    <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <h2 class="text-3xl font-bold text-gray-900 mb-3">Track Your Request</h2>
-                <p class="text-gray-600">Enter the Transaction ID from your receipt or scan the QR Code.</p>
-            </div>
-
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Transaction ID</label>
-                    <div class="input-with-icon">
-                        <input 
-                            type="text" 
-                            id="trackInput" 
-                            placeholder="RES-XXXXXX"
-                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
-                        >
-                        <div class="qr-icon">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <button onclick="trackRequest()" class="btn-primary w-full">
-                    Track Status
-                </button>
-
-                <div id="errorMsg" class="hidden mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
-                    <p class="text-red-700 font-semibold">❌ Request not found. Please check your Transaction ID.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Results View -->
-    <div id="resultsView" class="hidden w-full px-4 sm:px-6 py-8 pb-20">
-        <!-- Status Alert Banner -->
-        <div id="statusAlert" class="hidden mb-6 p-4 rounded-lg border-l-4"></div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <!-- Left Card - Request Details -->
-            <div class="lg:col-span-2">
-                <div class="card-white p-6">
-                    <div id="requestDetailsCard"></div>
-                </div>
-            </div>
+            // 2. Reset Camera UI Elements
+            const previewContainer = document.getElementById('scanPreviewContainer');
+            if (previewContainer) previewContainer.classList.add('hidden');
             
-            <!-- Right Card - Approval Timeline -->
-            <div class="lg:col-span-3">
-                <div class="card-white p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-xl font-bold text-gray-900 flex items-center">
-                            <svg class="w-6 h-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                            </svg>
-                            Approval Timeline
-                        </h3>
-                        <span class="text-xs text-gray-500" id="lastUpdated">Last updated: Just now</span>
-                    </div>
-                    <div id="timelineContent"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="mt-6 flex justify-center space-x-4">
-            <button onclick="switchTab('form2')" class="btn-secondary flex items-center space-x-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                <span>View Submission Documents</span>
-            </button>
-        </div>
-
-        <!-- Forms Modal -->
-        <div id="formsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-6">
-            <div class="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-                <div class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-                    <h3 class="text-xl font-bold">Submission Documents</h3>
-                    <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                <div class="p-6">
-                    <div id="form2Content" class="mb-8"></div>
-                    <div id="form1Content"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let currentRequest = null;
-
-        function showSearch() {
-            // Clear URL parameters
-            if (window.history.replaceState) {
-                window.history.replaceState({}, document.title, window.location.pathname);
+            const previewActions = document.getElementById('previewActions');
+            if (previewActions) {
+                previewActions.classList.add('hidden');
+                previewActions.classList.remove('flex');
+            }
+        
+            const uploadLoading = document.getElementById('uploadLoading');
+            if (uploadLoading) uploadLoading.classList.add('hidden');
+        
+            const nextBtn = document.getElementById('fileNextBtn');
+            if (nextBtn) {
+                nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                nextBtn.disabled = true;
             }
             
-            document.getElementById('searchView').classList.remove('hidden');
-            document.getElementById('resultsView').classList.add('hidden');
-            document.getElementById('trackInput').value = '';
-            document.getElementById('errorMsg').classList.add('hidden');
-        }
-
-        function switchTab(tab) {
-            document.getElementById('formsModal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('formsModal').classList.add('hidden');
-        }
-
-        function cancelRequest() {
-            if (confirm('Are you sure you want to cancel this request?')) {
-                alert('Request cancellation submitted.');
+            const captureBtn = document.getElementById('captureBtn');
+            if (captureBtn) {
+                captureBtn.classList.remove('hidden');
+                captureBtn.disabled = false;
             }
-        }
-
-        function trackRequest() {
-            const trackId = document.getElementById('trackInput').value.trim();
-
-            if (!trackId) {
-                alert('Please enter a Transaction ID');
-                return;
+            const captureBtnText = document.getElementById('captureBtnText');
+            if (captureBtnText) captureBtnText.innerText = "Capture Document";
+            
+            // 2. Reset File Upload Section
+            const fileInput = document.getElementById('requestLetterFile');
+            if(fileInput) fileInput.value = ''; // Clear actual file
+            const fileLabel = document.getElementById('fileInputLabel');
+            if(fileLabel) {
+                fileLabel.classList.remove('bg-green-100');
+                // Reset label text but keep the input element inside
+                fileLabel.innerHTML = `Browse / Scan <input type="file" id="requestLetterFile" class="hidden" onchange="updateFileName(this)">`;
             }
-
-            const requestRef = window.ref(window.db, `requests/${trackId}`);
-
-            // Use onValue for real-time updates
-            window.onValue(requestRef, (snapshot) => {
-                if (snapshot.exists()) {
-                    currentRequest = snapshot.val();
-                    displayRequest(currentRequest);
-                    document.getElementById('searchView').classList.add('hidden');
-                    document.getElementById('resultsView').classList.remove('hidden');
-                    document.getElementById('errorMsg').classList.add('hidden');
-                    
-                    // Update "Last updated" timestamp
-                    const now = new Date().toLocaleString('en-US', { 
-                        hour: 'numeric', 
-                        minute: 'numeric', 
-                        hour12: true 
-                    });
-                    document.getElementById('lastUpdated').textContent = `Last updated: ${now}`;
-                } else {
-                    document.getElementById('errorMsg').classList.remove('hidden');
+        
+            // 3. Reset All Form Inputs (Text, Date, Time, Checkboxes)
+            const formInputs = document.querySelectorAll('#formView input');
+            formInputs.forEach(input => {
+                if (input.type === 'checkbox') {
+                    input.checked = false;
+                } else if (input.type !== 'button' && input.type !== 'submit' && !input.readOnly) {
+                    // Don't clear readOnly fields like Transaction Number
+                    input.value = '';
                 }
-            }, (error) => {
-                console.error('Error:', error);
-                alert('Error loading request. Please try again.');
             });
-        }
-
-
-        function formatDate(dateStr) {
-            if (!dateStr) return '';
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
-        }
-
-        function showStatusAlert(request) {
-            const alertDiv = document.getElementById('statusAlert');
-            const status = request.status || '';
-            
-            if (status.includes('Rejected')) {
-                alertDiv.className = 'mb-6 p-4 rounded-lg border-l-4 bg-red-50 border-red-500';
-                alertDiv.innerHTML = `
-                    <div class="flex items-start">
-                        <svg class="w-6 h-6 text-red-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                        </svg>
-                        <div>
-                            <h4 class="font-bold text-red-900">Request Rejected</h4>
-                            <p class="text-sm text-red-700 mt-1">Your request has been rejected. Please check the timeline below for details.</p>
-                        </div>
-                    </div>
-                `;
-                alertDiv.classList.remove('hidden');
-            } else if (status.includes('Appointment')) {
-                alertDiv.className = 'mb-6 p-4 rounded-lg border-l-4 bg-yellow-50 border-yellow-500';
-                alertDiv.innerHTML = `
-                    <div class="flex items-start">
-                        <svg class="w-6 h-6 text-yellow-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                        </svg>
-                        <div>
-                            <h4 class="font-bold text-yellow-900">📅 Appointment Required</h4>
-                            <p class="text-sm text-yellow-700 mt-1">An appointment has been set. Please check the timeline below for appointment details.</p>
-                        </div>
-                    </div>
-                `;
-                alertDiv.classList.remove('hidden');
-            } else if (status.includes('Approved') || status.includes('Completed')) {
-                alertDiv.className = 'mb-6 p-4 rounded-lg border-l-4 bg-green-50 border-green-500';
-                alertDiv.innerHTML = `
-                    <div class="flex items-start">
-                        <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                        </svg>
-                        <div>
-                            <h4 class="font-bold text-green-900">✅ Request Approved</h4>
-                            <p class="text-sm text-green-700 mt-1">Your request has been approved. You can now proceed to document stamping.</p>
-                        </div>
-                    </div>
-                `;
-                alertDiv.classList.remove('hidden');
-            } else {
-                alertDiv.classList.add('hidden');
-            }
-        }
-
-        function getStatusBadge(status) {
-            if (!status) status = 'Processing';
-            
-            let bgClass = 'bg-blue-100 border-blue-300';
-            let textClass = 'text-blue-700';
-            
-            if (status.includes('Rejected')) {
-                bgClass = 'bg-red-100 border-red-300';
-                textClass = 'text-red-700';
-            } else if (status.includes('Appointment')) {
-                bgClass = 'bg-yellow-100 border-yellow-300';
-                textClass = 'text-yellow-700';
-            } else if (status.includes('Approved') || status.includes('Completed')) {
-                bgClass = 'bg-green-100 border-green-300';
-                textClass = 'text-green-700';
-            } else if (status.includes('Pending')) {
-                bgClass = 'bg-blue-100 border-blue-300';
-                textClass = 'text-blue-700';
-            }
-            
-            return `<div class="inline-block px-4 py-2 rounded-full ${bgClass} border-2">
-                        <p class="text-sm font-bold ${textClass} uppercase">${status}</p>
-                    </div>`;
-        }
-
-                function displayRequest(request) {
-            // Show status alerts
-            showStatusAlert(request);
-            
-            // Request Details Card (Left)
-            const venueList = Array.isArray(request.venue) ? request.venue.join(', ') : request.venue || 'Not specified';
-            
-            document.getElementById('requestDetailsCard').innerHTML = `
-                <div class="space-y-6">
-                    <div>
-                        <p class="text-sm font-semibold text-gray-500 mb-2">TRANSACTION ID</p>
-                        <p class="text-2xl font-bold text-gray-900">${request.id || 'N/A'}</p>
-                    </div>
-                    
-                    <div>
-                        <p class="text-sm font-semibold text-gray-500 mb-2">EVENT TITLE</p>
-                        <p class="text-lg font-semibold text-green-700">${request.activityName || 'Untitled Event'}</p>
-                    </div>
-                    
-                    <div>
-                        <p class="text-sm font-semibold text-gray-500 mb-2">REQUESTED DATE</p>
-                        <p class="text-gray-700">${formatDate(request.activityDate) || 'Not specified'}</p>
-                    </div>
-                    
-                    <div>
-                        <p class="text-sm font-semibold text-gray-500 mb-2">VENUE</p>
-                        <p class="text-gray-700">${venueList}</p>
-                    </div>
-                    
-                    <div class="pt-4 border-t">
-                        <p class="text-xs text-gray-500 mb-2">Overall Status</p>
-                        ${getStatusBadge(request.status)}
-                    </div>
-                </div>
-            `;
-
-            // Timeline
-            document.getElementById('timelineContent').innerHTML = renderTimeline(request);
-
-            // Forms
-            document.getElementById('form2Content').innerHTML = renderForm2Content(request);
-            document.getElementById('form1Content').innerHTML = renderForm1Content(request);
-        }
-        function renderTimeline(request) {
-            const steps = [
-                {
-                    label: 'Request Submitted',
-                    sublabel: 'Successfully processed by Applicant.',
-                    status: 'Approved',
-                    date: request.filingDate || request.timestamp,
-                    icon: '✓'
-                },
-                {
-                    label: 'Endorsed/Reviewed',
-                    sublabel: 'Successfully processed by Department Head.',
-                    status: request.approvals?.deptHead?.status || 'Approved',
-                    date: request.approvals?.deptHead?.date || '',
-                    remarks: request.approvals?.deptHead?.remarks || '',
-                    icon: '✓'
-                },
-                {
-                    label: 'Recommended',
-                    sublabel: 'Currently with the PM Officer for action.',
-                    status: request.approvals?.pmOfficer?.status || 'Pending',
-                    date: request.approvals?.pmOfficer?.date || '',
-                    remarks: request.approvals?.pmOfficer?.remarks || '',
-                    icon: request.approvals?.pmOfficer?.status === 'Approved' ? '✓' : 
-                          request.approvals?.pmOfficer?.status === 'Appointment Set' ? '📅' :
-                          request.approvals?.pmOfficer?.status === 'Rejected' ? '✕' : '⏱'
-                },
-                {
-                    label: 'Final Approval',
-                    sublabel: '',
-                    status: request.approvals?.pmgsdDirector?.status || 'Pending',
-                    date: request.approvals?.pmgsdDirector?.date || '',
-                    remarks: request.approvals?.pmgsdDirector?.remarks || '',
-                    icon: request.approvals?.pmgsdDirector?.status === 'Approved' ? '✓' :
-                          request.approvals?.pmgsdDirector?.status === 'Appointment Set' ? '📅' :
-                          request.approvals?.pmgsdDirector?.status === 'Rejected' ? '✕' : '○'
-                },
-                {
-                    label: 'Document Stamping',
-                    sublabel: '',
-                    status: request.stamped ? 'Approved' : 'Pending',
-                    date: request.stampedDate || '',
-                    icon: request.stamped ? '✓' : '○'
-                }
-            ];
-
-            return steps.map((step, index) => {
-                const isCompleted = step.status === 'Approved';
-                const isAppointment = step.status === 'Appointment Set';
-                const isRejected = step.status === 'Rejected';
-                const isInProgress = step.status === 'Pending' && index > 0 && steps[index - 1].status === 'Approved';
-                const isPending = step.status === 'Pending' && !isInProgress;
-                
-                let dotClass = 'bg-gray-200 text-gray-400';
-                let textClass = 'text-gray-400';
-                let statusText = '';
-                let statusDate = '';
-                let remarksHTML = '';
-                
-                if (isCompleted) {
-                    dotClass = 'bg-green-600 text-white';
-                    textClass = 'text-gray-900';
-                    statusText = `<span class="text-xs font-semibold text-green-600">Completed</span>`;
-                    statusDate = step.date ? `<span class="text-xs text-gray-500">on ${formatDate(step.date)}</span>` : '';
-                } else if (isAppointment) {
-                    dotClass = 'bg-yellow-500 text-white';
-                    textClass = 'text-gray-900';
-                    statusText = `<span class="text-xs font-semibold text-yellow-600">Appointment Set</span>`;
-                    statusDate = step.date ? `<span class="text-xs text-gray-500">on ${formatDate(step.date)}</span>` : '';
-                    remarksHTML = step.remarks ? `
-                        <div class="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                            <p class="text-xs font-semibold text-yellow-900">📅 Appointment Details:</p>
-                            <p class="text-xs text-yellow-800 mt-1 whitespace-pre-line">${step.remarks}</p>
-                        </div>
-                    ` : '';
-                } else if (isRejected) {
-                    dotClass = 'bg-red-600 text-white';
-                    textClass = 'text-gray-900';
-                    statusText = `<span class="text-xs font-semibold text-red-600">Rejected</span>`;
-                    statusDate = step.date ? `<span class="text-xs text-gray-500">on ${formatDate(step.date)}</span>` : '';
-                    remarksHTML = step.remarks ? `
-                        <div class="mt-2 p-3 bg-red-50 border-l-4 border-red-400 rounded">
-                            <p class="text-xs font-semibold text-red-900">❌ Rejection Reason:</p>
-                            <p class="text-xs text-red-800 mt-1">${step.remarks}</p>
-                        </div>
-                    ` : '';
-                } else if (isInProgress) {
-                    dotClass = 'bg-yellow-500 text-white';
-                    textClass = 'text-gray-900';
-                    statusText = `<span class="text-xs font-semibold text-yellow-600">In Progress</span>`;
-                }
-
-                return `
-                    <div class="relative flex items-start space-x-4 pb-8 ${index === steps.length - 1 ? 'pb-0' : ''}">
-                        ${index < steps.length - 1 ? '<div class="absolute left-5 top-12 w-0.5 h-full bg-gray-200"></div>' : ''}
-                        <div class="timeline-dot ${dotClass} w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 z-10">
-                            ${step.icon}
-                        </div>
-                        <div class="flex-1 pt-1">
-                            <div class="flex items-start justify-between">
-                                <div class="w-full">
-                                    <h4 class="font-bold ${textClass} text-base">${step.label}</h4>
-                                    <p class="text-sm ${textClass === 'text-gray-900' ? 'text-gray-600' : 'text-gray-400'} mt-1">${step.sublabel}</p>
-                                    ${statusText ? `<div class="mt-2 flex items-center space-x-2">${statusText} ${statusDate}</div>` : ''}
-                                    ${remarksHTML}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // 100% IDENTICAL FORM 2 FROM AD27.TXT
-        function renderForm2Content(request) {
-            const deptHead = request.approvals?.deptHead || {};
-            const pmOfficer = request.approvals?.pmOfficer || {};
-            const pmgsdDirector = request.approvals?.pmgsdDirector || {};
-            
-            const venues = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
-            const equipments = Array.isArray(request.equipment) ? request.equipment : (request.equipment ? Object.values(request.equipment) : []);
-            
-            const val = (v) => v || '';
-            const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
-
-            const getEquip = (name, field) => {
-                const item = equipments.find(e => e.name === name);
-                return item ? item[field] : '';
-            };
-            const isEquipChecked = (name) => equipments.some(e => e.name === name) ? 'checked' : '';
-            const manpower = request.manpower || {};
-
-            function getStatusClass(status) {
-                if (status === 'Approved') return 'bg-green-100 text-green-700';
-                if (status === 'Rejected') return 'bg-red-100 text-red-700';
-                return 'bg-yellow-100 text-yellow-700';
-            }
-
-            return `
-                <div class="form-header flex items-center justify-center space-x-4 mb-6">
-                    <img src="pnc-logo.jpg" alt="PnC Logo" class="w-16 h-16 rounded-full border-2 border-white/50 shadow-lg">
-                    <div class="text-center">
-                        <p class="text-sm">Republic of the Philippines</p>
-                        <h2 class="text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
-                        <p class="text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
-                        <p class="text-sm italic">Administration and Finance Division</p>
-                        <p class="font-bold text-gray-700 mt-1">Property Management and General Services Department</p>
-                        <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
-                    </div>
-                </div>
-
-                <div class="form-title text-black bg-gray-300">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
-
-                <div class="border-b border-black p-4 space-y-4 text-sm text-black">
-                    <div class="flex flex-wrap gap-4">
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Transaction Number:</label>
-                            <div class="read-only-field">${val(request.id)}</div>
-                        </div>
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Date of Filing:</label>
-                            <div class="read-only-field">${formatDate(request.filingDate)}</div>
-                        </div>
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Department:</label>
-                            <div class="read-only-field">${val(request.department)}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex flex-wrap gap-4">
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Activity Date:</label>
-                            <div class="read-only-field">${formatDate(request.activityDate)}</div>
-                        </div>
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Time:</label>
-                            <div class="read-only-field">${val(request.time)}</div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="font-normal text-gray-600">Activity Name/Title/Purpose:</label>
-                        <div class="read-only-field">${val(request.activityName)}</div>
-                    </div>
-
-                    <div class="flex flex-wrap gap-4 items-end">
-                        <div class="w-1/3 font-normal text-gray-600">Expected # of Participants:</div>
-                        <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span>
-                            <div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div>
-                        </div>
-                        <div class="flex-1 flex items-center"><span class="mr-2">External:</span>
-                            <div class="read-only-field w-20 text-center">${val(request.externalParticipants)}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="border border-black border-t-0 flex text-black">
-                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Venue Reservation</div>
-                    <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Gym Stage / Court')} class="accent-black"> <span>Gym Stage / Court</span></label>
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Multi-Purpose Hall')} class="accent-black"> <span>Multi-Purpose Hall</span></label>
-                        <div class="flex items-center space-x-2">
-                             <input type="checkbox" disabled ${venues.some(v => v.includes('Classroom')) ? 'checked' : ''}> 
-                             <span>Classroom #</span> 
-                             <div class="read-only-field w-16 text-center">${(venues.find(v => v.includes('Classroom')) || '').replace('Classroom', '').trim()}</div>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                             <input type="checkbox" disabled ${venues.some(v => v.includes('Laboratory')) ? 'checked' : ''}> 
-                             <span>Laboratory #</span> 
-                             <div class="read-only-field w-16 text-center">${(venues.find(v => v.includes('Laboratory')) || '').replace('Laboratory', '').trim()}</div>
-                        </div>
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Library')} class="accent-black"> <span>Library</span></label>
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Cafeteria')} class="accent-black"> <span>Cafeteria</span></label>
-                        <div class="col-span-2 flex items-center space-x-2">
-                            <input type="checkbox" disabled ${venues.some(v => v.includes('Others:')) ? 'checked' : ''}> 
-                            <span>Others:</span> 
-                            <div class="read-only-field flex-1">${(venues.find(v => v.includes('Others:')) || '').replace('Others:', '').trim()}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="border border-black border-t-0 flex text-black">
-                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">
-                        <p>Equipment Reservation</p>
-                        <p class="mt-4 text-xs font-bold">Set-up Details:</p>
-                        <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
-                            <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressDate)}</span></p>
-                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressTime)}</span></p>
-                            <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressDate)}</span></p>
-                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressTime)}</span></p>
-                        </div>
-                    </div>
-                    <div class="flex-1 p-2 text-sm">
-                        <div class="grid grid-cols-1 gap-2 mb-2">
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${getEquip('Chair', 'count') ? 'checked' : ''} class="accent-black"> 
-                                <span>Chair #</span> 
-                                <div class="read-only-field w-16 text-center font-bold">${getEquip('Chair', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquip('Chair', 'type')}</div>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${getEquip('Table', 'count') ? 'checked' : ''} class="accent-black"> 
-                                <span>Table #</span> 
-                                <div class="read-only-field w-16 text-center font-bold">${getEquip('Table', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquip('Table', 'type')}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Podium/Rostrum')} class="accent-black"> <span>Podium/Rostrum</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Sound System')} class="accent-black"> <span>Sound System</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Electric fans')} class="accent-black"> <span>Electric fans</span></label>
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${getEquip('Microphone', 'count') ? 'checked' : ''} class="accent-black"> 
-                                <span>Microphone #</span> 
-                                <div class="read-only-field w-12 text-center font-bold">${getEquip('Microphone', 'count')}</div>
-                            </div>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Extension Cord')} class="accent-black"> <span>Extension Cord</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Panel Board / White Board')} class="accent-black"> <span>Panel/White Board</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Philippine Flag')} class="accent-black"> <span>Philippine Flag</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Pamantasan ng Cabuyao Flag')} class="accent-black"> <span>PnC Flag</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Multi-media Projector')} class="accent-black"> <span>Projector</span></label>
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${equipments.some(e => e.name.includes('Others:')) ? 'checked' : ''}> 
-                                <span>Others:</span> 
-                                <div class="read-only-field w-full font-bold">${(equipments.find(e => e.name.includes('Others:'))?.name || '').replace('Others:', '').trim()}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="border border-black border-t-0 flex text-black">
-                    <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Manpower Requirement</div>
-                    <div class="flex-1 p-2 grid grid-cols-2 gap-4 text-sm">
-                        <div class="flex items-center space-x-2">
-                            <input type="checkbox" disabled ${manpower.technical ? 'checked' : ''}> 
-                            <span>Technical</span> 
-                            <div class="read-only-field flex-1 font-bold">${val(manpower.technical)}</div>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <input type="checkbox" disabled ${manpower.housekeeping ? 'checked' : ''}> 
-                            <span>Housekeeping</span> 
-                            <div class="read-only-field flex-1 font-bold">${val(manpower.housekeeping)}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-xs text-gray-600 mt-2 mb-6 space-y-1 italic p-2">
-                    <p>• Request must be submitted at least a week before the activity.</p>
-                    <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required.</p>
-                    <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
-                </div>
-
-                <div class="grid grid-cols-4 gap-4 text-center mt-4 text-black text-xs">
-                    <div>
-                        <p class="font-bold mb-8 text-gray-700">Requested by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${request.requestedBy}</div>
-                        <p class="mt-1">Signature over Printed Name/Date</p>
-                    </div>
-                    
-                    <div class="opacity-90">
-                        <p class="font-bold mb-8 text-gray-700">Reviewed by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || ''}</div>
-                        <p class="mt-1">Department/Division Head</p>
-                        <div class="text-[10px] font-bold ${getStatusClass(deptHead.status)} rounded-full inline-block px-2 mt-1">${deptHead.status}</div>
-                    </div>
-
-                    <div class="opacity-90">
-                        <p class="font-bold mb-8 text-gray-700">Recommended by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">Mr. Colin B. Garcia</div>
-                        <p class="mt-1">PM Officer</p>
-                        <div class="text-[10px] font-bold ${getStatusClass(pmOfficer.status)} rounded-full inline-block px-2 mt-1">${pmOfficer.status}</div>
-                    </div>
-
-                    <div class="opacity-90">
-                        <p class="font-bold mb-8 text-gray-700">Approved by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">Alfredo Glenn H. Beaño</div>
-                        <p class="mt-1">PMGSD Director</p>
-                        <div class="text-[10px] font-bold ${getStatusClass(pmgsdDirector.status)} rounded-full inline-block px-2 mt-1">${pmgsdDirector.status}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderForm1Content(request) {
-            const deptHeadApproval = request.approvals?.deptHead || {};
-            const ovpasApproval = request.approvals?.ovpas || {name: '---', status: 'Pending'};
-            const oevpApproval = request.approvals?.oevp || {name: '---', status: 'Pending'};
-            const oupApproval = request.approvals?.oup || {name: '---', status: 'Pending'};
-            
-            const logoUrl = 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c8/Pamantasan_ng_Cabuyao_Logo.png/220px-Pamantasan_ng_Cabuyao_Logo.png';
-            const purpose = request.form1 ? request.form1.purpose : 'to conduct the activity';
-            const venues = Array.isArray(request.venue) ? request.venue : [];
-
-            // FIX: Support both key names — kiosk saves as 'globalScannedDocumentUrl',
-            //      older records may use 'scannedDocumentUrl'.
-            const scannedUrl = request.globalScannedDocumentUrl || request.scannedDocumentUrl || null;
-
-            let documentViewHtml = '';
-            if (scannedUrl) {
-                documentViewHtml = `
-                    <div class="mb-8">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-base font-bold text-gray-700 flex items-center gap-2">
-                                <span class="inline-block w-3 h-3 rounded-full bg-green-500"></span>
-                                Your Scanned Request Letter
-                            </h4>
-                            <a href="${scannedUrl}" target="_blank"
-                               class="text-xs text-blue-600 underline hover:text-blue-800">
-                                Open full size ↗
-                            </a>
-                        </div>
-                        <div class="border-2 border-gray-200 rounded-lg overflow-hidden shadow-lg bg-gray-50 flex items-center justify-center" style="min-height:400px;">
-                            <img src="${scannedUrl}" 
-                                 alt="Scanned Request Letter" 
-                                 class="max-w-full h-auto object-contain"
-                                 style="max-height:900px;"
-                                 onerror="this.parentElement.innerHTML='<p class=\\'text-red-500 text-sm p-4\\'>⚠️ Image could not be loaded.<br><a href=\\'${scannedUrl}\\' target=\\'_blank\\' class=\\'underline text-blue-600\\'>Try opening directly</a></p>'">
-                        </div>
-                    </div>
-                `;
-            } else {
-                // Fallback to text mock-up if no scan exists
-                documentViewHtml = `
-                    <div class="mb-4 p-3 bg-yellow-50 border border-yellow-300 rounded text-xs text-yellow-800">
-                        ⚠️ No scanned document was attached to this request.
-                    </div>
-                    <div class="relative mb-10">
-                         <img src="${logoUrl}" alt="PnC Logo" class="w-24 h-24 object-contain absolute left-0">
-                        <div class="text-center relative z-10">
-                            <p class="text-xs font-serif text-gray-700">Republic of the Philippines</p>
-                            <h1 class="text-5xl tracking-wide my-1 text-[#005728]" style="font-family: 'UnifrakturMaguntia', cursive;">University of Cabuyao</h1>
-                            <p class="text-sm font-bold tracking-widest text-gray-700 uppercase font-serif">(PAMANTASAN NG CABUYAO)</p>
-                            <p class="text-sm italic text-gray-700 mt-1 font-serif">Property Management and General Service Department</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5 font-serif">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
-                        </div>
-                    </div>
-                    <div class="mb-8"><p class="text-xs text-gray-500">(${request.id})</p><p class="mt-2 text-sm">${formatDate(request.filingDate)}</p></div>
-                    <div class="mb-6"><p class="font-bold text-sm">Dr. Roberto F. Rañola Jr.</p><p class="text-sm">OIC-University President</p></div>
-                    <div class="mb-8 pl-8"><p class="text-sm"><span class="font-bold">Thru: Mr. Colin B. Garcia</span></p><p class="text-sm ml-9">Vice President for Administration and Linkages</p></div>
-                    <div class="text-sm text-justify space-y-4">
-                        <p class="indent-8">I am writing to respectfully request your approval for the activity titled "<span class="font-bold uppercase">${request.activityName}</span>". The purpose is ${purpose.toLowerCase()}.</p>
-                        <p class="indent-8">We would like to reserve <span class="font-bold">${venues.join(' and ')}</span> on <span class="font-bold">${formatDate(request.activityDate)}</span>.</p>
-                        <p class="indent-8">Thank you very much for your favorable response.</p>
-                    </div>
-                    <div class="mt-8"><p class="text-sm mb-4">Respectfully yours,</p><div class="mt-4"><p class="font-bold uppercase">${request.requestedBy}</p><p class="text-sm text-gray-600">Requester / ${request.department}</p></div></div>
-                `;
-            }
-
-            return `
-                <div class="bg-white p-8 text-gray-900 font-sans leading-relaxed">
-                    ${documentViewHtml}
-                </div>
-            `;
-        }
-
-        // AUTO-LOAD FROM QR CODE - Wait for Firebase to be ready
-        function autoLoadFromQR() {
-            console.log('🔍 Checking for QR code parameter...');
-            
-            // Get URL parameter
-            const urlParams = new URLSearchParams(window.location.search);
-            const idFromUrl = urlParams.get('id');
-            
-            if (idFromUrl) {
-                console.log('✅ QR Code detected! Transaction ID:', idFromUrl);
-                
-                // Check if Firebase is ready
-                if (window.db && window.ref && window.onValue) {
-                    console.log('✅ Firebase ready, loading request...');
-                    document.getElementById('trackInput').value = idFromUrl;
-                    
-                    // Give a small delay for DOM to be fully ready
-                    setTimeout(() => {
-                        trackRequest();
-                    }, 500);
-                } else {
-                    console.log('⏳ Firebase not ready yet, waiting...');
-                    setTimeout(autoLoadFromQR, 200);
-                }
-            } else {
-                console.log('ℹ️ No QR code parameter found in URL');
-            }
-        }
         
-        // Start checking when page loads
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', autoLoadFromQR);
-        } else {
-            // Document already loaded
-            autoLoadFromQR();
-        }
+            // 4. Reset Personnel Selection Arrays & UI
+            document.getElementById('finalSelectedList_main').innerHTML = '<p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>';
+            document.getElementById('finalSelectedList_sub').innerHTML = '<p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>';
+            document.getElementById('personnelChecklistContainer').innerHTML = '';
+            document.getElementById('selectedDepartmentName').innerText = '--';
+        
+            // 5. Reset Verification Input
+            const verifyInput = document.getElementById('verificationCodeInput');
+            if(verifyInput) verifyInput.value = '';
+        
+            console.log("Kiosk data has been reset.");
+        };
 
+        window.getDaysInMonth = function(year, month) { return new Date(year, month + 1, 0).getDate(); };
+
+        window.showView = function(id) {
+            document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            const homeButton = document.getElementById('homeButton');
+            if (id === 'landingView') {
+                homeButton.innerText = 'Start Screen';
+                homeButton.onclick = () => window.showView('landingView');
+            } else {
+                homeButton.innerText = 'Back to Start Screen';
+                homeButton.onclick = () => window.showView('landingView');
+            }
+            if (id === 'calendarView') window.renderCalendar();
+            if (id === 'landingView') window.renderReadOnlyCalendar();
+        };
+
+        window.verifyReservationCode = function() {
+            const code = document.getElementById('verificationCodeInput').value.trim();
+            const btnText = document.getElementById('verifyBtnText');
+            const spinner = document.getElementById('verifySpinner');
+            if (!code) return alert("Please enter a code.");
+            
+            btnText.innerText = "Checking Form 1 & Form 2 Approval...";
+            spinner.classList.remove('hidden');
+            
+            const requestRef = window.ref(window.db, 'requests/' + code);
+            window.get(requestRef).then((snapshot) => {
+                setTimeout(() => {
+                    btnText.innerText = "Check Status";
+                    spinner.classList.add('hidden');
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        document.getElementById('displayVerifiedCode').innerText = code;
+                        const isForm1Approved = true; // Form 1 is assumed approved
+                        const isForm2Approved = data.approvals?.pmgsdDirector?.status === "Approved";
+                        if (isForm1Approved && isForm2Approved) {
+                            stampingStep = 1;
+                            window.updateStampingUI();
+                            window.showView('stampingActionView');
+                        } else {
+                            alert("❌ Forms are not fully approved yet.\nForm 1: " + (isForm1Approved ? "✅" : "❌") + "\nForm 2: " + (isForm2Approved ? "✅" : "❌"));
+                            window.showView('verificationView');
+                        }
+                    } else {
+                        alert("❌ No reservation found with code: " + code);
+                        window.showView('verificationView');
+                    }
+                }, 1500);
+            }).catch((error) => {
+                console.error("Error checking status:", error);
+                alert("Network error. Please try again.");
+                btnText.innerText = "Check Status";
+                spinner.classList.add('hidden');
+            });
+        };
+
+        window.updateStampingUI = function() {
+            const title = document.getElementById('stampingTitle');
+            const desc = document.getElementById('stampingDesc');
+            const btn = document.getElementById('stampingBtn');
+            if (stampingStep === 1) {
+                title.innerText = "Step 1: Insert Request Letter";
+                desc.innerHTML = "Please insert your <strong>Form 1 (Request Letter)</strong> into the document slot.";
+                btn.innerText = "Insert Letter & Stamp";
+                btn.onclick = () => window.processStamping(1);
+            } else if (stampingStep === 2) {
+                title.innerText = "Step 2: Insert Request Form";
+                desc.innerHTML = "Please insert your <strong>Form 2 (Request Form)</strong> into the document slot.";
+                btn.innerText = "Insert Form & Stamp";
+                btn.onclick = () => window.processStamping(2);
+            }
+        };
+
+        window.processStamping = function(step) {
+            const btn = document.getElementById('stampingBtn');
+            btn.innerText = "Stamping...";
+            btn.disabled = true;
+            setTimeout(() => {
+                if (step === 1) {
+                    stampingStep = 2;
+                    window.updateStampingUI();
+                    btn.disabled = false;
+                } else {
+                    window.simulateStampingProcess();
+                }
+            }, 2000);
+        };
+
+        window.simulateStampingProcess = function() {
+            document.getElementById('stampDate').innerText = new Date().toLocaleDateString();
+            window.showView('stampingSuccessView');
+        };
+
+        window.showEventDetailsFromCalendar = function(dateString) {
+            const event = globalEvents.find(e => e.date === dateString);
+            if (event) alert(`📅 OCCUPIED\n\nEvent: ${event.title}\nTime: ${event.time}\nStatus: ${event.status.toUpperCase()}`);
+        };
+
+        window.setReservationDateAndShowUpload = function(dateString) {
+            selectedReservationDate = dateString;
+            const filingDateInput = document.getElementById('filingDateInput');
+            if (filingDateInput) filingDateInput.value = today.toISOString().split('T')[0];
+            const actDate = document.getElementById('activityDateInput');
+            if (actDate) actDate.value = dateString;
+            window.showView('uploadView');
+        };
+
+        window.renderReadOnlyCalendar = function() {
+            const grid = document.getElementById('landingCalendarGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            dayNames.forEach(d => grid.innerHTML += `<div class="font-bold bg-gray-200 py-2">${d}</div>`);
+            const monthDisplay = document.getElementById('landingMonthDisplay');
+            if (monthDisplay) monthDisplay.innerText = `${monthNames[currentMonth]} ${currentYear}`;
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+            const firstDay = firstDayOfMonth.getDay();
+            const daysInMonth = window.getDaysInMonth(currentYear, currentMonth);
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
+            for (let i = 1; i <= daysInMonth; i++) {
+                // FIX: Manually format date to avoid TimeZone shifts caused by toISOString()
+                const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                
+                // We still need dayDate for the 'isCurrentDay' logic if you used it for other logic, 
+                // but for matching the event, strictly use dateString above.
+                const event = globalEvents.find(e => e.date === dateString);
+                const isCurrentDay = (i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear());
+                let dayClass = 'readonly-day border border-gray-200';
+                let statusText = 'Available';
+                if (event) { dayClass += ' occupied'; statusText = 'OCCUPIED'; } 
+                else if (isCurrentDay) { dayClass = 'bg-green-200 border-green-400 text-gray-800'; statusText = 'TODAY'; }
+                grid.innerHTML += `<div class="p-2 h-16 flex flex-col items-center justify-center font-bold relative text-xs ${dayClass}"><span>${i}</span>${statusText === 'OCCUPIED' ? '<span class="text-[9px] font-bold text-red-800 mt-1">OCCUPIED</span>' : ''}</div>`;
+            }
+        };
+
+        window.renderCalendar = function() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            dayNames.forEach(d => grid.innerHTML += `<div class="font-bold bg-gray-200 py-2">${d}</div>`);
+            document.getElementById('monthDisplay').innerText = `${monthNames[currentMonth]} ${currentYear}`;
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+            const firstDay = firstDayOfMonth.getDay();
+            const daysInMonth = window.getDaysInMonth(currentYear, currentMonth);
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayDate = new Date(currentYear, currentMonth, i);
+                dayDate.setHours(0, 0, 0, 0);
+                
+                // FIX: Manually format date to avoid TimeZone shifts
+                const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                
+                const event = globalEvents.find(e => e.date === dateString);
+                const isEligible = dayDate >= minReservationDate;
+                const isCurrentDay = (i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear());
+                let dayClass = 'bg-white border hover:bg-green-50';
+                let clickHandler = '';
+                let statusText = 'Available';
+                if (event) { 
+                    dayClass = 'occupied cursor-not-allowed border-2'; statusText = 'OCCUPIED'; 
+                    clickHandler = `onclick="window.showEventDetailsFromCalendar('${dateString}')"`;
+                } else if (!isEligible) { 
+                    dayClass = 'too-soon border'; statusText = isCurrentDay ? 'Today' : 'Too Soon'; 
+                } else { 
+                    dayClass += ' clickable calendar-day'; 
+                    clickHandler = `onclick="window.setReservationDateAndShowUpload('${dateString}')"`;
+                }
+                if (isCurrentDay && isEligible && !event) { dayClass = 'bg-green-200 border-green-400 clickable calendar-day hover:bg-green-300'; statusText = 'TODAY'; }
+                grid.innerHTML += `<div ${clickHandler} class="p-2 h-20 flex items-center justify-center font-bold relative text-sm ${dayClass}">${i}<span class="absolute bottom-1 right-2 text-[10px] font-medium text-gray-500">${statusText}</span></div>`;
+            }
+        };
+
+        window.changeMonth = function(delta) {
+            const newDate = new Date(currentYear, currentMonth + delta, 1);
+            currentMonth = newDate.getMonth();
+            currentYear = newDate.getFullYear();
+            window.renderCalendar();
+            window.renderReadOnlyCalendar();
+        };
+
+        window.updateFileName = function(input) {
+            const label = input.parentElement;
+            if (input.files.length > 0) {
+                label.innerHTML = 'Selected: ' + input.files[0].name;
+                label.classList.add('bg-green-100');
+            }
+        };
+
+        window.proceedToSubmissionChoice = function() { window.showView('submissionChoiceView'); };
+
+        window.selectOffice = function(officeName) {
+            document.getElementById('selectedDepartmentName').innerText = officeName;
+            const container = document.getElementById('personnelChecklistContainer');
+            container.innerHTML = '';
+            const staffList = personnelData[officeName] || [];
+            staffList.forEach(name => {
+                const wrapper = document.createElement('div');
+                wrapper.className = "flex items-center space-x-3 mb-2 p-2 hover:bg-green-50 rounded cursor-pointer";
+                const isChecked = globalSelectedPersonnel[officeName] && globalSelectedPersonnel[officeName].includes(name);
+                wrapper.innerHTML = `<input type="checkbox" id="${name}" value="${name}" class="form-checkbox h-5 w-5 text-[#15803d] rounded focus:ring-green-500 border-gray-300" onchange="window.togglePersonSelection('${officeName}', '${name}', this.checked)" ${isChecked ? 'checked' : ''}><label for="${name}" class="text-gray-700 cursor-pointer flex-1 select-none">${name}</label>`;
+                container.appendChild(wrapper);
+            });
+            window.showView('personnelView');
+        };
+
+        window.togglePersonSelection = function(office, name, isChecked) {
+            if (!globalSelectedPersonnel[office]) globalSelectedPersonnel[office] = [];
+            if (isChecked) {
+                if (!globalSelectedPersonnel[office].includes(name)) globalSelectedPersonnel[office].push(name);
+            } else {
+                globalSelectedPersonnel[office] = globalSelectedPersonnel[office].filter(p => p !== name);
+                if (globalSelectedPersonnel[office].length === 0) delete globalSelectedPersonnel[office];
+            }
+            window.updateSelectedDisplay();
+        };
+
+        window.updateSelectedDisplay = function() {
+            const containers = [document.getElementById('finalSelectedList_main'), document.getElementById('finalSelectedList_sub')];
+            const offices = Object.keys(globalSelectedPersonnel);
+            const content = (offices.length === 0) ? '<p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>' : offices.map(office => {
+                const lis = globalSelectedPersonnel[office].map(person => `<li>${person}</li>`).join('');
+                return `<div class="mb-4"><div class="font-bold text-xs text-[#15803d] uppercase tracking-wide mb-1">${office}</div><ul class="list-disc list-inside pl-1 text-gray-700">${lis}</ul></div>`;
+            }).join('');
+            containers.forEach(c => { if (c) c.innerHTML = content; });
+        };
+
+        window.submitFinalSelection = function() {
+            const formView = document.getElementById('formView');
+            
+            // --- 1. Scrape Basic Info ---
+            const activityName = formView.querySelector('input[placeholder="Activity Name/Title/Purpose"]')?.value || "Gym Reservation";
+            const department = formView.querySelector('input[placeholder="Department"]')?.value || "";
+            const activityDate = formView.querySelector('#activityDateInput')?.value || selectedReservationDate;
+            const time = formView.querySelector('input[type="time"]')?.value || "09:00";
+            const internalParticipants = formView.querySelector('input[placeholder="Internal"]')?.value || "0";
+            const externalParticipants = formView.querySelector('input[placeholder="External"]')?.value || "0";
+            const requestedBy = formView.querySelector('input[placeholder="[Enter Your Name]"]')?.value || "Anonymous";
+
+            // --- 2. Scrape Venue ---
+            // The venue section is the first section with border-t-0
+            const venueSection = formView.querySelectorAll('.border-t-0')[0];
+            const venueCheckboxes = venueSection.querySelectorAll('input[type="checkbox"]:checked');
+            let venueList = [];
+            venueCheckboxes.forEach(cb => {
+                let parent = cb.parentElement;
+                let text = parent.querySelector('span')?.innerText.trim() || "";
+                // Check if there is a text input next to it (e.g. Classroom # [101])
+                let inputDetail = parent.querySelector('input[type="text"]');
+                if (inputDetail && inputDetail.value) {
+                    venueList.push(`${text} ${inputDetail.value}`);
+                } else {
+                    venueList.push(text);
+                }
+            });
+
+            // --- 3. Scrape Equipment & Setup ---
+            const equipSection = formView.querySelectorAll('.border-t-0')[1];
+            
+            // Setup Details (Ingress/Egress) - found in the left column
+            const setupContainer = equipSection.querySelector('.w-40');
+            const setupInputs = setupContainer.querySelectorAll('input');
+            const ingressDate = setupInputs[0]?.value || "";
+            const ingressTime = setupInputs[1]?.value || "";
+            const egressDate = setupInputs[2]?.value || "";
+            const egressTime = setupInputs[3]?.value || "";
+
+            // Equipment List - found in the right column
+            const equipCheckboxes = equipSection.querySelectorAll('.flex-1 input[type="checkbox"]:checked');
+            let equipmentList = [];
+            equipCheckboxes.forEach(cb => {
+                let parent = cb.parentElement;
+                let nameSpan = parent.querySelector('span');
+                let name = nameSpan ? nameSpan.innerText.trim() : "Unknown";
+
+                if (name.includes("Chair") || name.includes("Table")) {
+                    // Structure: input(cb) span(name) input(count) span(Type:) input(type)
+                    const inputs = parent.querySelectorAll('input[type="text"]');
+                    let count = inputs[0]?.value || "0";
+                    let type = inputs[1]?.value || "Standard";
+                    equipmentList.push({ name: name.replace('#', '').trim(), count: count, type: type });
+                } else if (name.includes("Microphone")) {
+                     let countInput = parent.querySelector('input[type="number"]');
+                     let count = countInput?.value || "1";
+                     equipmentList.push({ name: "Microphone", count: count });
+                } else if (name.includes("Others")) {
+                     let val = parent.querySelector('input[type="text"]')?.value || "";
+                     equipmentList.push({ name: `Others: ${val}` });
+                } else {
+                     equipmentList.push({ name: name });
+                }
+            });
+
+            // --- 4. Scrape Manpower ---
+            const manpowerSection = formView.querySelectorAll('.border-t-0')[2];
+            const manpowerCheckboxes = manpowerSection.querySelectorAll('input[type="checkbox"]:checked');
+            let manpowerData = {};
+            manpowerCheckboxes.forEach(cb => {
+                let parent = cb.parentElement;
+                let name = parent.querySelector('span').innerText.trim().toLowerCase(); 
+                let detail = parent.querySelector('input[type="text"]')?.value || "Requested";
+                manpowerData[name] = detail;
+            });
+
+            // --- 5. Prepare Payload ---
+            const trackingId = "RES-" + Math.floor(100000 + Math.random() * 900000);
+            
+            const formData = {
+                id: trackingId,
+                timestamp: new Date().toISOString(),
+                filingDate: new Date().toISOString().split('T')[0],
+                activityDate: activityDate,
+                time: time,
+                department: department,
+                activityName: activityName,
+                internalParticipants: internalParticipants,
+                externalParticipants: externalParticipants,
+                venue: venueList,
+                equipment: equipmentList,
+                ingressDate: ingressDate,
+                ingressTime: ingressTime,
+                egressDate: egressDate,
+                egressTime: egressTime,
+                manpower: manpowerData,
+                requestedBy: requestedBy,
+                status: "Pending VP Admin",
+                personnel: globalSelectedPersonnel,
+                scannedDocumentUrl: globalScannedDocumentUrl,
+                approvals: {
+                    deptHead: { name: "", date: "", status: "Pending" },
+                    ovpas: { name: "", date: "", status: "Pending" },
+                    oevp: { name: "", date: "", status: "Pending" },
+                    oup: { name: "", date: "", status: "Pending" },
+                    pmOfficer: { name: "", date: "", status: "Pending" },
+                    pmgsdDirector: { name: "", date: "", status: "Pending" }
+                },
+                form1: { purpose: "Regular gym reservation for university activity." }
+            };
+
+            // --- 6. Send to Firebase ---
+            window.set(window.ref(window.db, 'requests/' + trackingId), formData)
+                .then(() => {
+                    const moniwebUrl = `${window.location.origin}/gym-kiosk-system/moniweb.html`;
+                    const qrData = `${moniwebUrl}?id=${trackingId}`;
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+                    
+                    document.getElementById('trackingIdDisplay').innerText = trackingId;
+                    document.getElementById('qrCodeImage').src = qrUrl;
+                    
+                    // Receipt update
+                    const offices = Object.keys(globalSelectedPersonnel).join(', ');
+                    document.getElementById('submittedToDisplay').innerText = offices || "No specific office selected";
+
+                    const personnelList = [];
+                    Object.values(globalSelectedPersonnel).forEach(arr => personnelList.push(...arr));
+                    document.getElementById('submittedPersonnelDisplay').innerText = personnelList.join(', ') || "None";
+                    
+                    window.showView('trackingView');
+                })
+                .catch((error) => {
+                    alert("Error sending request: " + error.message);
+                });
+        };
+
+        window.onload = () => {
+            window.showView('landingView');
+            window.renderReadOnlyCalendar();
+            
+            const eventsRef = window.ref(window.db, 'events');
+            window.onValue(eventsRef, (snapshot) => {
+                const data = snapshot.val();
+                globalEvents = [];
+                if (data) {
+                    Object.keys(data).forEach(key => { globalEvents.push(data[key]); });
+                }
+                console.log("📅 Kiosk Calendar synced:", globalEvents.length, "events");
+                window.renderCalendar();
+                window.renderReadOnlyCalendar();
+            });
+        };
+        
         window.debugFirebase = function() {
+            console.log("=== FIREBASE DATA CHECK ===");
             const requestsRef = window.ref(window.db, 'requests');
             window.get(requestsRef).then((snapshot) => {
-                console.log('Firebase data:', snapshot.val());
+                const data = snapshot.val();
+                console.log("Data:", data);
             });
+        };
+
+        // --- DOCUMENT SCANNING INTEGRATION ---
+
+       window.captureDocument = async function() {
+            const captureBtn = document.getElementById('captureBtn');
+            const captureBtnText = document.getElementById('captureBtnText');
+            const previewImg = document.getElementById('scanPreviewImage');
+            const previewContainer = document.getElementById('scanPreviewContainer');
+            const previewActions = document.getElementById('previewActions');
+            const previewStatusText = document.getElementById('previewStatusText');
+            const previewImageWrapper = document.getElementById('previewImageWrapper');
+        
+            captureBtn.disabled = true;
+            captureBtnText.innerText = "Capturing...";
+        
+            try {
+                console.log("Attempting to fetch high-res snapshot from Pi...");
+                const response = await fetch('http://192.168.100.57:5000/api/snapshot');
+                
+                if (!response.ok) {
+                    throw new Error(`Camera capture failed with status: ${response.status}`);
+                }
+                
+                console.log("Snapshot fetched successfully. Waiting for review...");
+                pendingCaptureBlob = await response.blob();
+
+                const camStream = document.getElementById('kioskCameraStream');
+                if (camStream) {
+                    camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
+                }
+        
+                // Show the Preview image
+                previewImg.src = URL.createObjectURL(pendingCaptureBlob);
+                previewContainer.classList.remove('hidden');
+                
+                // Setup UI for the "Review" phase
+                previewStatusText.innerText = "Review Captured Image";
+                previewStatusText.className = "text-blue-700 font-bold mb-2 flex items-center justify-center gap-1 text-sm";
+                previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-blue-500 shadow-lg bg-black w-[200px]";
+        
+                // Hide Capture button, show Confirm/Retake buttons
+                captureBtn.classList.add('hidden');
+                previewActions.classList.remove('hidden');
+                previewActions.classList.add('flex');
+        
+            } catch (err) {
+                console.error("Error during capture:", err);
+                alert("Error capturing document. Is the camera server running?");
+                captureBtn.disabled = false;
+                captureBtnText.innerText = "Capture Document";
+            }
+        };
+        
+        window.retakeCapture = function() {
+            // Clear the pending image
+            pendingCaptureBlob = null;
+            
+            // --- NEW FIX: Force the live camera feed to refresh and reset its zoom/crop ---
+            const camStream = document.getElementById('kioskCameraStream');
+            if (camStream) {
+                // Adding a timestamp forces the browser to pull a fresh, un-glitched stream from the Pi
+                camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
+            }
+            // ------------------------------------------------------------------------------
+            
+            // Reset UI back to default Capture state
+            document.getElementById('scanPreviewContainer').classList.add('hidden');
+            
+            const previewActions = document.getElementById('previewActions');
+            previewActions.classList.add('hidden');
+            previewActions.classList.remove('flex');
+            
+            const captureBtn = document.getElementById('captureBtn');
+            captureBtn.classList.remove('hidden');
+            captureBtn.disabled = false;
+            document.getElementById('captureBtnText').innerText = "Capture Document";
+        };
+        
+        window.confirmAndUpload = async function() {
+            if (!pendingCaptureBlob) return;
+        
+            const previewActions = document.getElementById('previewActions');
+            const uploadLoading = document.getElementById('uploadLoading');
+            const previewStatusText = document.getElementById('previewStatusText');
+            const previewImageWrapper = document.getElementById('previewImageWrapper');
+            const nextBtn = document.getElementById('fileNextBtn');
+        
+            // Swap buttons for loading text
+            previewActions.classList.add('hidden');
+            previewActions.classList.remove('flex');
+            uploadLoading.classList.remove('hidden');
+        
+            try {
+                console.log("Starting upload to Firebase Storage...");
+                const timestamp = Date.now();
+                const fileName = `scans/request_${timestamp}.jpg`;
+                const fileStorageRef = storageRef(storage, fileName); 
+                
+                await uploadBytes(fileStorageRef, pendingCaptureBlob);
+                console.log("Upload to Firebase successful.");
+                
+                globalScannedDocumentUrl = await getDownloadURL(fileStorageRef);
+                console.log("Document URL obtained:", globalScannedDocumentUrl);
+        
+                // Send backup to Pi
+                const formData = new FormData();
+                formData.append('document', pendingCaptureBlob, 'request_letter_long.jpg');
+                fetch('http://192.168.100.57:5000/api/upload_scan', {
+                    method: 'POST',
+                    body: formData
+                }).catch(e => console.log("Pi Backup failed:", e));
+        
+                // Update UI to Successful state
+                uploadLoading.classList.add('hidden');
+                previewStatusText.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 bg-green-100 rounded-full p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Uploaded Successfully
+                `;
+                previewStatusText.className = "text-green-700 font-bold mb-2 flex items-center justify-center gap-1 text-sm";
+                previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black w-[200px]";
+        
+                // Enable moving to the next step
+                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                nextBtn.disabled = false;
+        
+            } catch (err) {
+                console.error("Error during upload:", err);
+                alert("Upload failed. Please check network connection.");
+                // Revert UI to let them try uploading again
+                uploadLoading.classList.add('hidden');
+                previewActions.classList.remove('hidden');
+                previewActions.classList.add('flex');
+            }
         };
     </script>
     <!-- Bootstrap JS Bundle with Popper -->
