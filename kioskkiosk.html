@@ -310,11 +310,18 @@
                             <p id="previewStatusText" class="text-blue-700 font-bold mb-2 flex items-center justify-center gap-1 text-sm">
                                 Review Captured Image
                             </p>
-                            <div id="previewImageWrapper" class="relative rounded-lg overflow-hidden border-2 border-blue-500 shadow-lg bg-black w-[200px]"
-                                 style="aspect-ratio: 3280 / 2464;">
+                            <div id="previewImageWrapper" class="relative rounded-lg overflow-hidden border-2 border-blue-500 shadow-lg bg-black w-[200px] cursor-pointer group transition-all hover:border-blue-300"
+                                 style="aspect-ratio: 3280 / 2464;"
+                                 onclick="openImageModal()">
                                 <img id="scanPreviewImage" class="absolute inset-0 w-full h-full object-contain" alt="Captured document preview">
+                                
+                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white flex-col transition-opacity">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                    </svg>
+                                    <span class="text-xs font-bold mt-1 tracking-wider">EXPAND</span>
+                                </div>
                             </div>
-                        </div>
                     
                         <div id="previewActions" class="hidden w-full flex-col gap-2">
                             <button class="kiosk-btn !bg-green-600 hover:!bg-green-700 w-full py-2 text-md" onclick="confirmAndUpload()">Confirm & Upload</button>
@@ -513,6 +520,18 @@
                 </div>
             </div>
 
+            <div id="imageModal" class="fixed inset-0 z-50 hidden bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity" onclick="closeImageModal()">
+                <div class="relative w-full max-w-5xl h-[85vh] flex flex-col items-center justify-center">
+                    <button class="absolute -top-12 right-0 text-white hover:text-red-400 font-bold text-xl flex items-center gap-2 transition-colors" onclick="closeImageModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Close Preview
+                    </button>
+                    <img id="modalImage" class="max-w-full max-h-full object-contain border-4 border-gray-300 rounded-lg shadow-2xl" src="" alt="Full size preview" onclick="event.stopPropagation()">
+                </div>
+            </div>
+
         </main>
         <div id="flashMessage" class="hidden"><h4 class="text-xl font-bold mb-2" id="flashTitle"></h4><p id="flashBody" class="text-sm"></p></div>
     </div>
@@ -644,6 +663,23 @@
             if(verifyInput) verifyInput.value = '';
         
             console.log("Kiosk data has been reset.");
+        };
+
+        window.openImageModal = function() {
+            const previewImg = document.getElementById('scanPreviewImage');
+            const modalImg = document.getElementById('modalImage');
+            const modal = document.getElementById('imageModal');
+            
+            // Only open if there is actually an image captured
+            if (previewImg.src && previewImg.src !== window.location.href) {
+                modalImg.src = previewImg.src; // Copy the high-res blob to the modal
+                modal.classList.remove('hidden');
+            }
+        };
+
+        window.closeImageModal = function() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.add('hidden');
         };
 
         window.getDaysInMonth = function(year, month) { return new Date(year, month + 1, 0).getDate(); };
@@ -1203,6 +1239,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
