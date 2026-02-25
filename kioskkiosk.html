@@ -1124,8 +1124,37 @@
             previewActions.classList.add('hidden');
             previewActions.classList.remove('flex');
             uploadLoading.classList.remove('hidden');
+            uploadLoading.innerText = "Validating Signatures... Please wait."; // Update loading text
         
             try {
+                // --- 1. SEND TO PI FOR OCR & SIGNATURE VALIDATION FIRST ---
+                console.log("Validating signatures on Raspberry Pi...");
+                const formData = new FormData();
+                formData.append('document', pendingCaptureBlob, 'request_letter.jpg');
+        
+                const validationResponse = await fetch('http://192.168.100.57:5000/api/upload_scan', {
+                    method: 'POST',
+                    body: formData
+                });
+        
+                const validationData = await validationResponse.json();
+        
+                // --- 2. CHECK VALIDATION RESULT ---
+                if (!validationResponse.ok || validationData.status === "error") {
+                    console.error("Validation Failed Details:", validationData.details);
+                    alert("Document Rejected: \n" + (validationData.message || "Missing signatures or invalid format."));
+                    
+                    // Revert UI to let them retake or try again
+                    uploadLoading.classList.add('hidden');
+                    previewActions.classList.remove('hidden');
+                    previewActions.classList.add('flex');
+                    return; // STOP HERE. DO NOT UPLOAD TO FIREBASE.
+                }
+
+                // --- 3. VALIDATION PASSED! UPLOAD TO FIREBASE ---
+                console.log("Validation Success!", validationData.details);
+                uploadLoading.innerText = "Validation Passed! Uploading to Cloud...";
+
                 console.log("Starting upload to Firebase Storage...");
                 const timestamp = Date.now();
                 const fileName = `scans/request_${timestamp}.jpg`;
@@ -1137,21 +1166,13 @@
                 globalScannedDocumentUrl = await getDownloadURL(fileStorageRef);
                 console.log("Document URL obtained:", globalScannedDocumentUrl);
         
-                // Send backup to Pi
-                const formData = new FormData();
-                formData.append('document', pendingCaptureBlob, 'request_letter_long.jpg');
-                fetch('http://192.168.100.57:5000/api/upload_scan', {
-                    method: 'POST',
-                    body: formData
-                }).catch(e => console.log("Pi Backup failed:", e));
-        
                 // Update UI to Successful state
                 uploadLoading.classList.add('hidden');
                 previewStatusText.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 bg-green-100 rounded-full p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
-                    Uploaded Successfully
+                    Validated & Uploaded Successfully
                 `;
                 previewStatusText.className = "text-green-700 font-bold mb-2 flex items-center justify-center gap-1 text-sm";
                 previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black w-[200px]";
@@ -1161,8 +1182,8 @@
                 nextBtn.disabled = false;
         
             } catch (err) {
-                console.error("Error during upload:", err);
-                alert("Upload failed. Please check network connection.");
+                console.error("Error during upload/validation:", err);
+                alert("Validation or Upload failed. Please check your network connection.");
                 // Revert UI to let them try uploading again
                 uploadLoading.classList.add('hidden');
                 previewActions.classList.remove('hidden');
@@ -1174,6 +1195,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
