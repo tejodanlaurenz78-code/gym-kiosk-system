@@ -1124,11 +1124,11 @@
             previewActions.classList.add('hidden');
             previewActions.classList.remove('flex');
             uploadLoading.classList.remove('hidden');
-            uploadLoading.innerText = "Validating Signatures... Please wait."; // Update loading text
+            uploadLoading.innerText = "Scanning document for PNC code... Please wait."; 
         
             try {
-                // --- 1. SEND TO PI FOR OCR & SIGNATURE VALIDATION FIRST ---
-                console.log("Validating signatures on Raspberry Pi...");
+                // --- 1. SEND TO PI FOR OCR VALIDATION FIRST ---
+                console.log("Validating document on Raspberry Pi...");
                 const formData = new FormData();
                 formData.append('document', pendingCaptureBlob, 'request_letter.jpg');
         
@@ -1139,42 +1139,49 @@
         
                 const validationData = await validationResponse.json();
         
-                // --- 2. CHECK VALIDATION RESULT ---
+                // --- 2. CHECK VALIDATION RESULT (MISSING INFO) ---
                 if (!validationResponse.ok || validationData.status === "error") {
-                    console.error("Validation Failed Details:", validationData.details);
-                    alert("Document Rejected: \n" + (validationData.message || "Missing signatures or invalid format."));
+                    console.error("Validation Failed:", validationData);
                     
-                    // Revert UI to let them retake or try again
+                    // Alert the user exactly what is missing
+                    alert("Document Rejected ❌\n\nReason: " + (validationData.message || "Could not find the required PNC control code in the upper left corner. Please ensure the document is not blurry and is positioned correctly."));
+                    
+                    // Revert UI to let them retake
                     uploadLoading.classList.add('hidden');
                     previewActions.classList.remove('hidden');
                     previewActions.classList.add('flex');
-                    return; // STOP HERE. DO NOT UPLOAD TO FIREBASE.
+                    return; // STOP HERE. DO NOT UPLOAD.
                 }
 
-                // --- 3. VALIDATION PASSED! UPLOAD TO FIREBASE ---
-                console.log("Validation Success!", validationData.details);
-                uploadLoading.innerText = "Validation Passed! Uploading to Cloud...";
+                // --- 3. VALIDATION PASSED! (INFO COMPLETE) ---
+                const foundCode = validationData.code; // Grab the extracted PNC code
+                console.log("Validation Success! Found Code:", foundCode);
+                uploadLoading.innerText = `Valid Code Found: ${foundCode}. Uploading to Cloud...`;
 
-                console.log("Starting upload to Firebase Storage...");
+                // Proceed with Firebase Upload
                 const timestamp = Date.now();
                 const fileName = `scans/request_${timestamp}.jpg`;
                 const fileStorageRef = storageRef(storage, fileName); 
                 
                 await uploadBytes(fileStorageRef, pendingCaptureBlob);
-                console.log("Upload to Firebase successful.");
-                
                 globalScannedDocumentUrl = await getDownloadURL(fileStorageRef);
-                console.log("Document URL obtained:", globalScannedDocumentUrl);
         
-                // Update UI to Successful state
+                // Update UI to Successful state and display the extracted code
                 uploadLoading.classList.add('hidden');
                 previewStatusText.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 bg-green-100 rounded-full p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
-                    Validated & Uploaded Successfully
+                    <div class="flex flex-col items-center">
+                        <div class="flex items-center gap-1 text-green-700 font-bold">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 bg-green-100 rounded-full p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Validated & Uploaded Successfully
+                        </div>
+                        <div class="text-xs text-gray-600 mt-1 bg-gray-100 px-2 py-1 rounded border border-gray-200">
+                            Detected Form: <span class="font-mono font-bold text-gray-900">${foundCode}</span>
+                        </div>
+                    </div>
                 `;
-                previewStatusText.className = "text-green-700 font-bold mb-2 flex items-center justify-center gap-1 text-sm";
+                previewStatusText.className = "mb-3"; // Adjust margin for the larger message
                 previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black w-[200px]";
         
                 // Enable moving to the next step
@@ -1183,8 +1190,9 @@
         
             } catch (err) {
                 console.error("Error during upload/validation:", err);
-                alert("Validation or Upload failed. Please check your network connection.");
-                // Revert UI to let them try uploading again
+                alert("Validation or Upload failed. Please check your network connection to the camera server.");
+                
+                // Revert UI
                 uploadLoading.classList.add('hidden');
                 previewActions.classList.remove('hidden');
                 previewActions.classList.add('flex');
@@ -1195,6 +1203,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
