@@ -338,18 +338,18 @@
                         </div>
                     
                         <canvas id="scanCanvas" style="display:none;"></canvas>
-                    
-                        <button id="fileNextBtn" class="kiosk-btn w-full py-3 text-lg opacity-50 cursor-not-allowed mt-2" onclick="showView('formView')" disabled>
+
+                        <button id="fileNextBtn" class="kiosk-btn w-full py-3 text-lg opacity-50 cursor-not-allowed mt-2" onclick="window.showView('formView')" disabled>
                             Next Step: Fill Reservation Form &rarr;
                         </button>
                     </div>
                 </div>
             </div>
-            
-            <div id="formView" class="view-panel hidden">
-                <div class="flex justify-between items-start mb-4 px-4">
-                    <button class="text-gray-500 hover:text-gray-800" onclick="showView('uploadView')">&larr; Back</button>
-                    <p class="text-sm text-gray-400">PNC:AF-FO-15 rev.0 02012023<br>PMGSD Copy</p>
+        </div> <div id="formView" class="view-panel hidden">
+            <div class="flex justify-between items-start mb-4 px-4">
+                <button class="text-gray-500 hover:text-gray-800" onclick="window.showView('uploadView')">&larr; Back</button>
+                <p class="text-sm text-gray-400">PNC:AF-FO-15 rev.0 02012023<br>PMGSD Copy</p>
+                
                 </div>
                 <div class="form-container shadow-lg">
                     <div class="form-header flex items-center justify-center space-x-4 mb-6">
@@ -445,8 +445,8 @@
                     </div>
                 </div>
                 <div class="max-w-4xl mx-auto mt-8 flex justify-end space-x-4 pb-10">
-                    <button class="px-6 py-3 bg-gray-400 text-white rounded hover:bg-gray-500" onclick="showView('')">Cancel</button>
-                    <button class="kiosk-btn" onclick="proceedToSubmissionChoice()">SUBMIT FORM &rarr;</button>
+                    <button class="px-6 py-3 bg-gray-400 text-white rounded hover:bg-gray-500" onclick="window.showView('landingView')">Cancel</button>
+                    <button class="kiosk-btn" onclick="window.proceedToSubmissionChoice()">SUBMIT FORM &rarr;</button>
                 </div>
             </div>
 
@@ -1278,6 +1278,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
