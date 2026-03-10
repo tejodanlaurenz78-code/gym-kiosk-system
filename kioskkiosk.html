@@ -127,7 +127,7 @@
                 <img src="pnc-logo.jpg" alt="PnC Logo" class="w-16 h-16 rounded-full border-2 border-white/50 shadow-lg">
                 <h1 class="text-2xl font-extrabold text-white">Gym Reservation Kiosk</h1>
             </div>
-            <button id="homeButton" class="text-green-100 font-semibold hover:text-white transition" onclick="showView('landingView')">Start Screen</button>
+            <button id="homeButton" class="text-green-100 font-semibold hover:text-white transition" onclick="window.showView('landingView')">Start Screen</button>
         </header>
 
         <main class="flex-grow overflow-y-auto p-6">
@@ -159,8 +159,8 @@
                     </p>
 
                     <div class="flex flex-col md:flex-row justify-center gap-6 mb-12">
-                        <button class="kiosk-btn w-64 shadow-xl" onclick="showView('calendarView')">Start Reservation &rarr;</button>
-                        <button class="kiosk-btn w-64 shadow-xl" onclick="showView('verificationView')">Approved Letter for Stamping &rarr;</button>
+                        <button class="kiosk-btn w-64 shadow-xl" onclick="window.showView('calendarView')">Start Reservation &rarr;</button>
+                        <button class="kiosk-btn w-64 shadow-xl" onclick="window.showView('verificationView')">Approved Letter for Stamping &rarr;</button>
                     </div>
 
                     <div class="border-t pt-8">
@@ -1199,14 +1199,11 @@
                 // --- NEW: DISPLAY THE FULL OCR TEXT IMMEDIATELY ---
                 const textContainer = document.getElementById('ocrTextContainer');
                 const textDisplay = document.getElementById('ocrTextDisplay');
-                textContainer.classList.remove('hidden');
-                textContainer.classList.add('flex');
-                textDisplay.value = validationData.full_text || "No text could be extracted from the image.";// --- NEW: DISPLAY THE FULL OCR TEXT IMMEDIATELY ---
-                const textContainer = document.getElementById('ocrTextContainer');
-                const textDisplay = document.getElementById('ocrTextDisplay');
-                textContainer.classList.remove('hidden');
-                textContainer.classList.add('flex');
-                textDisplay.value = validationData.full_text || "No text could be extracted from the image.";
+                if (textContainer && textDisplay) {
+                    textContainer.classList.remove('hidden');
+                    textContainer.classList.add('flex');
+                    textDisplay.value = validationData.full_text || "No text could be extracted from the image.";
+                }
         
                 // --- 2. CHECK VALIDATION RESULT (MISSING INFO) ---
                if (!validationResponse.ok || validationData.status === "error") {
@@ -1271,6 +1268,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
