@@ -74,48 +74,33 @@
         }
 
         @media (max-width: 768px) {
-            /* 1. Force the main form rows to stack vertically */
-            .form-container .border-t-0.flex {
-                flex-direction: column !important;
-            }
+            /* Main form rows stack vertically */
+            .form-container .border-t-0.flex { flex-direction: column !important; }
             
-            /* 2. Make the left-hand titles (e.g. "Venue Reservation") full width */
-            .form-container .w-40 {
-                width: 100% !important;
-                border-right: none !important;
-                border-bottom: 2px solid #ccc !important;
-                padding-bottom: 0.5rem !important;
-                margin-bottom: 0.5rem !important;
-            }
+            /* Left-hand titles full width */
+            .form-container .w-40 { width: 100% !important; border-right: none !important; border-bottom: 2px solid #ccc !important; padding-bottom: 0.5rem !important; margin-bottom: 0.5rem !important; }
         
-            /* 3. Break the 2-column grid into 1 single column */
-            .form-container .grid-cols-2 {
-                display: flex !important;
-                flex-direction: column !important;
-                gap: 0.75rem !important;
-            }
+            /* Break the 2-column grid into 1 single column */
+            .form-container .grid-cols-2 { display: flex !important; flex-direction: column !important; gap: 0.75rem !important; }
         
-            /* 4. Force checkboxes and text inputs to wrap to the next line if squeezed */
-            .form-container .flex.items-center {
-                flex-wrap: wrap !important;
-                gap: 0.5rem !important;
-            }
-        
-            /* 5. Kill Tailwind's horizontal spacing that causes overlaps */
-            .form-container .space-x-2 > * + * {
-                margin-left: 0 !important;
-            }
-        
-            /* 6. Let inputs stretch so they don't disappear */
-            .read-only-field, .line-input {
-                flex-grow: 1 !important;
-                width: 100% !important;
-                min-width: 100px !important;
-            }
+            /* Checkboxes and text inputs wrap */
+            .form-container .flex.items-center { flex-wrap: wrap !important; gap: 0.5rem !important; }
+            .form-container .space-x-2 > * + * { margin-left: 0 !important; }
+            .read-only-field, .line-input { flex-grow: 1 !important; width: 100% !important; min-width: 100px !important; }
+
+            /* NEW: Ensure top inputs wrap cleanly */
+            .form-container .flex-wrap > div { min-width: 100% !important; margin-bottom: 0.5rem; }
+
+            /* NEW: Ensure 4 signature blocks at the bottom stack vertically */
+            .form-container .grid-cols-4 { grid-template-columns: 1fr !important; gap: 2rem !important; }
         }
 
         
     </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
 </head>
 
 <body class="h-screen w-screen overflow-hidden bg-gray-100 flex items-center justify-center m-0 p-0">
@@ -921,7 +906,7 @@
             containers.forEach(c => { if (c) c.innerHTML = content; });
         };
 
-        window.submitFinalSelection = function() {
+        window.submitFinalSelection = async function() {
             const formView = document.getElementById('formView');
             
             // --- 1. Scrape Basic Info ---
@@ -934,14 +919,12 @@
             const requestedBy = formView.querySelector('input[placeholder="[Enter Your Name]"]')?.value || "Anonymous";
 
             // --- 2. Scrape Venue ---
-            // The venue section is the first section with border-t-0
             const venueSection = formView.querySelectorAll('.border-t-0')[0];
             const venueCheckboxes = venueSection.querySelectorAll('input[type="checkbox"]:checked');
             let venueList = [];
             venueCheckboxes.forEach(cb => {
                 let parent = cb.parentElement;
                 let text = parent.querySelector('span')?.innerText.trim() || "";
-                // Check if there is a text input next to it (e.g. Classroom # [101])
                 let inputDetail = parent.querySelector('input[type="text"]');
                 if (inputDetail && inputDetail.value) {
                     venueList.push(`${text} ${inputDetail.value}`);
@@ -953,7 +936,6 @@
             // --- 3. Scrape Equipment & Setup ---
             const equipSection = formView.querySelectorAll('.border-t-0')[1];
             
-            // Setup Details (Ingress/Egress) - found in the left column
             const setupContainer = equipSection.querySelector('.w-40');
             const setupInputs = setupContainer.querySelectorAll('input');
             const ingressDate = setupInputs[0]?.value || "";
@@ -961,7 +943,6 @@
             const egressDate = setupInputs[2]?.value || "";
             const egressTime = setupInputs[3]?.value || "";
 
-            // Equipment List - found in the right column
             const equipCheckboxes = equipSection.querySelectorAll('.flex-1 input[type="checkbox"]:checked');
             let equipmentList = [];
             equipCheckboxes.forEach(cb => {
@@ -970,7 +951,6 @@
                 let name = nameSpan ? nameSpan.innerText.trim() : "Unknown";
 
                 if (name.includes("Chair") || name.includes("Table")) {
-                    // Structure: input(cb) span(name) input(count) span(Type:) input(type)
                     const inputs = parent.querySelectorAll('input[type="text"]');
                     let count = inputs[0]?.value || "0";
                     let type = inputs[1]?.value || "Standard";
@@ -998,66 +978,148 @@
                 manpowerData[name] = detail;
             });
 
-            // --- 5. Prepare Payload ---
+            // --- 5. CHANGE UI TO SHOW LOADING ---
+            const submitBtns = document.querySelectorAll('button[onclick="submitFinalSelection()"]');
+            submitBtns.forEach(btn => {
+                btn.innerText = "Uploading Document & Submitting...";
+                btn.disabled = true;
+                btn.classList.add('opacity-75', 'cursor-wait');
+            });
+
+            // --- 6. Prepare Tracking ID ---
             const trackingId = "RES-" + Math.floor(100000 + Math.random() * 900000);
             
-            const formData = {
-                id: trackingId,
-                timestamp: new Date().toISOString(),
-                filingDate: new Date().toISOString().split('T')[0],
-                activityDate: activityDate,
-                time: time,
-                department: department,
-                activityName: activityName,
-                internalParticipants: internalParticipants,
-                externalParticipants: externalParticipants,
-                venue: venueList,
-                equipment: equipmentList,
-                ingressDate: ingressDate,
-                ingressTime: ingressTime,
-                egressDate: egressDate,
-                egressTime: egressTime,
-                manpower: manpowerData,
-                requestedBy: requestedBy,
-                status: "Pending VP Admin",
-                personnel: globalSelectedPersonnel,
-                scannedDocumentUrl: globalScannedDocumentUrl,
-                approvals: {
-                    deptHead: { name: "", date: "", status: "Pending" },
-                    ovpas: { name: "", date: "", status: "Pending" },
-                    oevp: { name: "", date: "", status: "Pending" },
-                    oup: { name: "", date: "", status: "Pending" },
-                    pmOfficer: { name: "", date: "", status: "Pending" },
-                    pmgsdDirector: { name: "", date: "", status: "Pending" }
-                },
-                form1: { purpose: "Regular gym reservation for university activity." }
-            };
+            try {
+                // --- 7. UPLOAD DELAYED IMAGE TO FIREBASE STORAGE ---
+                if (pendingCaptureBlob) {
+                    const timestamp = Date.now();
+                    const fileName = `scans/request_${timestamp}.jpg`;
+                    const fileStorageRef = storageRef(storage, fileName); 
+                    await uploadBytes(fileStorageRef, pendingCaptureBlob);
+                    globalScannedDocumentUrl = await getDownloadURL(fileStorageRef);
+                }
 
-            // --- 6. Send to Firebase ---
-            window.set(window.ref(window.db, 'requests/' + trackingId), formData)
-                .then(() => {
-                    const moniwebUrl = `${window.location.origin}/gym-kiosk-system/moniweb.html`;
-                    const qrData = `${moniwebUrl}?id=${trackingId}`;
-                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
-                    
-                    document.getElementById('trackingIdDisplay').innerText = trackingId;
-                    document.getElementById('qrCodeImage').src = qrUrl;
-                    
-                    // Receipt update
-                    const offices = Object.keys(globalSelectedPersonnel).join(', ');
-                    document.getElementById('submittedToDisplay').innerText = offices || "No specific office selected";
+                // --- 7.5 NEW: GENERATE AND UPLOAD FORM 2 AS PDF ---
+                submitBtns.forEach(btn => { btn.innerText = "Generating Form 2 PDF..."; });
+                let form2PdfUrl = "";
+                
+                const formContainer = document.querySelector('.form-container');
+                const formViewSection = document.getElementById('formView');
+                const isHidden = formViewSection.classList.contains('hidden');
 
-                    const personnelList = [];
-                    Object.values(globalSelectedPersonnel).forEach(arr => personnelList.push(...arr));
-                    document.getElementById('submittedPersonnelDisplay').innerText = personnelList.join(', ') || "None";
-                    
-                    window.showView('trackingView');
-                })
-                .catch((error) => {
-                    alert("Error sending request: " + error.message);
+                // A. Secretly show the form off-screen and force a Desktop layout
+                if (isHidden) {
+                    formViewSection.classList.remove('hidden');
+                    formViewSection.style.position = 'absolute';
+                    formViewSection.style.top = '-9999px';
+                    formViewSection.style.left = '-9999px';
+                }
+                const originalWidth = formContainer.style.width;
+                const originalMaxWidth = formContainer.style.maxWidth;
+                formContainer.style.width = '1000px'; 
+                formContainer.style.maxWidth = '1000px';
+
+                // B. Bake the user's typed inputs directly into the HTML so the canvas can see them
+                formContainer.querySelectorAll('input, textarea').forEach(input => {
+                    if (input.type === 'checkbox' || input.type === 'radio') {
+                        if (input.checked) input.setAttribute('checked', 'checked');
+                        else input.removeAttribute('checked');
+                    } else {
+                        input.setAttribute('value', input.value);
+                    }
                 });
-        };
 
+                // C. Take a high-res snapshot and convert to A4 PDF
+                const canvas = await window.html2canvas(formContainer, { scale: 2, useCORS: true });
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                const pdfBlob = pdf.output('blob');
+
+                // D. Re-hide the form and restore mobile styles
+                formContainer.style.width = originalWidth;
+                formContainer.style.maxWidth = originalMaxWidth;
+                if (isHidden) {
+                    formViewSection.classList.add('hidden');
+                    formViewSection.style.position = '';
+                    formViewSection.style.top = '';
+                    formViewSection.style.left = '';
+                }
+
+                // E. Upload the PDF to Firebase
+                const pdfFileName = `forms/Form2_${trackingId}.pdf`;
+                const pdfRef = storageRef(storage, pdfFileName);
+                await uploadBytes(pdfRef, pdfBlob);
+                form2PdfUrl = await getDownloadURL(pdfRef);
+
+                submitBtns.forEach(btn => btn.innerText = "Saving to Database...");
+
+                // --- 8. Prepare Payload ---
+                const formData = {
+                    id: trackingId,
+                    timestamp: new Date().toISOString(),
+                    filingDate: new Date().toISOString().split('T')[0],
+                    activityDate: activityDate,
+                    time: time,
+                    department: department,
+                    activityName: activityName,
+                    internalParticipants: internalParticipants,
+                    externalParticipants: externalParticipants,
+                    venue: venueList,
+                    equipment: equipmentList,
+                    ingressDate: ingressDate,
+                    ingressTime: ingressTime,
+                    egressDate: egressDate,
+                    egressTime: egressTime,
+                    manpower: manpowerData,
+                    requestedBy: requestedBy,
+                    status: "Pending VP Admin",
+                    personnel: globalSelectedPersonnel,
+                    scannedDocumentUrl: globalScannedDocumentUrl, 
+                    form2PdfUrl: form2PdfUrl, // <--- THE NEW PDF URL SAVED HERE
+                    approvals: {
+                        deptHead: { name: "", date: "", status: "Pending" },
+                        ovpas: { name: "", date: "", status: "Pending" },
+                        oevp: { name: "", date: "", status: "Pending" },
+                        oup: { name: "", date: "", status: "Pending" },
+                        pmOfficer: { name: "", date: "", status: "Pending" },
+                        pmgsdDirector: { name: "", date: "", status: "Pending" }
+                    },
+                    form1: { purpose: "Regular gym reservation for university activity." }
+                };
+
+                // --- 9. Send to Firebase Database ---
+                await window.set(window.ref(window.db, 'requests/' + trackingId), formData);
+                
+                const moniwebUrl = `${window.location.origin}/gym-kiosk-system/moniweb.html`;
+                const qrData = `${moniwebUrl}?id=${trackingId}`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+                
+                document.getElementById('trackingIdDisplay').innerText = trackingId;
+                document.getElementById('qrCodeImage').src = qrUrl;
+                
+                const offices = Object.keys(globalSelectedPersonnel).join(', ');
+                document.getElementById('submittedToDisplay').innerText = offices || "No specific office selected";
+
+                const personnelList = [];
+                Object.values(globalSelectedPersonnel).forEach(arr => personnelList.push(...arr));
+                document.getElementById('submittedPersonnelDisplay').innerText = personnelList.join(', ') || "None";
+                
+                window.showView('trackingView');
+                
+            } catch (error) {
+                alert("Error sending request: " + error.message);
+                // Reset buttons if it fails so they can try again
+                submitBtns.forEach(btn => {
+                    btn.innerText = "Submit Reservation";
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-75', 'cursor-wait');
+                });
+            }
+        };
+        
         window.onload = () => {
             window.showView('landingView');
             window.renderReadOnlyCalendar();
@@ -1278,6 +1340,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
