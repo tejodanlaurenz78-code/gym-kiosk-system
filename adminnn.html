@@ -1162,20 +1162,19 @@
         }
 
         function renderForm2Content(request) {
+            if (!request) return '';
+
             // 1. Data Setup
             const deptHead = request.approvals?.deptHead || {};
             const pmOfficer = request.approvals?.pmOfficer || {};
             const pmgsdDirector = request.approvals?.pmgsdDirector || {};
             
-            // SAFETY FIX: Prevents white-screen crash if Firebase returns Object instead of Array
             const venues = Array.isArray(request.venue) ? request.venue : (request.venue ? Object.values(request.venue) : []);
             const equipments = Array.isArray(request.equipment) ? request.equipment : (request.equipment ? Object.values(request.equipment) : []);
+            const manpower = request.manpower || {};
             
-            // Helpers
+            // 2. Formatting Helpers
             const val = (v) => v || '';
-            const isChecked = (list, item) => (list && list.includes(item)) ? 'checked' : '';
-            
-            // NEW: Date Formatter (YYYY-MM-DD -> MM/DD/YYYY)
             const formatDate = (dateStr) => {
                 if (!dateStr) return '';
                 const parts = dateStr.split('-');
@@ -1183,19 +1182,28 @@
                 return `${parts[1]}/${parts[2]}/${parts[0]}`;
             };
 
-            const getEquip = (name, field) => {
-                const item = equipments.find(e => e.name === name);
-                return item ? item[field] : '';
-            };
-            const isEquipChecked = (name) => {
-                return equipments.some(e => e.name === name) ? 'checked' : '';
-            };
-            const manpower = request.manpower || {};
+            const hasVenue = (v) => venues.some(item => item.includes(v));
+            const getVenueDetail = (v) => { const match = venues.find(item => item.includes(v)); return match ? match.replace(v, '').trim() : ''; };
+            
+            const hasEquip = (e) => equipments.some(item => item.name.includes(e));
+            const getEquipDetail = (e, field) => { const match = equipments.find(item => item.name.includes(e)); return match ? (match[field] || '') : ''; };
+            
+            const hasMP = (k) => manpower[k] && manpower[k] !== 'false';
+            const getMPDetail = (k) => manpower[k] === 'Requested' ? '' : val(manpower[k]);
 
-            // 2. HTML Template
+            // 🚨 PDF-SAFE DRAWING HELPERS 🚨
+            const checkIcon = (condition) => condition 
+                ? `<div class="w-4 h-4 border border-black flex items-center justify-center font-bold text-xs bg-gray-200 shrink-0">X</div>` 
+                : `<div class="w-4 h-4 border border-black shrink-0"></div>`;
+
+            const fakeInput = (value, extraClass="") => `<div class="border-b border-black px-1 min-h-[24px] pb-0.5 font-bold ${extraClass}" style="word-break: break-word;">${value || '&nbsp;'}</div>`;
+
+            // 3. Strict 1000px HTML Template
             return `
-                <div class="form-header flex items-center justify-center space-x-4 mb-6">
-                    <img src="pnc-logo.jpg" alt="PnC Logo" class="w-16 h-16 rounded-full border-2 border-white/50 shadow-lg">
+            <div class="bg-white p-8 border border-gray-300 relative text-black mx-auto" style="width: 1000px; min-width: 1000px; max-width: 1000px; box-sizing: border-box;">
+                
+                <div class="flex items-center justify-center space-x-4 mb-6">
+                    <img src="pnc-logo.jpg" alt="PnC Logo" class="w-16 h-16 rounded-full border-2 border-gray-200">
                     <div class="text-center">
                         <p class="text-sm">Republic of the Philippines</p>
                         <h2 class="text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
@@ -1206,183 +1214,151 @@
                     </div>
                 </div>
 
-                <div class="form-title text-black bg-gray-300" style="border: none;">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
+                <div class="bg-gray-300 font-bold text-center p-1 uppercase text-lg border border-black border-b-0 text-black">
+                    EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM
+                </div>
 
-                <div class="border-b border-black p-4 space-y-4 text-sm text-black">
-                    <div class="flex flex-wrap gap-4">
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Transaction Number:</label>
-                            <div class="read-only-field">${val(request.id)}</div>
-                        </div>
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Date of Filing:</label>
-                            <div class="read-only-field">${formatDate(request.filingDate)}</div>
-                        </div>
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Department:</label>
-                            <div class="read-only-field">${val(request.department)}</div>
-                        </div>
+                <div class="border border-black p-4 space-y-4 text-sm border-t-0">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="flex flex-col"><label>Transaction Number:</label>${fakeInput(request.id, 'text-red-700')}</div>
+                        <div class="flex flex-col"><label>Date of Filing:</label>${fakeInput(formatDate(request.filingDate))}</div>
+                        <div class="flex flex-col"><label>Department:</label>${fakeInput(request.department)}</div>
                     </div>
                     
-                    <div class="flex flex-wrap gap-4">
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Activity Date:</label>
-                            <div class="read-only-field">${formatDate(request.activityDate)}</div>
-                        </div>
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Time:</label>
-                            <div class="read-only-field">${val(request.time)}</div>
-                        </div>
+                    <div class="grid grid-cols-2 gap-4 mt-2">
+                        <div class="flex flex-col"><label>Activity Date:</label>${fakeInput(formatDate(request.activityDate))}</div>
+                        <div class="flex flex-col"><label>Time:</label>${fakeInput(request.time)}</div>
                     </div>
-
-                    <div>
-                        <label class="font-normal text-gray-600">Activity Name/Title/Purpose:</label>
-                        <div class="read-only-field">${val(request.activityName)}</div>
+                    
+                    <div class="mt-2 flex flex-col">
+                        <label>Activity Name/Title/Purpose:</label>
+                        ${fakeInput(request.activityName)}
                     </div>
-
-                    <div class="flex flex-wrap gap-4 items-end">
-                        <div class="w-1/3 font-normal text-gray-600">Expected # of Participants:</div>
-                        <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span>
-                            <div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div>
-                        </div>
-                        <div class="flex-1 flex items-center"><span class="mr-2">External:</span>
-                            <div class="read-only-field w-20 text-center">${val(request.externalParticipants)}</div>
-                        </div>
+                    
+                    <div class="grid grid-cols-3 gap-4 items-end mt-2">
+                        <div class="font-bold">Expected # of Participants:</div>
+                        <div class="flex items-center"><span class="mr-2">Internal:</span><div class="flex-1">${fakeInput(request.internalParticipants, 'text-center')}</div></div>
+                        <div class="flex items-center"><span class="mr-2">External:</span><div class="flex-1">${fakeInput(request.externalParticipants, 'text-center')}</div></div>
                     </div>
                 </div>
 
-                <div class="border border-black border-t-0 flex text-black">
+                <div class="border border-black border-t-0 flex">
                     <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Venue Reservation</div>
                     <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Gym Stage / Court')} class="accent-black"> <span class="${isChecked(venues, 'Gym Stage / Court') ? 'font-bold' : ''}">Gym Stage / Court</span></label>
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Multi-Purpose Hall')} class="accent-black"> <span class="${isChecked(venues, 'Multi-Purpose Hall') ? 'font-bold' : ''}">Multi-Purpose Hall</span></label>
+                        <div class="flex items-center space-x-2">${checkIcon(hasVenue('Gym Stage') || hasVenue('Gym'))} <span class="${hasVenue('Gym Stage') ? 'font-bold' : ''}">Gym Stage / Court</span></div>
+                        <div class="flex items-center space-x-2">${checkIcon(hasVenue('Multi-Purpose'))} <span class="${hasVenue('Multi-Purpose') ? 'font-bold' : ''}">Multi-Purpose Hall</span></div>
                         
                         <div class="flex items-center space-x-2">
-                             <input type="checkbox" disabled ${venues.some(v => v.includes('Classroom')) ? 'checked' : ''}> 
-                             <span>Classroom #</span> 
-                             <div class="read-only-field w-16 text-center">${(venues.find(v => v.includes('Classroom')) || '').replace('Classroom', '').trim()}</div>
+                            ${checkIcon(hasVenue('Classroom'))} <span>Classroom #</span> 
+                            <div class="w-16">${fakeInput(getVenueDetail('Classroom'), 'text-center')}</div>
                         </div>
-
                         <div class="flex items-center space-x-2">
-                             <input type="checkbox" disabled ${venues.some(v => v.includes('Laboratory')) ? 'checked' : ''}> 
-                             <span>Laboratory #</span> 
-                             <div class="read-only-field w-16 text-center">${(venues.find(v => v.includes('Laboratory')) || '').replace('Laboratory', '').trim()}</div>
+                            ${checkIcon(hasVenue('Laboratory'))} <span>Laboratory #</span> 
+                            <div class="w-16">${fakeInput(getVenueDetail('Laboratory'), 'text-center')}</div>
                         </div>
 
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Library')} class="accent-black"> <span class="${isChecked(venues, 'Library') ? 'font-bold' : ''}">Library</span></label>
-                        <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isChecked(venues, 'Cafeteria')} class="accent-black"> <span class="${isChecked(venues, 'Cafeteria') ? 'font-bold' : ''}">Cafeteria</span></label>
+                        <div class="flex items-center space-x-2">${checkIcon(hasVenue('Library'))} <span class="${hasVenue('Library') ? 'font-bold' : ''}">Library</span></div>
+                        <div class="flex items-center space-x-2">${checkIcon(hasVenue('Cafeteria'))} <span class="${hasVenue('Cafeteria') ? 'font-bold' : ''}">Cafeteria</span></div>
                         
                         <div class="col-span-2 flex items-center space-x-2">
-                            <input type="checkbox" disabled ${venues.some(v => v.includes('Others:')) ? 'checked' : ''}> 
-                            <span>Others:</span> 
-                            <div class="read-only-field flex-1">${(venues.find(v => v.includes('Others:')) || '').replace('Others:', '').trim()}</div>
+                            ${checkIcon(hasVenue('Others'))} <span>Others:</span> 
+                            <div class="flex-1">${fakeInput(getVenueDetail('Others:'))}</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="border border-black border-t-0 flex text-black">
+                <div class="border border-black border-t-0 flex">
                     <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">
                         <p>Equipment Reservation</p>
                         <p class="mt-4 text-xs font-bold">Set-up Details:</p>
-                        <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
-                            <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressDate)}</span></p>
-                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressTime)}</span></p>
-                            <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressDate)}</span></p>
-                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressTime)}</span></p>
+                        <div class="mt-1 text-xs font-normal space-y-2">
+                            <p>Ingress Date: ${fakeInput(formatDate(request.ingressDate))}</p>
+                            <p>Time: ${fakeInput(request.ingressTime)}</p>
+                            <p class="mt-1">Egress Date: ${fakeInput(formatDate(request.egressDate))}</p>
+                            <p>Time: ${fakeInput(request.egressTime)}</p>
                         </div>
                     </div>
                     <div class="flex-1 p-2 text-sm">
                         <div class="grid grid-cols-1 gap-2 mb-2">
                             <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${getEquip('Chair', 'count') ? 'checked' : ''} class="accent-black"> 
-                                <span class="${getEquip('Chair', 'count') ? 'font-bold' : ''}">Chair #</span> 
-                                <div class="read-only-field w-16 text-center font-bold">${getEquip('Chair', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquip('Chair', 'type')}</div>
+                                ${checkIcon(hasEquip('Chair'))} <span class="${hasEquip('Chair') ? 'font-bold' : ''}">Chair #</span> 
+                                <div class="w-16">${fakeInput(getEquipDetail('Chair', 'count'), 'text-center')}</div>
+                                <span>Type:</span> <div class="flex-1">${fakeInput(getEquipDetail('Chair', 'type'))}</div>
                             </div>
                             <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${getEquip('Table', 'count') ? 'checked' : ''} class="accent-black"> 
-                                <span class="${getEquip('Table', 'count') ? 'font-bold' : ''}">Table #</span> 
-                                <div class="read-only-field w-16 text-center font-bold">${getEquip('Table', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquip('Table', 'type')}</div>
+                                ${checkIcon(hasEquip('Table'))} <span class="${hasEquip('Table') ? 'font-bold' : ''}">Table #</span> 
+                                <div class="w-16">${fakeInput(getEquipDetail('Table', 'count'), 'text-center')}</div>
+                                <span>Type:</span> <div class="flex-1">${fakeInput(getEquipDetail('Table', 'type'))}</div>
                             </div>
                         </div>
                         
                         <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Podium/Rostrum')} class="accent-black"> <span class="${isEquipChecked('Podium/Rostrum') ? 'font-bold' : ''}">Podium/Rostrum</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Sound System')} class="accent-black"> <span class="${isEquipChecked('Sound System') ? 'font-bold' : ''}">Sound System</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Electric fans')} class="accent-black"> <span class="${isEquipChecked('Electric fans') ? 'font-bold' : ''}">Electric fans</span></label>
+                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Podium'))} <span class="${hasEquip('Podium') ? 'font-bold' : ''}">Podium/Rostrum</span></div>
+                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Sound'))} <span class="${hasEquip('Sound') ? 'font-bold' : ''}">Sound System</span></div>
+                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Electric'))} <span class="${hasEquip('Electric') ? 'font-bold' : ''}">Electric fans</span></div>
                             
                             <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${getEquip('Microphone', 'count') ? 'checked' : ''} class="accent-black"> 
-                                <span>Microphone #</span> 
-                                <div class="read-only-field w-12 text-center font-bold">${getEquip('Microphone', 'count')}</div>
+                                ${checkIcon(hasEquip('Microphone'))} <span>Microphone #</span> 
+                                <div class="w-12">${fakeInput(getEquipDetail('Microphone', 'count'), 'text-center')}</div>
                             </div>
 
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Extension Cord')} class="accent-black"> <span class="${isEquipChecked('Extension Cord') ? 'font-bold' : ''}">Extension Cord</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Panel Board / White Board')} class="accent-black"> <span class="${isEquipChecked('Panel Board / White Board') ? 'font-bold' : ''}">Panel/White Board</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Philippine Flag')} class="accent-black"> <span class="${isEquipChecked('Philippine Flag') ? 'font-bold' : ''}">Philippine Flag</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Pamantasan ng Cabuyao Flag')} class="accent-black"> <span class="${isEquipChecked('Pamantasan ng Cabuyao Flag') ? 'font-bold' : ''}">PnC Flag</span></label>
-                            <label class="flex items-center space-x-2"><input type="checkbox" disabled ${isEquipChecked('Multi-media Projector')} class="accent-black"> <span class="${isEquipChecked('Multi-media Projector') ? 'font-bold' : ''}">Projector</span></label>
+                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Extension'))} <span class="${hasEquip('Extension') ? 'font-bold' : ''}">Extension Cord</span></div>
+                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('White Board'))} <span class="${hasEquip('White Board') ? 'font-bold' : ''}">Panel/White Board</span></div>
+                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Philippine Flag'))} <span class="${hasEquip('Philippine Flag') ? 'font-bold' : ''}">Philippine Flag</span></div>
+                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Pamantasan'))} <span class="${hasEquip('Pamantasan') ? 'font-bold' : ''}">PnC Flag</span></div>
+                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Projector'))} <span class="${hasEquip('Projector') ? 'font-bold' : ''}">Projector</span></div>
                             
                             <div class="flex items-center space-x-2">
-                                <input type="checkbox" disabled ${equipments.some(e => e.name.includes('Others:')) ? 'checked' : ''}> 
-                                <span>Others:</span> 
-                                <div class="read-only-field w-full font-bold">${(equipments.find(e => e.name.includes('Others:'))?.name || '').replace('Others:', '').trim()}</div>
+                                ${checkIcon(hasEquip('Others:'))} <span>Others:</span> 
+                                <div class="flex-1">${fakeInput(getEquipDetail('Others:', 'name').replace('Others:', '').trim())}</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="border border-black border-t-0 flex text-black">
+                <div class="border border-black border-t-0 flex">
                     <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black flex items-center">Manpower Requirement</div>
                     <div class="flex-1 p-2 grid grid-cols-2 gap-4 text-sm">
                         <div class="flex items-center space-x-2">
-                            <input type="checkbox" disabled ${manpower.technical ? 'checked' : ''}> 
-                            <span>Technical</span> 
-                            <div class="read-only-field flex-1 font-bold">${val(manpower.technical)}</div>
+                            ${checkIcon(hasMP('technical'))} <span>Technical</span> 
+                            <div class="flex-1">${fakeInput(getMPDetail('technical'))}</div>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <input type="checkbox" disabled ${manpower.housekeeping ? 'checked' : ''}> 
-                            <span>Housekeeping</span> 
-                            <div class="read-only-field flex-1 font-bold">${val(manpower.housekeeping)}</div>
+                            ${checkIcon(hasMP('housekeeping'))} <span>Housekeeping</span> 
+                            <div class="flex-1">${fakeInput(getMPDetail('housekeeping'))}</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="text-xs text-gray-600 mt-2 mb-6 space-y-1 italic p-2">
-                    <p>• Request must be submitted at least a week before the activity.</p>
-                    <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required.</p>
-                    <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
-                </div>
-
-                <div class="grid grid-cols-4 gap-4 text-center mt-4 text-black text-xs">
+                <div class="grid grid-cols-4 gap-4 text-center mt-6 text-black text-xs">
                     <div>
-                        <p class="font-bold mb-8 text-gray-700">Requested by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${request.requestedBy}</div>
+                        <p class="font-bold mb-8 text-gray-700 text-left">Requested by:</p>
+                        ${fakeInput(request.requestedBy, 'text-center text-[#15803d] uppercase')}
                         <p class="mt-1">Signature over Printed Name/Date</p>
                     </div>
                     
                     <div class="opacity-90">
-                        <p class="font-bold mb-8 text-gray-700">Reviewed by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || ''}</div>
+                        <p class="font-bold mb-8 text-gray-700 text-left">Reviewed by:</p>
+                        ${fakeInput(deptHead.name, 'text-center uppercase')}
+                        <p class="text-[10px] text-green-700 font-bold h-3">${deptHead.date ? formatDate(deptHead.date) : ''}</p>
                         <p class="mt-1">Department/Division Head</p>
-                        <div class="text-[10px] font-bold ${getStatusClass('Approved')} rounded-full inline-block px-2 mt-1">Approved</div>
                     </div>
 
                     <div class="opacity-90">
-                        <p class="font-bold mb-8 text-gray-700">Recommended by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">Mr. Colin B. Garcia</div>
+                        <p class="font-bold mb-8 text-gray-700 text-left">Recommended by:</p>
+                        ${fakeInput(pmOfficer.name || 'Mr. Colin B. Garcia', 'text-center uppercase')}
+                        <p class="text-[10px] text-green-700 font-bold h-3">${pmOfficer.date ? formatDate(pmOfficer.date) : ''}</p>
                         <p class="mt-1">PM Officer</p>
-                        <div class="text-[10px] font-bold ${getStatusClass(pmOfficer.status)} rounded-full inline-block px-2 mt-1">${pmOfficer.status}</div>
                     </div>
 
                     <div class="opacity-90">
-                        <p class="font-bold mb-8 text-gray-700">Approved by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">Alfredo Glenn H. Beaño</div>
+                        <p class="font-bold mb-8 text-gray-700 text-left">Approved by:</p>
+                        ${fakeInput(pmgsdDirector.name || 'Alfredo Glenn H. Beaño', 'text-center uppercase')}
+                        <p class="text-[10px] text-green-700 font-bold h-3">${pmgsdDirector.date ? formatDate(pmgsdDirector.date) : ''}</p>
                         <p class="mt-1">PMGSD Director</p>
-                        <div class="text-[10px] font-bold ${getStatusClass(pmgsdDirector.status)} rounded-full inline-block px-2 mt-1">${pmgsdDirector.status}</div>
                     </div>
                 </div>
+            </div>
             `;
         }
         
@@ -1550,6 +1526,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
