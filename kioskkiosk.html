@@ -1019,6 +1019,13 @@
                 formContainer.style.width = '1000px'; 
                 formContainer.style.maxWidth = '1000px';
 
+                const transInput = formContainer.querySelector('input[placeholder="(Auto-Generated)"]');
+                if (transInput) { 
+                    transInput.value = trackingId; 
+                    transInput.setAttribute('value', trackingId); 
+                }
+                
+
                 // B. Bake the user's typed inputs directly into the HTML so the canvas can see them
                 formContainer.querySelectorAll('input, textarea').forEach(input => {
                     if (input.type === 'checkbox' || input.type === 'radio') {
@@ -1228,6 +1235,12 @@
                 textContainer.classList.remove('flex');
                 document.getElementById('ocrTextDisplay').value = '';
             }
+
+            const uploadLoading = document.getElementById('uploadLoading');
+            if (uploadLoading) {
+                uploadLoading.classList.add('hidden');
+                uploadLoading.innerHTML = 'Uploading... Please wait.'; // Reset text
+            }
         };
        
         window.confirmAndUpload = async function() {
@@ -1267,14 +1280,10 @@
                 }
 
                 // --- 3. APPLY ENHANCED IMAGE FROM BACKEND ---
-                // If the Pi sent back a cleaned-up image, replace our raw preview and our upload blob!
                 if (validationData.enhanced_image_b64) {
                     const enhancedDataUrl = 'data:image/jpeg;base64,' + validationData.enhanced_image_b64;
-                    
-                    // Update the screen so the user sees the CamScanner version
                     document.getElementById('scanPreviewImage').src = enhancedDataUrl;
                     
-                    // Convert Base64 back into a file Blob for Firebase
                     const byteCharacters = atob(validationData.enhanced_image_b64);
                     const byteNumbers = new Array(byteCharacters.length);
                     for (let i = 0; i < byteCharacters.length; i++) {
@@ -1293,18 +1302,10 @@
                     return; // STOP HERE
                 }
 
-                // --- 5. VALIDATION PASSED! UPLOAD TO FIREBASE ---
+                // --- 5. VALIDATION PASSED! (NO UPLOAD YET) ---
                 const foundCode = validationData.code; 
                 console.log("Validation Success! Found Code:", foundCode);
-                uploadLoading.innerText = `Valid Code Found: ${foundCode}. Uploading to Cloud...`;
-
-                const timestamp = Date.now();
-                const fileName = `scans/request_${timestamp}.jpg`;
-                const fileStorageRef = storageRef(storage, fileName); 
-                
-                // This now uploads the clean, enhanced image we created in step 3!
-                await uploadBytes(fileStorageRef, pendingCaptureBlob);
-                globalScannedDocumentUrl = await getDownloadURL(fileStorageRef);
+                uploadLoading.innerText = `Valid Code Found: ${foundCode}. Proceeding...`;
         
                 // Update UI to Successful state
                 uploadLoading.classList.add('hidden');
@@ -1314,7 +1315,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 bg-green-100 rounded-full p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
-                            Validated & Uploaded Successfully
+                            Validated Successfully
                         </div>
                         <div class="text-xs text-gray-600 mt-1 bg-gray-100 px-2 py-1 rounded border border-gray-200">
                             Detected Form: <span class="font-mono font-bold text-gray-900">${foundCode}</span>
@@ -1329,7 +1330,7 @@
         
             } catch (err) {
                 console.error("Error during upload/validation:", err);
-                alert("Validation or Upload failed. Please check your network connection to the camera server.");
+                alert("Validation failed. Please check your network connection to the camera server.");
                 uploadLoading.classList.add('hidden');
                 previewActions.classList.remove('hidden');
                 previewActions.classList.add('flex');
@@ -1340,6 +1341,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
