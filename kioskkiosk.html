@@ -583,14 +583,16 @@
         // --- FUNCTIONS (Attached to Window for HTML access) ---
 
        window.resetKioskData = function() {
+            console.log("Wiping all kiosk data...");
+            
             // 1. Reset Global Variables
             selectedReservationDate = null;
             globalSelectedPersonnel = {};
             globalScannedDocumentUrl = null;
-            pendingCaptureBlob = null; // Reset pending blob
+            pendingCaptureBlob = null; 
             stampingStep = 0;
         
-            // 2. Reset Camera UI Elements
+            // 2. Reset Step 1 (Camera & UI)
             const previewContainer = document.getElementById('scanPreviewContainer');
             if (previewContainer) previewContainer.classList.add('hidden');
             
@@ -617,49 +619,84 @@
             const captureBtnText = document.getElementById('captureBtnText');
             if (captureBtnText) captureBtnText.innerText = "Capture Document";
             
-            // 2. Reset File Upload Section
-            const fileInput = document.getElementById('requestLetterFile');
-            if(fileInput) fileInput.value = ''; // Clear actual file
-            const fileLabel = document.getElementById('fileInputLabel');
-            if(fileLabel) {
-                fileLabel.classList.remove('bg-green-100');
-                // Reset label text but keep the input element inside
-                fileLabel.innerHTML = `Browse / Scan <input type="file" id="requestLetterFile" class="hidden" onchange="updateFileName(this)">`;
+            const previewImg = document.getElementById('scanPreviewImage');
+            if (previewImg) previewImg.src = ""; // Erases the old photo completely
+
+            // Wake up camera
+            const camStream = document.getElementById('kioskCameraStream');
+            if (camStream) {
+                camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
             }
-        
-            // 3. Reset All Form Inputs (Text, Date, Time, Checkboxes)
-            const formInputs = document.querySelectorAll('#formView input');
+
+            // Reset green success border
+            const previewStatusText = document.getElementById('previewStatusText');
+            if (previewStatusText) {
+                previewStatusText.innerText = "Review Captured Image";
+                previewStatusText.className = "text-blue-700 font-bold mb-2 flex items-center justify-center gap-1 text-sm";
+            }
+            const previewImageWrapper = document.getElementById('previewImageWrapper');
+            if (previewImageWrapper) {
+                previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-blue-500 shadow-lg bg-black w-[200px] cursor-pointer group transition-all hover:border-blue-300";
+            }
+
+            // Reset OCR text
+            const ocrContainer = document.getElementById('ocrTextContainer');
+            if (ocrContainer) {
+                ocrContainer.classList.add('hidden');
+                ocrContainer.classList.remove('flex');
+            }
+            const ocrDisplay = document.getElementById('ocrTextDisplay');
+            if (ocrDisplay) ocrDisplay.value = '';
+
+            // 3. Reset Step 2 (Form Inputs)
+            // Select literally every input in the form
+            const formInputs = document.querySelectorAll('#formView input, #formView textarea');
             formInputs.forEach(input => {
-                if (input.type === 'checkbox') {
+                if (input.type === 'checkbox' || input.type === 'radio') {
                     input.checked = false;
-                } else if (input.type !== 'button' && input.type !== 'submit' && !input.readOnly) {
-                    // Don't clear readOnly fields like Transaction Number
-                    input.value = '';
+                } else if (input.type !== 'button' && input.type !== 'submit') {
+                    input.value = ''; 
                 }
             });
-        
-            // 4. Reset Personnel Selection Arrays & UI
-            document.getElementById('finalSelectedList_main').innerHTML = '<p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>';
-            document.getElementById('finalSelectedList_sub').innerHTML = '<p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>';
-            document.getElementById('personnelChecklistContainer').innerHTML = '';
-            document.getElementById('selectedDepartmentName').innerText = '--';
-        
-            // 5. Reset Verification Input
+
+            // 🚨 CRITICAL FIX: Re-disable all conditionally enabled text fields! 🚨
+            const dependentInputs = ['classroomNum', 'labNum', 'otherVenue', 'chairCount', 'chairType', 'tableCount', 'tableType', 'micCount', 'otherEquip', 'techCount', 'hkCount'];
+            dependentInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.value = '';
+                    el.disabled = true; // Locks the inputs until checked again
+                }
+            });
+
+            // 4. Reset Personnel Selection
+            const noPersonnelHtml = '<p class="italic text-gray-400 text-center mt-10">No personnel selected yet.</p>';
+            const mainList = document.getElementById('finalSelectedList_main');
+            if (mainList) mainList.innerHTML = noPersonnelHtml;
+            const subList = document.getElementById('finalSelectedList_sub');
+            if (subList) subList.innerHTML = noPersonnelHtml;
+            
+            const personnelContainer = document.getElementById('personnelChecklistContainer');
+            if (personnelContainer) personnelContainer.innerHTML = '';
+            
+            const deptName = document.getElementById('selectedDepartmentName');
+            if (deptName) deptName.innerText = '--';
+
+            // 5. Reset Verify
             const verifyInput = document.getElementById('verificationCodeInput');
-            if(verifyInput) verifyInput.value = '';
+            if (verifyInput) verifyInput.value = '';
 
-            // 6. Reset OCR Text Box
-            const textContainer = document.getElementById('ocrTextContainer');
-            if (textContainer) {
-                textContainer.classList.add('hidden');
-                textContainer.classList.remove('flex');
-                const textDisplay = document.getElementById('ocrTextDisplay');
-                if (textDisplay) textDisplay.value = '';
-            }
-           
-            console.log("Kiosk data has been reset.");
+            // 6. 🚨 CRITICAL FIX: UN-STUCK THE SUBMIT BUTTONS 🚨
+            const submitBtns = document.querySelectorAll('button[onclick="submitFinalSelection()"]');
+            submitBtns.forEach(btn => {
+                btn.innerText = "Submit Reservation";
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-wait');
+            });
+
+            console.log("Kiosk data has been fully wiped clean.");
         };
-
+        
         window.openImageModal = function() {
             const previewImg = document.getElementById('scanPreviewImage');
             const modalImg = document.getElementById('modalImage');
@@ -680,8 +717,14 @@
         window.getDaysInMonth = function(year, month) { return new Date(year, month + 1, 0).getDate(); };
 
         window.showView = function(id) {
+            // 🚨 Always wipe data when returning to the Start Screen! 🚨
+            if (id === 'landingView') {
+                window.resetKioskData();
+            }
+
             document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
+            
             const homeButton = document.getElementById('homeButton');
             if (id === 'landingView') {
                 homeButton.innerText = 'Start Screen';
@@ -690,10 +733,11 @@
                 homeButton.innerText = 'Back to Start Screen';
                 homeButton.onclick = () => window.showView('landingView');
             }
+            
             if (id === 'calendarView') window.renderCalendar();
             if (id === 'landingView') window.renderReadOnlyCalendar();
         };
-
+        
         window.verifyReservationCode = function() {
             const code = document.getElementById('verificationCodeInput').value.trim();
             const btnText = document.getElementById('verifyBtnText');
@@ -1276,6 +1320,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
