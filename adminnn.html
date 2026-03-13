@@ -221,6 +221,10 @@
         }
    
     </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
 </head>
 <body class="h-screen w-screen flex flex-col items-center justify-center bg-gray-100 overflow-hidden m-0 p-0">
 
@@ -492,6 +496,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, update, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
         // 1. CONFIGURATION
         const firebaseConfig = {
@@ -507,6 +512,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const storage = getStorage(app);
         
         // Export to window for debugging if needed
         window.db = db;
@@ -516,6 +522,11 @@
         window.onValue = onValue; 
         window.remove = remove;
         window.get = get;
+
+        window.storage = storage;
+        window.storageRef = storageRef;
+        window.uploadBytes = uploadBytes;
+        window.getDownloadURL = getDownloadURL;
 
         // 2. GLOBAL STATE
         let currentRequests = [];
@@ -812,9 +823,8 @@
             renderReadOnlyForm(activeRequest);
         };
             
-            
 
-        window.processApproval = function(requestId, action) {
+        window.processApproval = async function(requestId, action) {
             const requestIndex = currentRequests.findIndex(r => r.id === requestId);
             const request = currentRequests[requestIndex];
             const currentStepKey = getCurrentApprovalStep(request);
@@ -822,6 +832,9 @@
 
             if (currentStepKey !== currentRoleKey) return customAlert('Not your turn.');
             if (action === 'Rejected' && !remarks) return customAlert("⚠️ Please provide a reason for rejection.");
+
+            // Show loading message because PDF generation takes a second
+            customAlert("Processing approval & updating documents... Please wait ⏳");
 
             let newGlobalStatus = request.status;
             if (action === 'Rejected') {
@@ -837,21 +850,70 @@
                 }
             }
 
-            const updates = {};
-            const basePath = `requests/${requestId}`;
-            updates[`${basePath}/status`] = newGlobalStatus;
-            updates[`${basePath}/approvals/${currentStepKey}/status`] = action;
-            updates[`${basePath}/approvals/${currentStepKey}/name`] = currentUserName;
-            updates[`${basePath}/approvals/${currentStepKey}/remarks`] = remarks;
-            updates[`${basePath}/approvals/${currentStepKey}/date`] = new Date().toISOString().split('T')[0];
+            try {
+                const updates = {};
+                const basePath = `requests/${requestId}`;
+                updates[`${basePath}/status`] = newGlobalStatus;
+                updates[`${basePath}/approvals/${currentStepKey}/status`] = action;
+                updates[`${basePath}/approvals/${currentStepKey}/name`] = currentUserName;
+                updates[`${basePath}/approvals/${currentStepKey}/remarks`] = remarks;
+                updates[`${basePath}/approvals/${currentStepKey}/date`] = new Date().toISOString().split('T')[0];
 
-            window.update(window.ref(window.db), updates)
-                .then(() => {
-                    customAlert(`Request ${action} and saved to cloud!`);
-                })
-                .catch((err) => {
-                    customAlert("Error saving to cloud: " + err.message);
-                });
+                // 🚨 THE MAGIC HAPPENS HERE 🚨
+                // If this is the FINAL approval, generate the stamped PDF!
+                if (newGlobalStatus === 'Approved (Completed)') {
+                    
+                    // 1. Create a simulated request object that includes THIS final approval
+                    const completedRequest = JSON.parse(JSON.stringify(request));
+                    completedRequest.approvals[currentStepKey] = {
+                        status: action,
+                        name: currentUserName,
+                        remarks: remarks,
+                        date: updates[`${basePath}/approvals/${currentStepKey}/date`]
+                    };
+
+                    // 2. Build a secret, perfect 1000px form off-screen
+                    const offScreenDiv = document.createElement('div');
+                    offScreenDiv.style.position = 'absolute';
+                    offScreenDiv.style.top = '-9999px';
+                    offScreenDiv.style.left = '-9999px';
+                    offScreenDiv.style.width = '1000px';
+                    offScreenDiv.style.backgroundColor = 'white';
+                    offScreenDiv.innerHTML = `<div class="form-container" style="min-width: 1000px; width: 1000px; padding: 0; margin: 0; border: none;">${renderForm2Content(completedRequest)}</div>`;
+                    document.body.appendChild(offScreenDiv);
+
+                    // 3. Give browser 200ms to render the HTML layout
+                    await new Promise(r => setTimeout(r, 200));
+
+                    // 4. Snap the high-res PDF photo
+                    const canvas = await window.html2canvas(offScreenDiv, { scale: 3, useCORS: true, windowWidth: 1000, width: 1000 });
+                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                    const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                    const pdfBlob = pdf.output('blob');
+
+                    // 5. Upload PDF to Firebase Storage
+                    const fileRef = window.storageRef(window.storage, `form2_pdfs/${requestId}_official.pdf`);
+                    await window.uploadBytes(fileRef, pdfBlob);
+                    const pdfUrl = await window.getDownloadURL(fileRef);
+
+                    // 6. Attach the final PDF link to the database
+                    updates[`${basePath}/form2PdfUrl`] = pdfUrl;
+
+                    // Clean up
+                    document.body.removeChild(offScreenDiv);
+                }
+
+                // Push all updates to Firebase
+                await window.update(window.ref(window.db), updates);
+                customAlert(`✅ Request successfully processed!`);
+
+            } catch (err) {
+                console.error(err);
+                customAlert("Error processing approval: " + err.message);
+            }
         };
 
         // --- FORM 1 MODAL ---
@@ -1488,6 +1550,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
