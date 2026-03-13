@@ -1182,214 +1182,213 @@
                 return `${parts[1]}/${parts[2]}/${parts[0]}`;
             };
 
+            // Helpers to find specific items
             const hasVenue = (v) => venues.some(item => item.includes(v));
             const getVenueDetail = (v) => { const match = venues.find(item => item.includes(v)); return match ? match.replace(v, '').trim() : ''; };
-            
             const hasEquip = (e) => equipments.some(item => item.name.includes(e));
             const getEquipDetail = (e, field) => { const match = equipments.find(item => item.name.includes(e)); return match ? (match[field] || '') : ''; };
-            
             const hasMP = (k) => manpower[k] && manpower[k] !== 'false';
             const getMPDetail = (k) => manpower[k] === 'Requested' ? '' : val(manpower[k]);
 
-            // 🚨 PDF-SAFE CHECKBOX FIX (Keeps checkboxes from vanishing in PDF)
+            // 🚨 PDF-SAFE CHECKBOX (Fixes html2canvas disappearing bug)
             const checkIcon = (condition) => condition 
                 ? `<div class="w-4 h-4 border border-black flex items-center justify-center font-bold text-xs bg-gray-200 shrink-0">X</div>` 
                 : `<div class="w-4 h-4 border border-black shrink-0"></div>`;
 
-            // 3. Strict 1000px HTML Template
+            // 3. HTML Template (Combined your format + the anti-overlap locks)
             return `
-            <div class="bg-white p-8 border border-gray-300 relative text-black mx-auto" style="width: 1000px; min-width: 1000px; max-width: 1000px; box-sizing: border-box;">
-                
-                <div class="form-header flex items-center justify-center space-x-4 mb-6">
-                    <img src="pnc-logo.jpg" alt="PnC Logo" class="w-16 h-16 rounded-full border-2 border-white/50 shadow-lg">
-                    <div class="text-center">
-                        <p class="text-sm">Republic of the Philippines</p>
-                        <h2 class="text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
-                        <p class="text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
-                        <p class="text-sm italic">Administration and Finance Division</p>
-                        <p class="font-bold text-gray-700 mt-1">Property Management and General Services Department</p>
-                        <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
-                    </div>
-                </div>
-
-                <div class="form-title text-black bg-gray-300" style="border: none;">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
-
-                <div class="border-b border-black p-4 space-y-4 text-sm text-black">
-                    <div class="flex flex-wrap gap-4">
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Transaction Number:</label>
-                            <div class="read-only-field">${val(request.id)}</div>
-                        </div>
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Date of Filing:</label>
-                            <div class="read-only-field">${formatDate(request.filingDate)}</div>
-                        </div>
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Department:</label>
-                            <div class="read-only-field">${val(request.department)}</div>
-                        </div>
-                    </div>
+                <div class="bg-white p-8 border border-gray-300 relative text-black mx-auto" style="width: 1000px; min-width: 1000px; max-width: 1000px; box-sizing: border-box;">
                     
-                    <div class="flex flex-wrap gap-4">
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Activity Date:</label>
-                            <div class="read-only-field">${formatDate(request.activityDate)}</div>
-                        </div>
-                        <div class="flex-1">
-                            <label class="font-normal text-gray-600">Time:</label>
-                            <div class="read-only-field">${val(request.time)}</div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="font-normal text-gray-600">Activity Name/Title/Purpose:</label>
-                        <div class="read-only-field">${val(request.activityName)}</div>
-                    </div>
-
-                    <div class="flex flex-wrap gap-4 items-end">
-                        <div class="w-1/3 font-normal text-gray-600">Expected # of Participants:</div>
-                        <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span>
-                            <div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div>
-                        </div>
-                        <div class="flex-1 flex items-center"><span class="mr-2">External:</span>
-                            <div class="read-only-field w-20 text-center">${val(request.externalParticipants)}</div>
+                    <div class="form-header flex items-center justify-center space-x-4 mb-6">
+                        <img src="pnc-logo.jpg" alt="PnC Logo" class="w-16 h-16 rounded-full border-2 border-white/50 shadow-lg">
+                        <div class="text-center">
+                            <p class="text-sm">Republic of the Philippines</p>
+                            <h2 class="text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
+                            <p class="text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
+                            <p class="text-sm italic">Administration and Finance Division</p>
+                            <p class="font-bold text-gray-700 mt-1">Property Management and General Services Department</p>
+                            <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna 4025</p>
                         </div>
                     </div>
-                </div>
 
-                <div class="border border-black border-t-0 flex w-full text-black">
-                    <div class="font-bold p-3 bg-gray-50 border-r border-black flex items-center" style="width: 180px; min-width: 180px; flex-shrink: 0; box-sizing: border-box;">Venue Reservation</div>
-                    <div class="p-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm" style="width: calc(100% - 180px); box-sizing: border-box;">
-                        <div class="flex items-center space-x-2">${checkIcon(hasVenue('Gym Stage') || hasVenue('Gym'))} <span class="${hasVenue('Gym Stage') ? 'font-bold' : ''}">Gym Stage / Court</span></div>
-                        <div class="flex items-center space-x-2">${checkIcon(hasVenue('Multi-Purpose'))} <span class="${hasVenue('Multi-Purpose') ? 'font-bold' : ''}">Multi-Purpose Hall</span></div>
-                        
-                        <div class="flex items-center space-x-2">
-                             ${checkIcon(hasVenue('Classroom'))}
-                             <span>Classroom #</span> 
-                             <div class="read-only-field w-16 text-center">${getVenueDetail('Classroom')}</div>
-                        </div>
+                    <div class="form-title text-black bg-gray-300" style="border: none;">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
 
-                        <div class="flex items-center space-x-2">
-                             ${checkIcon(hasVenue('Laboratory'))}
-                             <span>Laboratory #</span> 
-                             <div class="read-only-field w-16 text-center">${getVenueDetail('Laboratory')}</div>
-                        </div>
-
-                        <div class="flex items-center space-x-2">${checkIcon(hasVenue('Library'))} <span class="${hasVenue('Library') ? 'font-bold' : ''}">Library</span></div>
-                        <div class="flex items-center space-x-2">${checkIcon(hasVenue('Cafeteria'))} <span class="${hasVenue('Cafeteria') ? 'font-bold' : ''}">Cafeteria</span></div>
-                        
-                        <div class="col-span-2 flex items-center space-x-2">
-                            ${checkIcon(hasVenue('Others'))}
-                            <span>Others:</span> 
-                            <div class="read-only-field flex-1">${getVenueDetail('Others:')}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="border border-black border-t-0 flex w-full text-black">
-                    <div class="font-bold p-3 bg-gray-50 border-r border-black" style="width: 180px; min-width: 180px; flex-shrink: 0; box-sizing: border-box;">
-                        <p>Equipment Reservation</p>
-                        <p class="mt-4 text-xs font-bold">Set-up Details:</p>
-                        <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
-                            <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${formatDate(request.ingressDate)}</span></p>
-                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressTime)}</span></p>
-                            <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${formatDate(request.egressDate)}</span></p>
-                            <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressTime)}</span></p>
-                        </div>
-                    </div>
-                    <div class="flex-1 p-2 text-sm" style="width: calc(100% - 180px); box-sizing: border-box;">
-                        <div class="grid grid-cols-1 gap-2 mb-2">
-                            <div class="flex items-center space-x-2">
-                                ${checkIcon(hasEquip('Chair'))}
-                                <span class="${hasEquip('Chair') ? 'font-bold' : ''}">Chair #</span> 
-                                <div class="read-only-field w-16 text-center font-bold">${getEquipDetail('Chair', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquipDetail('Chair', 'type')}</div>
+                    <div class="border-b border-black p-4 space-y-4 text-sm text-black">
+                        <div class="flex flex-wrap gap-4">
+                            <div class="flex-1">
+                                <label class="font-normal text-gray-600">Transaction Number:</label>
+                                <div class="read-only-field">${val(request.id)}</div>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                ${checkIcon(hasEquip('Table'))}
-                                <span class="${hasEquip('Table') ? 'font-bold' : ''}">Table #</span> 
-                                <div class="read-only-field w-16 text-center font-bold">${getEquipDetail('Table', 'count')}</div>
-                                <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquipDetail('Table', 'type')}</div>
+                            <div class="flex-1">
+                                <label class="font-normal text-gray-600">Date of Filing:</label>
+                                <div class="read-only-field">${formatDate(request.filingDate)}</div>
+                            </div>
+                            <div class="flex-1">
+                                <label class="font-normal text-gray-600">Department:</label>
+                                <div class="read-only-field">${val(request.department)}</div>
                             </div>
                         </div>
                         
-                        <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Podium'))} <span class="${hasEquip('Podium') ? 'font-bold' : ''}">Podium/Rostrum</span></div>
-                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Sound'))} <span class="${hasEquip('Sound') ? 'font-bold' : ''}">Sound System</span></div>
-                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Electric'))} <span class="${hasEquip('Electric') ? 'font-bold' : ''}">Electric fans</span></div>
+                        <div class="flex flex-wrap gap-4">
+                            <div class="flex-1">
+                                <label class="font-normal text-gray-600">Activity Date:</label>
+                                <div class="read-only-field">${formatDate(request.activityDate)}</div>
+                            </div>
+                            <div class="flex-1">
+                                <label class="font-normal text-gray-600">Time:</label>
+                                <div class="read-only-field">${val(request.time)}</div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="font-normal text-gray-600">Activity Name/Title/Purpose:</label>
+                            <div class="read-only-field">${val(request.activityName)}</div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div class="w-1/3 font-normal text-gray-600">Expected # of Participants:</div>
+                            <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span>
+                                <div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div>
+                            </div>
+                            <div class="flex-1 flex items-center"><span class="mr-2">External:</span>
+                                <div class="read-only-field w-20 text-center">${val(request.externalParticipants)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border border-black border-t-0 flex w-full text-black">
+                        <div class="font-bold p-3 bg-gray-50 border-r border-black flex items-center" style="width: 180px; min-width: 180px; flex-shrink: 0; box-sizing: border-box;">Venue Reservation</div>
+                        <div class="p-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm" style="width: calc(100% - 180px); box-sizing: border-box;">
+                            <div class="flex items-center space-x-2">${checkIcon(hasVenue('Gym Stage') || hasVenue('Gym'))} <span class="${hasVenue('Gym Stage') ? 'font-bold' : ''}">Gym Stage / Court</span></div>
+                            <div class="flex items-center space-x-2">${checkIcon(hasVenue('Multi-Purpose'))} <span class="${hasVenue('Multi-Purpose') ? 'font-bold' : ''}">Multi-Purpose Hall</span></div>
                             
                             <div class="flex items-center space-x-2">
-                                ${checkIcon(hasEquip('Microphone'))}
-                                <span>Microphone #</span> 
-                                <div class="read-only-field w-12 text-center font-bold">${getEquipDetail('Microphone', 'count')}</div>
+                                 ${checkIcon(hasVenue('Classroom'))}
+                                 <span>Classroom #</span> 
+                                 <div class="read-only-field w-16 text-center">${getVenueDetail('Classroom')}</div>
                             </div>
 
-                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Extension'))} <span class="${hasEquip('Extension') ? 'font-bold' : ''}">Extension Cord</span></div>
-                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('White Board'))} <span class="${hasEquip('White Board') ? 'font-bold' : ''}">Panel/White Board</span></div>
-                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Philippine Flag'))} <span class="${hasEquip('Philippine Flag') ? 'font-bold' : ''}">Philippine Flag</span></div>
-                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Pamantasan'))} <span class="${hasEquip('Pamantasan') ? 'font-bold' : ''}">PnC Flag</span></div>
-                            <div class="flex items-center space-x-2">${checkIcon(hasEquip('Projector'))} <span class="${hasEquip('Projector') ? 'font-bold' : ''}">Projector</span></div>
-                            
                             <div class="flex items-center space-x-2">
-                                ${checkIcon(hasEquip('Others:'))}
+                                 ${checkIcon(hasVenue('Laboratory'))}
+                                 <span>Laboratory #</span> 
+                                 <div class="read-only-field w-16 text-center">${getVenueDetail('Laboratory')}</div>
+                            </div>
+
+                            <div class="flex items-center space-x-2">${checkIcon(hasVenue('Library'))} <span class="${hasVenue('Library') ? 'font-bold' : ''}">Library</span></div>
+                            <div class="flex items-center space-x-2">${checkIcon(hasVenue('Cafeteria'))} <span class="${hasVenue('Cafeteria') ? 'font-bold' : ''}">Cafeteria</span></div>
+                            
+                            <div class="col-span-2 flex items-center space-x-2">
+                                ${checkIcon(hasVenue('Others'))}
                                 <span>Others:</span> 
-                                <div class="read-only-field w-full font-bold">${getEquipDetail('Others:', 'name').replace('Others:', '').trim()}</div>
+                                <div class="read-only-field flex-1">${getVenueDetail('Others:')}</div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="border border-black border-t-0 flex w-full text-black">
-                    <div class="font-bold p-3 bg-gray-50 border-r border-black flex items-center" style="width: 180px; min-width: 180px; flex-shrink: 0; box-sizing: border-box;">Manpower Requirement</div>
-                    <div class="p-2 grid grid-cols-2 gap-4 text-sm" style="width: calc(100% - 180px); box-sizing: border-box;">
-                        <div class="flex items-center space-x-2">
-                            ${checkIcon(hasMP('technical'))}
-                            <span>Technical</span> 
-                            <div class="read-only-field flex-1 font-bold">${getMPDetail('technical')}</div>
+                    <div class="border border-black border-t-0 flex w-full text-black">
+                        <div class="font-bold p-3 bg-gray-50 border-r border-black" style="width: 180px; min-width: 180px; flex-shrink: 0; box-sizing: border-box;">
+                            <p>Equipment Reservation</p>
+                            <p class="mt-4 text-xs font-bold">Set-up Details:</p>
+                            <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
+                                <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${formatDate(request.ingressDate)}</span></p>
+                                <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.ingressTime)}</span></p>
+                                <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${formatDate(request.egressDate)}</span></p>
+                                <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black">${val(request.egressTime)}</span></p>
+                            </div>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            ${checkIcon(hasMP('housekeeping'))}
-                            <span>Housekeeping</span> 
-                            <div class="read-only-field flex-1 font-bold">${getMPDetail('housekeeping')}</div>
+                        <div class="flex-1 p-2 text-sm" style="width: calc(100% - 180px); box-sizing: border-box;">
+                            <div class="grid grid-cols-1 gap-2 mb-2">
+                                <div class="flex items-center space-x-2">
+                                    ${checkIcon(hasEquip('Chair'))}
+                                    <span class="${hasEquip('Chair') ? 'font-bold' : ''}">Chair #</span> 
+                                    <div class="read-only-field w-16 text-center font-bold">${getEquipDetail('Chair', 'count')}</div>
+                                    <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquipDetail('Chair', 'type')}</div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    ${checkIcon(hasEquip('Table'))}
+                                    <span class="${hasEquip('Table') ? 'font-bold' : ''}">Table #</span> 
+                                    <div class="read-only-field w-16 text-center font-bold">${getEquipDetail('Table', 'count')}</div>
+                                    <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquipDetail('Table', 'type')}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                                <div class="flex items-center space-x-2">${checkIcon(hasEquip('Podium'))} <span class="${hasEquip('Podium') ? 'font-bold' : ''}">Podium/Rostrum</span></div>
+                                <div class="flex items-center space-x-2">${checkIcon(hasEquip('Sound'))} <span class="${hasEquip('Sound') ? 'font-bold' : ''}">Sound System</span></div>
+                                <div class="flex items-center space-x-2">${checkIcon(hasEquip('Electric'))} <span class="${hasEquip('Electric') ? 'font-bold' : ''}">Electric fans</span></div>
+                                
+                                <div class="flex items-center space-x-2">
+                                    ${checkIcon(hasEquip('Microphone'))}
+                                    <span>Microphone #</span> 
+                                    <div class="read-only-field w-12 text-center font-bold">${getEquipDetail('Microphone', 'count')}</div>
+                                </div>
+
+                                <div class="flex items-center space-x-2">${checkIcon(hasEquip('Extension'))} <span class="${hasEquip('Extension') ? 'font-bold' : ''}">Extension Cord</span></div>
+                                <div class="flex items-center space-x-2">${checkIcon(hasEquip('White Board'))} <span class="${hasEquip('White Board') ? 'font-bold' : ''}">Panel/White Board</span></div>
+                                <div class="flex items-center space-x-2">${checkIcon(hasEquip('Philippine Flag'))} <span class="${hasEquip('Philippine Flag') ? 'font-bold' : ''}">Philippine Flag</span></div>
+                                <div class="flex items-center space-x-2">${checkIcon(hasEquip('Pamantasan'))} <span class="${hasEquip('Pamantasan') ? 'font-bold' : ''}">PnC Flag</span></div>
+                                <div class="flex items-center space-x-2">${checkIcon(hasEquip('Projector'))} <span class="${hasEquip('Projector') ? 'font-bold' : ''}">Projector</span></div>
+                                
+                                <div class="flex items-center space-x-2">
+                                    ${checkIcon(hasEquip('Others:'))}
+                                    <span>Others:</span> 
+                                    <div class="read-only-field w-full font-bold">${getEquipDetail('Others:', 'name').replace('Others:', '').trim()}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border border-black border-t-0 flex w-full text-black">
+                        <div class="font-bold p-3 bg-gray-50 border-r border-black flex items-center" style="width: 180px; min-width: 180px; flex-shrink: 0; box-sizing: border-box;">Manpower Requirement</div>
+                        <div class="p-2 grid grid-cols-2 gap-4 text-sm" style="width: calc(100% - 180px); box-sizing: border-box;">
+                            <div class="flex items-center space-x-2">
+                                ${checkIcon(hasMP('technical'))}
+                                <span>Technical</span> 
+                                <div class="read-only-field flex-1 font-bold">${getMPDetail('technical')}</div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                ${checkIcon(hasMP('housekeeping'))}
+                                <span>Housekeeping</span> 
+                                <div class="read-only-field flex-1 font-bold">${getMPDetail('housekeeping')}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-gray-600 mt-2 mb-6 space-y-1 italic p-2">
+                        <p>• Request must be submitted at least a week before the activity.</p>
+                        <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required.</p>
+                        <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-4 text-center mt-4 text-black text-xs">
+                        <div>
+                            <p class="font-bold mb-8 text-gray-700">Requested by:</p>
+                            <div class="border-b border-black font-bold uppercase text-black pb-1">${request.requestedBy}</div>
+                            <p class="mt-1">Signature over Printed Name/Date</p>
+                        </div>
+                        
+                        <div class="opacity-90">
+                            <p class="font-bold mb-8 text-gray-700">Reviewed by:</p>
+                            <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || ''}</div>
+                            <p class="mt-1">Department/Division Head</p>
+                            ${deptHead.status === 'Approved' ? `<div class="text-[10px] font-bold bg-green-100 text-green-800 rounded-full inline-block px-2 mt-1">Approved</div>` : ''}
+                        </div>
+
+                        <div class="opacity-90">
+                            <p class="font-bold mb-8 text-gray-700">Recommended by:</p>
+                            <div class="border-b border-black font-bold uppercase text-black pb-1">${pmOfficer.name || 'Mr. Colin B. Garcia'}</div>
+                            <p class="mt-1">PM Officer</p>
+                            ${pmOfficer.status ? `<div class="text-[10px] font-bold ${pmOfficer.status.includes('Approved') ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} rounded-full inline-block px-2 mt-1">${pmOfficer.status}</div>` : ''}
+                        </div>
+
+                        <div class="opacity-90">
+                            <p class="font-bold mb-8 text-gray-700">Approved by:</p>
+                            <div class="border-b border-black font-bold uppercase text-black pb-1">${pmgsdDirector.name || 'Alfredo Glenn H. Beaño'}</div>
+                            <p class="mt-1">PMGSD Director</p>
+                            ${pmgsdDirector.status ? `<div class="text-[10px] font-bold ${pmgsdDirector.status.includes('Approved') ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} rounded-full inline-block px-2 mt-1">${pmgsdDirector.status}</div>` : ''}
                         </div>
                     </div>
                 </div>
-
-                <div class="text-xs text-gray-600 mt-2 mb-6 space-y-1 italic p-2">
-                    <p>• Request must be submitted at least a week before the activity.</p>
-                    <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required.</p>
-                    <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
-                </div>
-
-                <div class="grid grid-cols-4 gap-4 text-center mt-4 text-black text-xs">
-                    <div>
-                        <p class="font-bold mb-8 text-gray-700">Requested by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${request.requestedBy}</div>
-                        <p class="mt-1">Signature over Printed Name/Date</p>
-                    </div>
-                    
-                    <div class="opacity-90">
-                        <p class="font-bold mb-8 text-gray-700">Reviewed by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || ''}</div>
-                        <p class="mt-1">Department/Division Head</p>
-                        ${deptHead.status === 'Approved' ? `<div class="text-[10px] font-bold bg-green-100 text-green-800 rounded-full inline-block px-2 mt-1">Approved</div>` : ''}
-                    </div>
-
-                    <div class="opacity-90">
-                        <p class="font-bold mb-8 text-gray-700">Recommended by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${pmOfficer.name || 'Mr. Colin B. Garcia'}</div>
-                        <p class="mt-1">PM Officer</p>
-                        ${pmOfficer.status ? `<div class="text-[10px] font-bold ${pmOfficer.status.includes('Approved') ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} rounded-full inline-block px-2 mt-1">${pmOfficer.status}</div>` : ''}
-                    </div>
-
-                    <div class="opacity-90">
-                        <p class="font-bold mb-8 text-gray-700">Approved by:</p>
-                        <div class="border-b border-black font-bold uppercase text-black pb-1">${pmgsdDirector.name || 'Alfredo Glenn H. Beaño'}</div>
-                        <p class="mt-1">PMGSD Director</p>
-                        ${pmgsdDirector.status ? `<div class="text-[10px] font-bold ${pmgsdDirector.status.includes('Approved') ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} rounded-full inline-block px-2 mt-1">${pmgsdDirector.status}</div>` : ''}
-                    </div>
-                </div>
-            </div>
             `;
         }
         
@@ -1557,6 +1556,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
