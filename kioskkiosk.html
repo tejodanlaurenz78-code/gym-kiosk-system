@@ -1007,7 +1007,7 @@
                 const formViewSection = document.getElementById('formView');
                 const isHidden = formViewSection.classList.contains('hidden');
 
-                // A. Secretly show the form off-screen and force a Desktop layout
+               // A. Secretly show the form off-screen and force a Desktop layout
                 if (isHidden) {
                     formViewSection.classList.remove('hidden');
                     formViewSection.style.position = 'absolute';
@@ -1019,24 +1019,40 @@
                 formContainer.style.width = '1000px'; 
                 formContainer.style.maxWidth = '1000px';
 
+                // --- INJECT TRACKING ID FOR PDF ---
                 const transInput = formContainer.querySelector('input[placeholder="(Auto-Generated)"]');
                 if (transInput) { 
                     transInput.value = trackingId; 
                     transInput.setAttribute('value', trackingId); 
                 }
-                
 
-                // B. Bake the user's typed inputs directly into the HTML so the canvas can see them
+                // B. CONVERT INPUTS TO TEXT BLOCKS (Fixes the overlapping lines bug!)
+                const tempDivs = [];
                 formContainer.querySelectorAll('input, textarea').forEach(input => {
                     if (input.type === 'checkbox' || input.type === 'radio') {
                         if (input.checked) input.setAttribute('checked', 'checked');
                         else input.removeAttribute('checked');
                     } else {
-                        input.setAttribute('value', input.value);
+                        // Create a fake div that perfectly mimics the input
+                        const fakeDiv = document.createElement('div');
+                        fakeDiv.className = input.className; // Inherit all CSS
+                        
+                        // Force perfect alignment above the line
+                        fakeDiv.style.display = 'inline-block';
+                        fakeDiv.style.minHeight = '24px';
+                        fakeDiv.style.borderBottom = '1px solid #000';
+                        fakeDiv.style.paddingBottom = '4px'; 
+                        fakeDiv.innerText = input.value || '\u00A0'; // Use empty space if blank
+                        
+                        // Hide real input, show fake text div
+                        input.style.display = 'none';
+                        input.parentNode.insertBefore(fakeDiv, input.nextSibling);
+                        
+                        tempDivs.push({ realInput: input, fakeDiv: fakeDiv });
                     }
                 });
 
-                // C. Take a high-res snapshot and convert to A4 PDF
+                // C. Take an ULTRA high-res snapshot and convert to A4 PDF
                 const canvas = await window.html2canvas(formContainer, { scale: 4, useCORS: true });
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
                 const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
@@ -1045,7 +1061,7 @@
                 pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
                 const pdfBlob = pdf.output('blob');
 
-                // D. Re-hide the form and restore mobile styles
+                // D. Re-hide the form and RESTORE THE REAL INPUTS
                 formContainer.style.width = originalWidth;
                 formContainer.style.maxWidth = originalMaxWidth;
                 if (isHidden) {
@@ -1054,6 +1070,12 @@
                     formViewSection.style.top = '';
                     formViewSection.style.left = '';
                 }
+
+                // Delete the fake text and bring the inputs back to normal
+                tempDivs.forEach(item => {
+                    item.realInput.style.display = '';
+                    item.fakeDiv.remove();
+                });
 
                 // E. Upload the PDF to Firebase
                 const pdfFileName = `forms/Form2_${trackingId}.pdf`;
@@ -1341,6 +1363,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
