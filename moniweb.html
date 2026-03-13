@@ -197,21 +197,32 @@
         }
 
         @media (max-width: 768px) {
-            /* 1. Turn the modal containers into horizontal scroll areas */
+            /* 1. Turn off horizontal scrolling completely */
+            .modal-body, #documentModalBody {
+                overflow-x: hidden !important; 
+                padding: 0.5rem !important;
+            }
+
             #form2Content, #form1Content, #readOnlyFormContainer {
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch !important; /* Smooth swiping on iOS */
                 width: 100% !important;
-                display: block !important;
-                padding-bottom: 1.5rem !important; /* Space for the scrollbar */
+                overflow: hidden !important;
+                display: flex !important;
+                justify-content: center !important; /* Centers the zoomed paper */
             }
             
-            /* 2. Force the Form to act like a real A4 paper (NO SQUISHING) */
+            /* 2. Lock to desktop size, then forcefully zoom out to 35% */
             .form-container {
-                min-width: 900px !important; /* Lock the width to desktop size */
-                width: 900px !important;
-                max-width: 900px !important;
-                margin: 0 !important; /* Align left so natural scrolling works */
+                min-width: 1000px !important; /* Physically prevents column squishing */
+                width: 1000px !important;
+                max-width: 1000px !important;
+                margin: 0 !important;
+                
+                /* This shrinks the 1000px document down to 350px so it fits all phone screens */
+                zoom: 0.35 !important; 
+                
+                /* Fallback for Firefox browsers */
+                -moz-transform: scale(0.35);
+                -moz-transform-origin: top center;
             }
         }
         
@@ -981,6 +992,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
