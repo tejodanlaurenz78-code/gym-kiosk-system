@@ -192,35 +192,37 @@
 
          @media (max-width: 768px) {
 
-            /* Stop the form from shrinking naturally */
-            .form-container {
-                width: 1000px !important;       /* Match the form's exact width */
-                max-width: 1000px !important;
-                zoom: 0.35       /* Dynamically scale to fit perfectly on any mobile screen */
-                margin: 0 auto;
-                transform-origin: top center;
-            }
-
-            /* Ensure no weird horizontal scrollbars appear */
+            /* --- FORM MOBILE FIX --- */
             #readOnlyFormContainer {
-                overflow-x: hidden !important;
+                overflow: hidden !important;
                 display: flex;
                 justify-content: center;
                 width: 100%;
             }
 
-            .calendar-zoom-container {
-                width: 950px !important;       /* Force wide desktop width */
-                max-width: 950px !important;
-                zoom: 0.40;                    /* Shrink to fit mobile screen */
-                margin: 0 auto;
+            .form-container {
+                width: 1000px !important;
+                min-width: 1000px !important;
+                max-width: 1000px !important;
+                transform: scale(0.33) !important; /* Universally supported zoom out */
+                transform-origin: top center !important;
+                margin-bottom: -800px !important; /* Removes the empty space left below the scaled document */
             }
-             
+
+            /* --- CALENDAR MOBILE FIX --- */
             .calendar-overflow-wrapper {
-                overflow-x: hidden !important;
+                overflow: hidden !important;
                 display: flex;
                 width: 100%;
+            }
 
+            .calendar-zoom-container {
+                width: 950px !important;
+                min-width: 950px !important;
+                max-width: 950px !important;
+                transform: scale(0.35) !important; /* Universally supported zoom out */
+                transform-origin: top center !important;
+                margin-bottom: -500px !important;
             }
         }
    
@@ -1560,6 +1562,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
