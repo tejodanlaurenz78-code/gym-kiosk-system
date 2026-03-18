@@ -197,7 +197,7 @@
             .form-container {
                 width: 1000px !important;       /* Match the form's exact width */
                 max-width: 1000px !important;
-                zoom: 0.35       /* Dynamically scale to fit perfectly on any mobile screen */
+                zoom: 0.35;      /* Dynamically scale to fit perfectly on any mobile screen */
                 margin: 0 auto;
                 transform-origin: top center;
             }
@@ -914,7 +914,7 @@
 
                     // Clean up
                     document.body.removeChild(offScreenDiv);
-                }
+                
 
                     const plotImmediately = confirm("✅ Document officially stamped and saved.\n\nDo you want to automatically plot this event on the Facility Calendar right now?\n\n• Click 'OK' to plot immediately.\n• Click 'Cancel' to plot it manually later.");
                     
