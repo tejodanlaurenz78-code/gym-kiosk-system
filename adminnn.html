@@ -832,6 +832,11 @@
         window.processApproval = async function(requestId, action) {
             const requestIndex = currentRequests.findIndex(r => r.id === requestId);
             const request = currentRequests[requestIndex];
+
+            if (request.status === 'Approved (Completed)') {
+                return customAlert('⚠️ This request has already been fully approved and processed.\n\nIf you need to add this to the calendar, please plot it manually from the Facility Calendar.');
+            }
+            
             const currentStepKey = getCurrentApprovalStep(request);
             const remarks = document.getElementById('approverRemarks').value.trim();
 
@@ -911,6 +916,24 @@
                     document.body.removeChild(offScreenDiv);
                 }
 
+                    const plotImmediately = confirm("✅ Document officially stamped and saved.\n\nDo you want to automatically plot this event on the Facility Calendar right now?\n\n• Click 'OK' to plot immediately.\n• Click 'Cancel' to plot it manually later.");
+                    
+                    if (plotImmediately) {
+                        const newEventId = "EVT-" + Date.now();
+                        
+                        // Add the new event directly into our Firebase updates payload
+                        updates[`events/${newEventId}`] = {
+                            id: newEventId,
+                            title: request.activityName || "Approved Activity",
+                            date: request.activityDate, // Ensures it lands on the right day
+                            time: request.time || "Not specified",
+                            status: "confirmed",
+                            description: `Auto-plotted from Request: ${request.id}\nRequested by: ${request.requestedBy}`
+                        };
+                    }
+                    // ==========================================
+                }
+            
                 // Push all updates to Firebase
                 await window.update(window.ref(window.db), updates);
                 customAlert(`✅ Request successfully processed!`);
