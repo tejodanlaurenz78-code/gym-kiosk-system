@@ -938,6 +938,10 @@
                 await window.update(window.ref(window.db), updates);
                 customAlert(`✅ Request successfully processed!`);
 
+                if (newGlobalStatus === 'Approved (Completed)') {
+                    window.loadCalendarView();
+                }
+
             } catch (err) {
                 console.error(err);
                 customAlert("Error processing approval: " + err.message);
