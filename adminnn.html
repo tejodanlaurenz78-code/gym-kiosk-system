@@ -919,7 +919,8 @@
                     const plotImmediately = confirm("✅ Document officially stamped and saved.\n\nDo you want to automatically plot this event on the Facility Calendar right now?\n\n• Click 'OK' to plot immediately.\n• Click 'Cancel' to plot it manually later.");
                     
                     if (plotImmediately) {
-                        const newEventId = "EVT-" + Date.now();
+                        // Ties the calendar event directly to the request transaction number
+                        const newEventId = "EVT-" + request.id;
                         
                         // Add the new event directly into our Firebase updates payload
                         updates[`events/${newEventId}`] = {
