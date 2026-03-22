@@ -798,34 +798,42 @@
         // --- UPDATED STAMPING INTEGRATION ---
         window.processStamping = async function(step) {
             const btn = document.getElementById('stampingBtn');
+            const originalText = btn.innerText; // Store "Insert Letter & Stamp" or similar
+            
             btn.innerText = "Stamping Motor Running...";
             btn.disabled = true;
         
             try {
-                // Send the HTTP request to the Raspberry Pi Python server
                 const response = await fetch('http://192.168.100.57:5000/api/trigger_stamp', {
                     method: 'POST'
                 });
         
                 if (response.ok) {
-                    // Arduino finished the physical stamp, update the UI
                     if (step === 1) {
                         stampingStep = 2;
                         window.updateStampingUI();
-                        btn.disabled = false;
+                        // Button is re-enabled by updateStampingUI() or manually below
                     } else {
-                        window.simulateStampingProcess(); // Show the final success screen
+                        window.simulateStampingProcess(); 
                     }
                 } else {
-                    alert("Hardware error: The motor did not respond.");
+                    const errorData = await response.json().catch(() => ({}));
+                    alert("Hardware error: " + (errorData.error || "The motor did not respond."));
                     btn.innerText = "Try Again";
-                    btn.disabled = false;
                 }
             } catch (err) {
                 console.error("Hardware connection error:", err);
                 alert("Network error: Cannot reach the Raspberry Pi hardware controller.");
                 btn.innerText = "Try Again";
+            } finally {
+                // --- THIS PART FIXES THE STUCK BUTTON ---
+                // We re-enable the button so it's ready for the next attempt or next user.
                 btn.disabled = false;
+                
+                // If it wasn't a success that changed the view, restore the text
+                if (btn.innerText === "Stamping Motor Running...") {
+                    btn.innerText = originalText;
+                }
             }
         };
 
