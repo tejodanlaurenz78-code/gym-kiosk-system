@@ -94,21 +94,7 @@
             /* NEW: Ensure 4 signature blocks at the bottom stack vertically */
             .form-container .grid-cols-4 { grid-template-columns: 1fr !important; gap: 2rem !important; }
         }
-
-        /* --- Document Insertion Animations --- */
-        .slide-up-anim {
-            animation: docSlideUp 2.5s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
-        }
-        
-        @keyframes docSlideUp {
-            0% { top: 120%; opacity: 0; }
-            20% { opacity: 1; }
-            100% { top: 50%; opacity: 1; }
-        }
-        
-        #stampingInstructions { 
-            transition: opacity 0.5s ease; 
-        }
+ 
     </style>
     
 </head>
@@ -198,52 +184,23 @@
                 </div>
             </div>
 
-            <div id="stampingActionView" class="hidden flex flex-col items-center justify-center h-full">
-    
-                <div class="bg-[#f2fdf5] border border-[#22c55e] rounded-xl p-8 w-full max-w-2xl shadow-lg text-center relative">
-                    
-                    <div class="flex items-center justify-center gap-3 mb-2">
-                        <div class="bg-[#16a34a] text-white rounded-full w-8 h-8 flex items-center justify-center text-lg">
-                            <i class="fas fa-check"></i>
+            <div id="stampingActionView" class="view-panel hidden text-center h-full pt-10">
+                <div class="max-w-3xl mx-auto bg-green-50 border-2 border-green-500 p-8 rounded-2xl shadow-xl">
+                    <div class="flex items-center justify-center space-x-3 mb-4">
+                        <div class="bg-green-600 text-white rounded-full p-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                         </div>
-                        <h2 class="text-[#16a34a] text-2xl font-bold">Status: APPROVED</h2>
+                        <h2 class="text-3xl font-bold text-green-800">Status: APPROVED</h2>
                     </div>
-                    <p class="text-gray-700 mb-6">The reservation for Letter Code <strong id="displayVerifiedCode">RES-XXXXXX</strong> is fully approved.</p>
-            
-                    <div class="bg-white border-2 border-dashed border-gray-400 rounded-xl relative overflow-hidden" style="height: 280px;">
-                        
-                        <div id="stampingInstructions" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
-                            <i class="fas fa-file-alt text-gray-400 mb-4" style="font-size: 60px;"></i>
-                            <h3 id="stampingTitle" class="text-2xl font-bold text-gray-800 mb-1">Step 1: Insert Request Letter</h3>
-                            <p id="stampingDesc" class="text-gray-600">Please insert your <strong>Form 1 (Request Letter)</strong> into the document slot.</p>
+                    <p class="text-lg text-gray-700 mb-8">The reservation for Letter Code <span class="font-mono font-bold" id="displayVerifiedCode">--</span> is fully approved.</p>
+                    <div class="bg-white p-10 rounded-xl border-2 border-dashed border-gray-400 mb-8">
+                        <div class="mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                         </div>
-            
-                        <div id="stampingAnimationArea" class="absolute inset-0 z-0 bg-white" style="display: none;">
-                            <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-gray-400 flex flex-col items-center animate-pulse">
-                                <i class="fas fa-chevron-up fa-2x"></i>
-                                <span class="text-xs font-bold mt-1 tracking-widest">INSERT FROM BOTTOM</span>
-                            </div>
-                            <div id="movingDocument" class="absolute left-1/2 transform -translate-x-1/2 text-gray-400" style="top: 120%;">
-                                <i class="fas fa-file-contract" style="font-size: 80px;"></i>
-                            </div>
-                        </div>
+                        <h3 id="stampingTitle" class="text-2xl font-bold text-gray-800 mb-2">Ready for Stamping</h3>
+                        <p id="stampingDesc" class="text-gray-600">Please insert your documents into the slot below.</p>
                     </div>
-            
-                    <button id="stampingBtn" class="mt-8 bg-[#86c298] hover:bg-[#16a34a] text-white font-bold py-4 px-10 rounded-lg text-xl transition-colors w-3/4 shadow-md">
-                        Insert Letter & Stamp
-                    </button>
-                </div>
-            </div>
-            
-            <div id="stampConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-                <div class="bg-white rounded-xl p-8 max-w-md w-full text-center shadow-2xl">
-                    <i class="fas fa-exclamation-circle text-yellow-500 fa-4x mb-4"></i>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Confirm Alignment</h3>
-                    <p id="confirmModalText" class="text-gray-600 mb-6">Is your document pushed all the way up and aligned properly in the slot?</p>
-                    <div class="flex gap-4 justify-center">
-                        <button onclick="document.getElementById('stampConfirmModal').classList.add('hidden')" class="px-6 py-2 border-2 border-gray-300 text-gray-600 font-bold rounded-lg hover:bg-gray-100">Wait, let me adjust</button>
-                        <button id="confirmExecuteBtn" class="px-6 py-2 bg-[#16a34a] text-white font-bold rounded-lg hover:bg-green-700 shadow-md">Yes, Stamp It Now</button>
-                    </div>
+                    <button id="stampingBtn" class="kiosk-btn w-72 animate-pulse">Start Stamping Process</button>
                 </div>
             </div>
 
@@ -1385,90 +1342,11 @@
                 previewActions.classList.add('flex');
             }
         };
-
-        let currentDocStep = 1; // Tracks if we are on Form 1 or Form 2
-
-        // --- Handle Initial Button Click (Start Animation) ---
-        document.getElementById('stampingBtn').onclick = function() {
-            const btn = document.getElementById('stampingBtn');
-            
-            // 1. Fade out the static text and show the animation area
-            document.getElementById('stampingInstructions').style.opacity = '0';
-            document.getElementById('stampingAnimationArea').style.display = 'block';
-            
-            // 2. Trigger the slide-up animation
-            const doc = document.getElementById('movingDocument');
-            doc.classList.remove('slide-up-anim');
-            void doc.offsetWidth; // Force a DOM reflow to restart animation
-            doc.classList.add('slide-up-anim');
-        
-            btn.disabled = true;
-            btn.innerText = "Please insert document now...";
-        
-            // 3. Wait 2.5 seconds for animation to finish, then show the confirmation popup
-            setTimeout(() => {
-                document.getElementById('stampConfirmModal').classList.remove('hidden');
-                btn.disabled = false;
-                btn.innerText = (currentDocStep === 1) ? "Insert Letter & Stamp" : "Insert Form & Stamp";
-                
-                // Update popup text based on the step
-                const docName = (currentDocStep === 1) ? "Form 1 (Request Letter)" : "Form 2 (Request Form)";
-                document.getElementById('confirmModalText').innerText = `Is your ${docName} pushed all the way up and aligned properly?`;
-            }, 2500);
-        };
-        
-        // --- Handle Confirmation Modal (Execute Hardware) ---
-        document.getElementById('confirmExecuteBtn').onclick = async function() {
-            // Hide modal
-            document.getElementById('stampConfirmModal').classList.add('hidden');
-            const btn = document.getElementById('stampingBtn');
-            
-            btn.innerText = "Motor Running... Please Wait";
-            btn.disabled = true;
-        
-            try {
-                // Send signal to Python server to trigger Arduino
-                const response = await fetch('http://192.168.100.57:5000/api/trigger_stamp', { method: 'POST' });
-                
-                if (response.ok) {
-                    if (currentDocStep === 1) {
-                        // STEP 1 FINISHED! Prepare for Step 2.
-                        currentDocStep = 2;
-                        
-                        // Update text to match Step 2
-                        document.getElementById('stampingTitle').innerText = "Step 2: Insert Request Form";
-                        document.getElementById('stampingDesc').innerHTML = "Please insert your <strong>Form 2 (Request Form)</strong> into the document slot.";
-                        
-                        // Change button text and make it darker green
-                        btn.innerText = "Insert Form & Stamp";
-                        btn.classList.remove('bg-[#86c298]');
-                        btn.classList.add('bg-[#2e8b57]'); 
-                        
-                        // Reset visuals for the second animation
-                        document.getElementById('stampingInstructions').style.opacity = '1';
-                        document.getElementById('stampingAnimationArea').style.display = 'none';
-                        
-                    } else {
-                        // STEP 2 FINISHED! Both documents are done.
-                        window.simulateStampingProcess(); // Go to your final success screen
-                    }
-                } else {
-                    alert("Hardware Error: The motor did not respond.");
-                    btn.innerText = "Try Again";
-                }
-            } catch (err) {
-                alert("Network Error: Could not reach the Raspberry Pi.");
-                btn.innerText = "Try Again";
-            } finally {
-                btn.disabled = false;
-            }
-        };
     </script>
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
 
 
 
