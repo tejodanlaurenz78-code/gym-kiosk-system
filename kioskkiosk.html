@@ -795,19 +795,38 @@
             }
         };
 
-        window.processStamping = function(step) {
+        // --- UPDATED STAMPING INTEGRATION ---
+        window.processStamping = async function(step) {
             const btn = document.getElementById('stampingBtn');
-            btn.innerText = "Stamping...";
+            btn.innerText = "Stamping Motor Running...";
             btn.disabled = true;
-            setTimeout(() => {
-                if (step === 1) {
-                    stampingStep = 2;
-                    window.updateStampingUI();
-                    btn.disabled = false;
+        
+            try {
+                // Send the HTTP request to the Raspberry Pi Python server
+                const response = await fetch('http://192.168.100.57:5000/api/trigger_stamp', {
+                    method: 'POST'
+                });
+        
+                if (response.ok) {
+                    // Arduino finished the physical stamp, update the UI
+                    if (step === 1) {
+                        stampingStep = 2;
+                        window.updateStampingUI();
+                        btn.disabled = false;
+                    } else {
+                        window.simulateStampingProcess(); // Show the final success screen
+                    }
                 } else {
-                    window.simulateStampingProcess();
+                    alert("Hardware error: The motor did not respond.");
+                    btn.innerText = "Try Again";
+                    btn.disabled = false;
                 }
-            }, 2000);
+            } catch (err) {
+                console.error("Hardware connection error:", err);
+                alert("Network error: Cannot reach the Raspberry Pi hardware controller.");
+                btn.innerText = "Try Again";
+                btn.disabled = false;
+            }
         };
 
         window.simulateStampingProcess = function() {
