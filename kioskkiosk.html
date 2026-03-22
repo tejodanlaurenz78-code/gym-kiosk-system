@@ -94,6 +94,21 @@
             /* NEW: Ensure 4 signature blocks at the bottom stack vertically */
             .form-container .grid-cols-4 { grid-template-columns: 1fr !important; gap: 2rem !important; }
         }
+
+        /* Animation for document sliding into the slot */
+        @keyframes insertDocument {
+            0% { transform: translateY(0); opacity: 1; }
+            30% { transform: translateY(-10px); } 
+            100% { transform: translateY(150px); opacity: 0; }
+        }
+
+        .animate-insert {
+            animation: insertDocument 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        #confirmModal {
+            backdrop-filter: blur(4px);
+        }
  
     </style>
     
@@ -185,7 +200,7 @@
             </div>
 
             <div id="stampingActionView" class="view-panel hidden text-center h-full pt-10">
-                <div class="max-w-3xl mx-auto bg-green-50 border-2 border-green-500 p-8 rounded-2xl shadow-xl">
+                <div class="max-w-3xl mx-auto bg-[#f8fff9] border-2 border-green-500 p-8 rounded-2xl shadow-xl">
                     <div class="flex items-center justify-center space-x-3 mb-4">
                         <div class="bg-green-600 text-white rounded-full p-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
@@ -193,14 +208,27 @@
                         <h2 class="text-3xl font-bold text-green-800">Status: APPROVED</h2>
                     </div>
                     <p class="text-lg text-gray-700 mb-8">The reservation for Letter Code <span class="font-mono font-bold" id="displayVerifiedCode">--</span> is fully approved.</p>
-                    <div class="bg-white p-10 rounded-xl border-2 border-dashed border-gray-400 mb-8">
-                        <div class="mb-4">
+                    
+                    <div class="bg-white p-10 rounded-xl border-2 border-dashed border-gray-400 mb-8 overflow-hidden relative" style="min-height: 280px;">
+                        <div id="doc-wrapper">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                         </div>
-                        <h3 id="stampingTitle" class="text-2xl font-bold text-gray-800 mb-2">Ready for Stamping</h3>
+                        <h3 id="stampingTitle" class="text-2xl font-bold text-gray-800 mt-4 mb-2">Ready for Stamping</h3>
                         <p id="stampingDesc" class="text-gray-600">Please insert your documents into the slot below.</p>
                     </div>
-                    <button id="stampingBtn" class="kiosk-btn w-72 animate-pulse">Start Stamping Process</button>
+                    
+                    <button id="stampingBtn" class="kiosk-btn w-72" onclick="showStampConfirmation()">Start Stamping Process</button>
+                </div>
+            </div>
+
+            <div id="confirmModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 p-4">
+                <div class="bg-white p-6 rounded-xl shadow-2xl text-center max-w-sm w-full border-t-8 border-green-600">
+                    <h4 class="text-xl font-bold mb-2">Confirm Placement</h4>
+                    <p class="text-gray-600 mb-6">Is the document properly aligned in the slot?</p>
+                    <div class="flex gap-3 justify-center">
+                        <button class="px-4 py-2 bg-gray-200 rounded-lg font-bold" onclick="closeModal()">Cancel</button>
+                        <button class="px-4 py-2 bg-green-600 text-white rounded-lg font-bold" onclick="startStampingSequence()">Yes, Proceed</button>
+                    </div>
                 </div>
             </div>
 
@@ -837,6 +865,41 @@
             }
         };
 
+
+        window.showStampConfirmation = function() {
+            document.getElementById('confirmModal').style.display = 'flex';
+        };
+
+        window.closeModal = function() {
+            document.getElementById('confirmModal').style.display = 'none';
+        };
+
+        window.startStampingSequence = function() {
+            window.closeModal();
+            // This triggers your existing hardware logic
+            window.processStamping(stampingStep);
+        };
+
+        // Modify your existing processStamping function (around line 720) 
+        // to include the animation trigger
+        const originalProcessStamping = window.processStamping;
+        window.processStamping = async function(step) {
+            const iconWrapper = document.getElementById('doc-wrapper');
+            
+            // Start the physical "inserting" visual
+            iconWrapper.classList.add('animate-insert');
+            
+            // Wait 1 second for the visual to start before calling the motor
+            setTimeout(async () => {
+                await originalProcessStamping(step);
+                
+                // Reset the icon position after the step is done
+                setTimeout(() => {
+                    iconWrapper.classList.remove('animate-insert');
+                }, 1000);
+            }, 1000);
+        };
+        
         window.simulateStampingProcess = function() {
             document.getElementById('stampDate').innerText = new Date().toLocaleDateString();
             window.showView('stampingSuccessView');
