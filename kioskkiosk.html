@@ -813,11 +813,13 @@
             if (stampingStep === 1) {
                 title.innerText = "Step 1: Insert Request Letter";
                 desc.innerHTML = "Please insert your <strong>Form 1 (Request Letter)</strong> into the document slot.";
+                desc.innerHTML = "<strong>Please insert the document bottom-edge first.</strong>";
                 btn.innerText = "Insert Letter & Stamp";
                 btn.onclick = () => window.processStamping(1);
             } else if (stampingStep === 2) {
                 title.innerText = "Step 2: Insert Request Form";
                 desc.innerHTML = "Please insert your <strong>Form 2 (Request Form)</strong> into the document slot.";
+                desc.innerHTML = "<strong>Please insert the document bottom-edge first.</strong>";
                 btn.innerText = "Insert Form & Stamp";
                 btn.onclick = () => window.processStamping(2);
             }
