@@ -265,9 +265,19 @@
             <div id="uploadView" class="view-panel hidden w-full pt-2">
 
                 <h2 class="text-2xl font-bold text-gray-700 mb-1 text-center px-6">Step 1: Request Letter</h2>
-                <p class="text-sm text-gray-500 italic text-center mb-4">
+                <p class="text-sm text-gray-500 italic text-center mb-2">
                     Align your document within the bounds and click Capture.
                 </p>
+                
+                <div class="flex justify-center mb-4 gap-6" id="pageSelectionDiv">
+                    <label class="flex items-center gap-2 cursor-pointer font-bold text-gray-700 bg-gray-100 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-200 transition">
+                        <input type="radio" name="pageCount" value="1" checked onchange="window.setPageCount(1)" class="w-5 h-5 accent-green-600"> 1-Page Letter
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer font-bold text-gray-700 bg-gray-100 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-200 transition">
+                        <input type="radio" name="pageCount" value="2" onchange="window.setPageCount(2)" class="w-5 h-5 accent-green-600"> 2-Page Letter
+                    </label>
+                </div>
+                <h3 id="captureStepHeader" class="text-xl font-bold text-green-700 text-center mb-4 hidden">Capturing Page 1 of 2</h3>
 
                 <div class="flex flex-row items-center justify-center gap-8 px-4">
 
@@ -574,7 +584,14 @@
     
         // New global variable to hold the uploaded image URL
         let globalScannedDocumentUrl = null;
+        let globalScannedDocumentUrl2 = null;
         let pendingCaptureBlob = null;
+        let savedBlob1 = null; // NEW: Stores Page 1 while capturing Page 2
+        let savedBlob2 = null;
+
+        // NEW: Page tracking state
+        let totalPagesToCapture = 1;
+        let currentPageCapturing = 1;
     
         // Expose aliased dbRef to window so your existing code works
         window.db = db;
@@ -610,17 +627,74 @@
 
         // --- FUNCTIONS (Attached to Window for HTML access) ---
 
-       window.resetKioskData = function() {
+        window.setPageCount = function(num) {
+            totalPagesToCapture = num;
+            const header = document.getElementById('captureStepHeader');
+            const btnText = document.getElementById('captureBtnText');
+            
+            if (num === 2) {
+                header.classList.remove('hidden');
+                header.innerText = "Capturing Page 1 of 2";
+                if (btnText) btnText.innerText = "Capture Page 1";
+            } else {
+                header.classList.add('hidden');
+                if (btnText) btnText.innerText = "Capture Document";
+            }
+        };
+
+        window.prepareForPage2 = function() {
+            savedBlob1 = pendingCaptureBlob; // Store the validated Page 1
+            pendingCaptureBlob = null; // Clear pending for Page 2
+            currentPageCapturing = 2;
+            
+            // Reset the UI for the second capture
+            document.getElementById('scanPreviewContainer').classList.add('hidden');
+            const previewActions = document.getElementById('previewActions');
+            previewActions.classList.add('hidden');
+            previewActions.classList.remove('flex');
+            
+            const captureBtn = document.getElementById('captureBtn');
+            captureBtn.classList.remove('hidden');
+            captureBtn.disabled = false;
+            
+            document.getElementById('captureStepHeader').innerText = "Capturing Page 2 of 2";
+            document.getElementById('captureBtnText').innerText = "Capture Page 2";
+            document.getElementById('uploadLoading').classList.add('hidden');
+            document.getElementById('ocrTextContainer').classList.add('hidden');
+            
+            // Wake up camera
+            const camStream = document.getElementById('kioskCameraStream');
+            if (camStream) {
+                camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
+            }
+        };
+
+        window.resetKioskData = function() {
             console.log("Wiping all kiosk data...");
             
             // 1. Reset Global Variables
             selectedReservationDate = null;
             globalSelectedPersonnel = {};
             globalScannedDocumentUrl = null;
+            globalScannedDocumentUrl2 = null; // NEW
             pendingCaptureBlob = null; 
+            savedBlob1 = null;                // NEW
+            savedBlob2 = null;                // NEW
             stampingStep = 0;
+            totalPagesToCapture = 1;          // NEW
+            currentPageCapturing = 1;         // NEW
         
             // 2. Reset Step 1 (Camera & UI)
+            // NEW: Reset UI Toggle for multiple pages
+            const pageRadios = document.getElementsByName('pageCount');
+            if(pageRadios.length > 0) pageRadios[0].checked = true;
+            
+            const pageSelectionDiv = document.getElementById('pageSelectionDiv');
+            if (pageSelectionDiv) pageSelectionDiv.classList.remove('hidden');
+            
+            const captureStepHeader = document.getElementById('captureStepHeader');
+            if (captureStepHeader) captureStepHeader.classList.add('hidden');
+
             const previewContainer = document.getElementById('scanPreviewContainer');
             if (previewContainer) previewContainer.classList.add('hidden');
             
@@ -1123,14 +1197,22 @@
             
             try {
                 // --- 7. UPLOAD DELAYED IMAGE TO FIREBASE STORAGE ---
-                if (pendingCaptureBlob) {
+                // --- 7. UPLOAD DELAYED IMAGES TO FIREBASE STORAGE ---
+                const finalBlob1 = savedBlob1 || pendingCaptureBlob; 
+                if (finalBlob1) {
                     const timestamp = Date.now();
-                    const fileName = `scans/request_${timestamp}.jpg`;
-                    const fileStorageRef = storageRef(storage, fileName); 
-                    await uploadBytes(fileStorageRef, pendingCaptureBlob);
-                    
-                    // Capture the download URL so we can save it to the database
-                    globalScannedDocumentUrl = await getDownloadURL(fileStorageRef);
+                    const fileName1 = `scans/request_${timestamp}_p1.jpg`;
+                    const fileStorageRef1 = storageRef(storage, fileName1); 
+                    await uploadBytes(fileStorageRef1, finalBlob1);
+                    globalScannedDocumentUrl = await getDownloadURL(fileStorageRef1);
+                }
+                
+                if (savedBlob2) {
+                    const timestamp2 = Date.now() + 1;
+                    const fileName2 = `scans/request_${timestamp2}_p2.jpg`;
+                    const fileStorageRef2 = storageRef(storage, fileName2); 
+                    await uploadBytes(fileStorageRef2, savedBlob2);
+                    globalScannedDocumentUrl2 = await getDownloadURL(fileStorageRef2);
                 }
 
                 submitBtns.forEach(btn => btn.innerText = "Saving to Database...");
@@ -1157,6 +1239,8 @@
                     status: "Pending VP Admin",
                     personnel: globalSelectedPersonnel,
                     scannedDocumentUrl: globalScannedDocumentUrl, 
+                    scannedDocumentUrl2: globalScannedDocumentUrl2 || null,
+                    
                     approvals: {
                         deptHead: { name: "", date: "", status: "Pending" },
                         ovpas: { name: "", date: "", status: "Pending" },
@@ -1326,10 +1410,32 @@
             previewActions.classList.add('hidden');
             previewActions.classList.remove('flex');
             uploadLoading.classList.remove('hidden');
+        
+            // --- NEW: SKIP OCR IF WE ARE ON PAGE 2 ---
+            if (currentPageCapturing === 2) {
+                savedBlob2 = pendingCaptureBlob; // Save the second page
+                uploadLoading.classList.add('hidden');
+                previewStatusText.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        <div class="flex items-center gap-1 text-green-700 font-bold">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 bg-green-100 rounded-full p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Page 2 Captured Successfully
+                        </div>
+                    </div>
+                `;
+                previewStatusText.className = "mb-3"; 
+                previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black w-[200px]";
+                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                nextBtn.disabled = false;
+                return;
+            }
+        
+            // --- PAGE 1 OCR LOGIC ---
             uploadLoading.innerText = "Scanning document for PNC code... Please wait."; 
         
             try {
-                // --- 1. SEND TO PI FOR OCR VALIDATION ---
                 console.log("Validating document on Raspberry Pi...");
                 const formData = new FormData();
                 formData.append('document', pendingCaptureBlob, 'request_letter.jpg');
@@ -1340,8 +1446,7 @@
                 });
         
                 const validationData = await validationResponse.json();
-
-                // --- 2. DISPLAY OCR TEXT ---
+        
                 const textContainer = document.getElementById('ocrTextContainer');
                 const textDisplay = document.getElementById('ocrTextDisplay');
                 if (textContainer && textDisplay) {
@@ -1349,8 +1454,7 @@
                     textContainer.classList.add('flex');
                     textDisplay.value = validationData.full_text || "No text could be extracted from the image.";
                 }
-
-                // --- 3. APPLY ENHANCED IMAGE FROM BACKEND ---
+        
                 if (validationData.enhanced_image_b64) {
                     const enhancedDataUrl = 'data:image/jpeg;base64,' + validationData.enhanced_image_b64;
                     document.getElementById('scanPreviewImage').src = enhancedDataUrl;
@@ -1364,40 +1468,46 @@
                     pendingCaptureBlob = new Blob([byteArray], {type: 'image/jpeg'});
                 }
         
-                // --- 4. CHECK VALIDATION RESULT ---
-               if (!validationResponse.ok || validationData.status === "error") {
+                if (!validationResponse.ok || validationData.status === "error") {
                     console.error("Validation Failed:", validationData);
                     uploadLoading.innerHTML = `<span class="text-red-600 font-bold">Document Rejected ❌<br>${validationData.message}</span>`;
                     previewActions.classList.remove('hidden');
                     previewActions.classList.add('flex');
-                    return; // STOP HERE
+                    return;
                 }
-
-                // --- 5. VALIDATION PASSED! (NO UPLOAD YET) ---
+        
+                // VALIDATION PASSED!
                 const foundCode = validationData.code; 
                 console.log("Validation Success! Found Code:", foundCode);
-                uploadLoading.innerText = `Valid Code Found: ${foundCode}. Proceeding...`;
         
-                // Update UI to Successful state
-                uploadLoading.classList.add('hidden');
-                previewStatusText.innerHTML = `
-                    <div class="flex flex-col items-center">
-                        <div class="flex items-center gap-1 text-green-700 font-bold">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 bg-green-100 rounded-full p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            Validated Successfully
+                // --- NEW: MULTI-PAGE TRANSITION LOGIC ---
+                if (totalPagesToCapture === 2) {
+                    document.getElementById('pageSelectionDiv').classList.add('hidden'); // Lock the toggle
+                    uploadLoading.innerText = `Valid Code Found: ${foundCode}. Transitioning to Page 2...`;
+                    setTimeout(() => {
+                        window.prepareForPage2();
+                    }, 2500);
+                } else {
+                    savedBlob1 = pendingCaptureBlob; // Save single page
+                    uploadLoading.classList.add('hidden');
+                    previewStatusText.innerHTML = `
+                        <div class="flex flex-col items-center">
+                            <div class="flex items-center gap-1 text-green-700 font-bold">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 bg-green-100 rounded-full p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Validated Successfully
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1 bg-gray-100 px-2 py-1 rounded border border-gray-200">
+                                Detected Form: <span class="font-mono font-bold text-gray-900">${foundCode}</span>
+                            </div>
                         </div>
-                        <div class="text-xs text-gray-600 mt-1 bg-gray-100 px-2 py-1 rounded border border-gray-200">
-                            Detected Form: <span class="font-mono font-bold text-gray-900">${foundCode}</span>
-                        </div>
-                    </div>
-                `;
-                previewStatusText.className = "mb-3"; 
-                previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black w-[200px]";
-        
-                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                nextBtn.disabled = false;
+                    `;
+                    previewStatusText.className = "mb-3"; 
+                    previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black w-[200px]";
+                    nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    nextBtn.disabled = false;
+                }
         
             } catch (err) {
                 console.error("Error during upload/validation:", err);
