@@ -5,16 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PnC Gymnasium Kiosk System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/css/index.css">
-    <script src="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/index.js"></script>
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
 
-    
     <style>
         :root {
             --pnc-blue: #15803d;
@@ -114,48 +109,7 @@
         #confirmModal {
             backdrop-filter: blur(4px);
         }
-
-
-        /* --- VIRTUAL KEYBOARD STYLES --- */
-        #keyboard-wrapper {
-            position: fixed;
-            bottom: -500px; /* Hidden off-screen by default */
-            left: 0;
-            width: 100vw;
-            background-color: #cbd5e1; /* Gray background */
-            padding: 10px 10px 20px 10px;
-            box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.2);
-            transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 99999; /* Ensure it stays on top of everything */
-            border-top: 4px solid var(--pnc-blue);
-        }
-        #keyboard-wrapper.show {
-            bottom: 0; /* Slide in */
-        }
-        .keyboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 10px 10px 10px;
-        }
-        .kb-close-btn {
-            background-color: #ef4444;
-            color: white;
-            padding: 6px 16px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .kb-close-btn:active {
-            background-color: #dc2626;
-            transform: translateY(1px);
-        }
-        /* Make the keyboard buttons a bit bigger for touchscreens */
-        .hg-theme-default .hg-button {
-            height: 50px !important;
-            font-size: 1.2rem !important;
-        }
+ 
     </style>
     
 </head>
@@ -604,14 +558,6 @@
 
         </main>
         <div id="flashMessage" class="hidden"><h4 class="text-xl font-bold mb-2" id="flashTitle"></h4><p id="flashBody" class="text-sm"></p></div>
-    </div>
-
-    <div id="keyboard-wrapper">
-        <div class="keyboard-header">
-            <span class="text-gray-700 font-bold text-sm" id="kb-input-name">Virtual Keyboard</span>
-            <button class="kb-close-btn" onclick="hideVirtualKeyboard()">Close Keyboard &darr;</button>
-        </div>
-        <div class="simple-keyboard"></div>
     </div>
 
     <script type="module">
@@ -1574,97 +1520,8 @@
     </script>
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const Keyboard = window.SimpleKeyboard.default;
-            let selectedInput = null;
-
-            const keyboard = new Keyboard({
-                onChange: input => onChange(input),
-                onKeyPress: button => onKeyPress(button),
-                theme: "hg-theme-default hg-layout-default",
-                layout: {
-                    default: [
-                        "1 2 3 4 5 6 7 8 9 0 - = {bksp}",
-                        "q w e r t y u i o p [ ]",
-                        "a s d f g h j k l ; ' {enter}",
-                        "{shift} z x c v b n m , . /",
-                        "@ {space} .com"
-                    ],
-                    shift: [
-                        "! @ # $ % ^ & * ( ) _ + {bksp}",
-                        "Q W E R T Y U I O P { }",
-                        'A S D F G H J K L : " {enter}',
-                        "{shift} Z X C V B N M < > ?",
-                        "@ {space} .com"
-                    ]
-                },
-                display: {
-                    '{bksp}': 'Backspace ⌫',
-                    '{enter}': 'Enter ↵',
-                    '{shift}': 'Shift ⇧',
-                    '{space}': ' ',
-                }
-            });
-
-            function onChange(input) {
-                if (selectedInput) {
-                    selectedInput.value = input;
-                }
-            }
-
-            function onKeyPress(button) {
-                if (button === "{shift}" || button === "{lock}") {
-                    let currentLayout = keyboard.options.layoutName;
-                    let shiftToggle = currentLayout === "default" ? "shift" : "default";
-                    keyboard.setOptions({ layoutName: shiftToggle });
-                }
-                
-                // If they hit enter, close the keyboard
-                if (button === "{enter}") {
-                    window.hideVirtualKeyboard();
-                }
-            }
-
-            // Global listener: Whenever ANY input is focused, show the keyboard
-            document.addEventListener('focusin', (e) => {
-                const el = e.target;
-                
-                // Only trigger on Text, Number, or Textarea. 
-                // We skip Date and Time inputs because native pickers are usually better.
-                if ((el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'number')) || el.tagName === 'TEXTAREA') {
-                    
-                    // Do not show keyboard if the input is readonly or disabled
-                    if (el.readOnly || el.disabled) return; 
-
-                    selectedInput = el;
-                    keyboard.setInput(el.value); // Sync keyboard with current input value
-                    
-                    // Update header text to tell user what they are typing
-                    let placeholder = el.getAttribute('placeholder') || 'Typing...';
-                    document.getElementById('kb-input-name').innerText = placeholder;
-
-                    document.getElementById('keyboard-wrapper').classList.add('show');
-                }
-            });
-
-            // Global function to hide it
-            window.hideVirtualKeyboard = function() {
-                document.getElementById('keyboard-wrapper').classList.remove('show');
-                if (selectedInput) {
-                    selectedInput.blur(); // Remove the glowing focus ring from the input
-                }
-                selectedInput = null;
-            };
-        });
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>
-
 
 
 
