@@ -1738,8 +1738,9 @@
                 kbResize.releasePointerCapture(e.pointerId);
             });
 
-            // CRITICAL FIX: Use 'click' for Raspberry Pi Touchscreens
-            ['click', 'focusin'].forEach(evt => {
+            // --- BULLETPROOF TOUCHSCREEN TRIGGERS ---
+            // Use event capturing (true) to catch the touch before the OS swallows it
+            ['focus', 'pointerdown', 'touchstart', 'click'].forEach(evt => {
                 document.addEventListener(evt, (e) => {
                     const el = e.target;
                     
@@ -1754,20 +1755,23 @@
 
                         document.getElementById('keyboard-wrapper').classList.add('show');
                     }
-                });
+                }, { capture: true }); // <-- This forces the browser to prioritize this action
             });
 
-            // CRITICAL FIX: Hide keyboard when tapping OUTSIDE the keyboard and inputs
-            document.addEventListener('click', (e) => {
-                const kbWrapper = document.getElementById('keyboard-wrapper');
-                if (kbWrapper && kbWrapper.classList.contains('show')) {
-                    const isInput = (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA');
-                    const isInsideKeyboard = kbWrapper.contains(e.target);
-                    
-                    if (!isInput && !isInsideKeyboard) {
-                        window.hideVirtualKeyboard();
+            // --- BULLETPROOF HIDE LOGIC ---
+            // Listen for touches/clicks specifically on the background to close it
+            ['pointerdown', 'touchstart', 'mousedown'].forEach(evt => {
+                document.addEventListener(evt, (e) => {
+                    const kbWrapper = document.getElementById('keyboard-wrapper');
+                    if (kbWrapper && kbWrapper.classList.contains('show')) {
+                        const isInput = (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA');
+                        const isInsideKeyboard = kbWrapper.contains(e.target);
+                        
+                        if (!isInput && !isInsideKeyboard) {
+                            window.hideVirtualKeyboard();
+                        }
                     }
-                }
+                }, { capture: true });
             });
 
             window.hideVirtualKeyboard = function() {
