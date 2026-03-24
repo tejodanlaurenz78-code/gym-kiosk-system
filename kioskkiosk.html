@@ -524,7 +524,10 @@
                     <div class="border border-black border-t-0 flex">
                         <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">Venue Reservation <span class="text-red-600 font-bold ml-1">*</span></div>
                         <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-2">
-                            <label class="flex items-center space-x-2"><input type="checkbox" checked> <span>Gym Stage / Court</span></label>
+                            <label class="flex items-center space-x-2 cursor-not-allowed text-green-800 font-bold bg-green-50 px-2 py-1 rounded border border-green-200 w-max">
+                                <input type="checkbox" id="gymCheckbox" checked disabled class="h-4 w-4 text-green-600 cursor-not-allowed"> 
+                                <span>Gym Stage / Court (Auto-selected)</span>
+                            </label>
                             <label class="flex items-center space-x-2"><input type="checkbox"> <span>Multi-Purpose Hall</span></label>
                             <div class="flex items-center space-x-2"><input type="checkbox"> <span>Classroom #</span> <input type="text" class="line-input w-16"></div>
                             <div class="flex items-center space-x-2"><input type="checkbox"> <span>Laboratory #</span> <input type="text" class="line-input w-16"></div>
@@ -800,6 +803,8 @@
             // Wake up camera
             const camStream = document.getElementById('kioskCameraStream');
             if (camStream) {
+                camStream.style.display = 'block'; 
+                document.getElementById('camOffline').style.display = 'none';
                 camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
             }
         };
@@ -862,6 +867,8 @@
             // Wake up camera
             const camStream = document.getElementById('kioskCameraStream');
             if (camStream) {
+                camStream.style.display = 'block'; 
+                document.getElementById('camOffline').style.display = 'none';
                 camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
             }
 
@@ -895,6 +902,10 @@
                     input.value = ''; 
                 }
             });
+
+            // NEW: Ensure the mandatory Gym checkbox stays checked after a reset
+            const gymCb = document.getElementById('gymCheckbox');
+            if (gymCb) gymCb.checked = true;
 
             // 🚨 CRITICAL FIX: Re-disable all conditionally enabled text fields! 🚨
             const dependentInputs = ['classroomNum', 'labNum', 'otherVenue', 'chairCount', 'chairType', 'tableCount', 'tableType', 'micCount', 'otherEquip', 'techCount', 'hkCount'];
@@ -1387,20 +1398,20 @@
             const trackingId = "RES-" + Math.floor(100000 + Math.random() * 900000);
             
             try {
-                // --- 7. UPLOAD DELAYED IMAGE TO FIREBASE STORAGE ---
+                
                 // --- 7. UPLOAD DELAYED IMAGES TO FIREBASE STORAGE ---
                 const finalBlob1 = savedBlob1 || pendingCaptureBlob; 
                 if (finalBlob1) {
-                    const timestamp = Date.now();
-                    const fileName1 = `scans/request_${timestamp}_p1.jpg`;
+                    // Uses the tracking ID (e.g., RES-123456_p1.jpg)
+                    const fileName1 = `scans/${trackingId}_p1.jpg`;
                     const fileStorageRef1 = storageRef(storage, fileName1); 
                     await uploadBytes(fileStorageRef1, finalBlob1);
                     globalScannedDocumentUrl = await getDownloadURL(fileStorageRef1);
                 }
                 
                 if (savedBlob2) {
-                    const timestamp2 = Date.now() + 1;
-                    const fileName2 = `scans/request_${timestamp2}_p2.jpg`;
+                    // Uses the tracking ID (e.g., RES-123456_p2.jpg)
+                    const fileName2 = `scans/${trackingId}_p2.jpg`;
                     const fileStorageRef2 = storageRef(storage, fileName2); 
                     await uploadBytes(fileStorageRef2, savedBlob2);
                     globalScannedDocumentUrl2 = await getDownloadURL(fileStorageRef2);
@@ -1559,6 +1570,10 @@
             // --- NEW FIX: Force the live camera feed to refresh and reset its zoom/crop ---
             const camStream = document.getElementById('kioskCameraStream');
             if (camStream) {
+
+                // Ensure the image is visible again in case it previously errored out
+                camStream.style.display = 'block'; 
+                document.getElementById('camOffline').style.display = 'none';
                 // Adding a timestamp forces the browser to pull a fresh, un-glitched stream from the Pi
                 camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
             }
