@@ -560,7 +560,15 @@
             document.getElementById('form2Content').innerHTML = renderForm2Content(request);
             document.getElementById('form1Content').innerHTML = renderForm1Content(request);
         }
+
+        
         function renderTimeline(request) {
+            // FIX: Force Dept Head to always be 'Approved' so old requests don't get stuck in 'In Progress'
+            const deptHeadStatus = 'Approved';
+            
+            // FIX: Securely check if stamped is true (handles both boolean and string formats)
+            const isStamped = request.stamped === true || request.stamped === "true";
+
             const steps = [
                 {
                     label: 'Request Submitted',
@@ -572,8 +580,8 @@
                 {
                     label: 'Endorsed/Reviewed',
                     sublabel: 'Successfully processed by Department Head.',
-                    status: request.approvals?.deptHead?.status || 'Approved',
-                    date: request.approvals?.deptHead?.date || '',
+                    status: deptHeadStatus,
+                    date: request.approvals?.deptHead?.date || request.filingDate || request.timestamp,
                     remarks: request.approvals?.deptHead?.remarks || '',
                     icon: '✓'
                 },
@@ -600,9 +608,9 @@
                 {
                     label: 'Document Stamping',
                     sublabel: '',
-                    status: request.stamped ? 'Approved' : 'Pending',
+                    status: isStamped ? 'Approved' : 'Pending',
                     date: request.stampedDate || '',
-                    icon: request.stamped ? '✓' : '○'
+                    icon: isStamped ? '✓' : '○'
                 }
             ];
 
