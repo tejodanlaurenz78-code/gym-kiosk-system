@@ -404,13 +404,13 @@
 
                     <div class="relative w-full max-w-[480px] bg-black border-2 border-gray-700 shadow-inner rounded-xl overflow-hidden shrink-0"
                          style="aspect-ratio: 3280 / 2464;">
-
+                
                         <img id="kioskCameraStream"
                              src="http://192.168.100.57:5000/video_feed"
                              class="absolute inset-0 w-full h-full object-contain"
                              alt="Camera Feed"
                              onerror="this.style.display='none'; document.getElementById('camOffline').style.display='flex';">
-
+                
                         <div id="camOffline"
                              class="absolute inset-0 hidden flex-col items-center justify-center text-white gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -418,23 +418,20 @@
                             </svg>
                             <p class="text-sm font-semibold text-white/50">Camera offline</p>
                         </div>
-
+                
                         <div class="absolute top-0 left-0 right-0 h-0.5 bg-white/25 pointer-events-none"></div>
                         <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-white/25 pointer-events-none"></div>
                         <div class="absolute top-0 bottom-0 left-0 w-0.5 bg-white/25 pointer-events-none"></div>
                         <div class="absolute top-0 bottom-0 right-0 w-0.5 bg-white/25 pointer-events-none"></div>
-
+                
                         <div class="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-white/80 pointer-events-none"></div>
                         <div class="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-white/80 pointer-events-none"></div>
                         <div class="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-white/80 pointer-events-none"></div>
                         <div class="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-white/80 pointer-events-none"></div>
-
-                        </div>
                     </div>
-
-                    
+                
                     <div class="flex flex-col items-center justify-center gap-4 w-[350px] shrink-0">
-    
+                
                         <button id="captureBtn" class="kiosk-btn !bg-red-600 hover:!bg-red-700 flex items-center justify-center gap-2 w-full py-3 text-lg" onclick="captureDocument()">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -459,29 +456,29 @@
                                     <span class="text-xs font-bold mt-1 tracking-wider">EXPAND</span>
                                 </div>
                             </div>
-
-                        <div id="ocrTextContainer" class="hidden w-full mt-4 flex-col items-center">
-                            <p class="text-sm font-bold text-gray-700 mb-1">OCR Extracted Text:</p>
-                            <textarea id="ocrTextDisplay" class="w-full h-40 p-3 text-xs border-2 border-gray-400 rounded-lg bg-gray-50 text-gray-800 font-mono focus:outline-none" readonly></textarea>
+                
+                            <div id="ocrTextContainer" class="hidden w-full mt-4 flex-col items-center">
+                                <p class="text-sm font-bold text-gray-700 mb-1">OCR Extracted Text:</p>
+                                <textarea id="ocrTextDisplay" class="w-full h-40 p-3 text-xs border-2 border-gray-400 rounded-lg bg-gray-50 text-gray-800 font-mono focus:outline-none" readonly></textarea>
+                            </div>
+                                
+                            <div id="previewActions" class="hidden w-full flex-col gap-2">
+                                <button class="kiosk-btn !bg-green-600 hover:!bg-green-700 w-full py-2 text-md" onclick="confirmAndUpload()">Confirm & Upload</button>
+                                <button class="kiosk-btn !bg-gray-500 hover:!bg-gray-600 w-full py-2 text-md" onclick="retakeCapture()">Retake Document</button>
+                            </div>
+                        
+                            <div id="uploadLoading" class="hidden w-full text-center text-gray-600 font-bold py-2 animate-pulse">
+                                Uploading... Please wait.
+                            </div>
+                        
+                            <canvas id="scanCanvas" style="display:none;"></canvas>
+                
+                            <button id="fileNextBtn" class="kiosk-btn w-full py-3 text-lg opacity-50 cursor-not-allowed mt-2" onclick="window.showView('formView')" disabled>
+                                Next Step: Fill Reservation Form &rarr;
+                            </button>
                         </div>
-                            
-                        <div id="previewActions" class="hidden w-full flex-col gap-2">
-                            <button class="kiosk-btn !bg-green-600 hover:!bg-green-700 w-full py-2 text-md" onclick="confirmAndUpload()">Confirm & Upload</button>
-                            <button class="kiosk-btn !bg-gray-500 hover:!bg-gray-600 w-full py-2 text-md" onclick="retakeCapture()">Retake Document</button>
-                        </div>
-                    
-                        <div id="uploadLoading" class="hidden w-full text-center text-gray-600 font-bold py-2 animate-pulse">
-                            Uploading... Please wait.
-                        </div>
-                    
-                        <canvas id="scanCanvas" style="display:none;"></canvas>
-
-                        <button id="fileNextBtn" class="kiosk-btn w-full py-3 text-lg opacity-50 cursor-not-allowed mt-2" onclick="window.showView('formView')" disabled>
-                            Next Step: Fill Reservation Form &rarr;
-                        </button>
                     </div>
                 </div>
-            </div>
         </div> <div id="formView" class="view-panel hidden">
             <div class="flex justify-between items-start mb-4 px-4">
                 <button class="text-gray-500 hover:text-gray-800" onclick="window.showView('uploadView')">&larr; Back</button>
