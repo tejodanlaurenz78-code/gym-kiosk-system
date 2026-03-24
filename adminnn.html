@@ -1427,27 +1427,6 @@
         }
         
         function renderForm1Content(request) {
-            const deptHeadApproval = request.approvals.deptHead;
-            const ovpasApproval = request.approvals.ovpas || {name: '---', date: '', status: 'Pending'};
-            const oevpApproval = request.approvals.oevp || {name: '---', date: '', status: 'Pending'};
-            const oupApproval = request.approvals.oup || {name: '---', date: '', status: 'Pending'};
-            
-            const logoUrl = 'pnc-logo.jpg';
-            
-            function getLetterSignature(title, approval) {
-                const dateStr = approval.date ? new Date(approval.date).toLocaleDateString() : '---';
-                return `
-                    <div class="mt-4 mb-2">
-                        <div class="font-bold uppercase text-black">${approval.name}</div>
-                        <div class="text-xs font-semibold text-gray-600">${title}</div>
-                        <div class="text-[10px] text-green-700 font-bold">APPROVED - ${dateStr}</div>
-                    </div>
-                `;
-            }
-        
-            // FIX: Support both key names — kiosk saves as 'globalScannedDocumentUrl',
-            //      older records may use 'scannedDocumentUrl'.
-           function renderForm1Content(request) {
             // FIX: Support both key names
             const scannedUrl = request.globalScannedDocumentUrl || request.scannedDocumentUrl || null;
 
