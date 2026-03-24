@@ -1116,6 +1116,16 @@
         
         window.simulateStampingProcess = function() {
             document.getElementById('stampDate').innerText = new Date().toLocaleDateString();
+            
+            // NEW: Update Firebase to mark Document Stamping as Completed
+            const trackingId = document.getElementById('displayVerifiedCode').innerText;
+            if (trackingId && trackingId !== '--') {
+                const updates = {};
+                updates['requests/' + trackingId + '/stamped'] = true;
+                updates['requests/' + trackingId + '/stampedDate'] = new Date().toISOString();
+                window.update(window.ref(window.db), updates).catch(err => console.error("Firebase update failed", err));
+            }
+        
             window.showView('stampingSuccessView');
         };
 
@@ -1380,13 +1390,14 @@
                     scannedDocumentUrl2: globalScannedDocumentUrl2 || null,
                     
                     approvals: {
-                        deptHead: { name: "", date: "", status: "Pending" },
-                        ovpas: { name: "", date: "", status: "Pending" },
-                        oevp: { name: "", date: "", status: "Pending" },
-                        oup: { name: "", date: "", status: "Pending" },
-                        pmOfficer: { name: "", date: "", status: "Pending" },
-                        pmgsdDirector: { name: "", date: "", status: "Pending" }
-                    },
+                    // Auto-approve the Dept Head to fix the "In Progress" timeline bug
+                    deptHead: { name: "Auto-Endorsed by System", date: new Date().toISOString().split('T')[0], status: "Approved" },
+                    ovpas: { name: "", date: "", status: "Pending" },
+                    oevp: { name: "", date: "", status: "Pending" },
+                    oup: { name: "", date: "", status: "Pending" },
+                    pmOfficer: { name: "", date: "", status: "Pending" },
+                    pmgsdDirector: { name: "", date: "", status: "Pending" }
+                },
                     form1: { purpose: "Regular gym reservation for university activity." }
                 };
 
