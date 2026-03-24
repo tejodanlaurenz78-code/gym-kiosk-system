@@ -429,9 +429,6 @@
                         <div class="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-white/80 pointer-events-none"></div>
                         <div class="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-white/80 pointer-events-none"></div>
 
-                        <div class="absolute top-2 left-1/2 -translate-x-1/2 bg-black/60 text-white/70 text-[10px] font-mono px-2 py-0.5 rounded-full pointer-events-none flex items-center gap-1">
-                            <span class="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                            LIVE
                         </div>
                     </div>
 
@@ -508,14 +505,14 @@
                         <div class="flex flex-wrap gap-4">
                             <div class="flex-1"><label>Transaction Number:</label><input type="text" class="line-input" placeholder="(Auto-Generated)" readonly></div>
                             <div class="flex-1"><label>Date of Filing:</label><input type="date" id="filingDateInput" class="line-input input-disabled" readonly></div>
-                            <div class="flex-1"><label>Department:</label><input type="text" class="line-input" placeholder="Department"></div>
+                            <div class="flex-1"><label>Department:<span class="text-red-600 font-bold ml-1">*</span></label><input type="text" class="line-input" placeholder="Department"></div>
                         </div>
                         <div class="flex flex-wrap gap-4">
                             <div class="flex-1"><label>Activity Date (Pre-selected):</label><input type="date" id="activityDateInput" class="line-input input-disabled" readonly></div>
-                            <div class="flex-1"><label>Time:</label><input type="time" class="line-input"></div>
+                            <div class="flex-1"><label>Time:<span class="text-red-600 font-bold ml-1">*</span></label><input type="time" class="line-input"></div>
                         </div>
                         <div>
-                            <label>Activity Name/Title/Purpose:</label><input type="text" class="line-input" placeholder="Activity Name/Title/Purpose">
+                            <label>Activity Name/Title/Purpose:<span class="text-red-600 font-bold ml-1">*</span></label><input type="text" class="line-input" placeholder="Activity Name/Title/Purpose">
                             <p class="text-xs italic mt-1">Note: Please attach proof of approval of the activity (Upload Step 1)</p>
                         </div>
                         <div class="flex flex-wrap gap-4 items-end">
@@ -525,7 +522,7 @@
                         </div>
                     </div>
                     <div class="border border-black border-t-0 flex">
-                        <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">Venue Reservation</div>
+                        <div class="w-40 font-bold p-2 bg-gray-50 border-r border-black">Venue Reservation <span class="text-red-600 font-bold ml-1">*</span></div>
                         <div class="flex-1 p-2 grid grid-cols-2 gap-x-4 gap-y-2">
                             <label class="flex items-center space-x-2"><input type="checkbox" checked> <span>Gym Stage / Court</span></label>
                             <label class="flex items-center space-x-2"><input type="checkbox"> <span>Multi-Purpose Hall</span></label>
@@ -578,7 +575,7 @@
                         <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
                     </div>
                     <div class="grid grid-cols-4 gap-4 text-center mt-8">
-                        <div><p class="font-bold text-sm mb-8">Requested by:</p><input type="text" class="line-input text-center font-bold text-[#15803d]" placeholder="[Enter Your Name]"><p class="text-xs mt-1">Signature over Printed Name/Date</p></div>
+                        <div><p class="font-bold text-sm mb-8">Requested by:<span class="text-red-600 font-bold text-lg ml-1">*</span></p><input type="text" class="line-input text-center font-bold text-[#15803d]" placeholder="[Enter Your Name]"><p class="text-xs mt-1">Signature over Printed Name/Date</p></div>
                         <div class="opacity-70"><p class="font-bold text-sm mb-8">Reviewed by:</p><input type="text" class="line-input input-disabled text-center" value="" disabled><p class="text-xs mt-1">Department/Division Head</p></div>
                         <div class="opacity-70"><p class="font-bold text-sm mb-8">Recommended by:</p><input type="text" class="line-input input-disabled text-center" value="" disabled><p class="text-xs mt-1">PM Officer</p></div>
                         <div class="opacity-70"><p class="font-bold text-sm mb-8">Approved by:</p><input type="text" class="line-input input-disabled text-center" value="" disabled><p class="text-xs mt-1">PMGSD Director</p></div>
@@ -1222,8 +1219,54 @@
             }
         };
 
-        window.proceedToSubmissionChoice = function() { window.showView('submissionChoiceView'); };
-
+        window.proceedToSubmissionChoice = function() { 
+            const formView = document.getElementById('formView');
+            
+            // Grab the values from the essential text inputs
+            const requestedBy = formView.querySelector('input[placeholder="[Enter Your Name]"]')?.value.trim();
+            const department = formView.querySelector('input[placeholder="Department"]')?.value.trim();
+            const activityName = formView.querySelector('input[placeholder="Activity Name/Title/Purpose"]')?.value.trim();
+            const time = formView.querySelector('input[type="time"]')?.value;
+        
+            // 1. Validate Requestor Name
+            if (!requestedBy) {
+                alert("⚠️ Required Field: Please enter your Name (Requested by) at the bottom of the form before proceeding.");
+                formView.querySelector('input[placeholder="[Enter Your Name]"]').focus();
+                return;
+            }
+            
+            // 2. Validate Department
+            if (!department) {
+                alert("⚠️ Required Field: Please enter your Department before proceeding.");
+                formView.querySelector('input[placeholder="Department"]').focus();
+                return;
+            }
+        
+            // 3. Validate Activity Name
+            if (!activityName) {
+                alert("⚠️ Required Field: Please enter the Activity Name/Title/Purpose before proceeding.");
+                formView.querySelector('input[placeholder="Activity Name/Title/Purpose"]').focus();
+                return;
+            }
+        
+            // 4. Validate Time
+            if (!time) {
+                alert("⚠️ Required Field: Please enter the Time of your activity before proceeding.");
+                formView.querySelector('input[type="time"]').focus();
+                return;
+            }
+        
+            // 5. Validate Venue (Ensure at least one venue checkbox is checked)
+            const venueSection = formView.querySelectorAll('.border-t-0')[0];
+            const venueCheckboxes = venueSection.querySelectorAll('input[type="checkbox"]:checked');
+            if (venueCheckboxes.length === 0) {
+                alert("⚠️ Required Field: Please select at least one Venue (e.g., Gym Stage, Classroom) for your reservation.");
+                return;
+            }
+        
+            // If all checks pass, proceed to the next view
+            window.showView('submissionChoiceView'); 
+        };
         window.selectOffice = function(officeName) {
             document.getElementById('selectedDepartmentName').innerText = officeName;
             const container = document.getElementById('personnelChecklistContainer');
