@@ -1201,7 +1201,7 @@
 
         window.showEventDetailsFromCalendar = function(dateString) {
             const event = globalEvents.find(e => e.date === dateString);
-            if (event) window.showCustomAlert("Schedule Occupied", \Event: ${event.title}\nTime: ${event.time}\nStatus: ${event.status.toUpperCase()}`);`
+            if (event) window.showCustomAlert("Schedule Occupied", `Event: ${event.title}\nTime: ${event.time}\nStatus: ${event.status.toUpperCase()}`, true);
         };
 
         window.setReservationDateAndShowUpload = function(dateString) {
@@ -1537,7 +1537,7 @@
                 window.showView('trackingView');
                 
             } catch (error) {
-                alert("Error sending request: " + error.message);
+                window.showCustomAlert("Submission Error", "Error sending request: " + error.message, true);
                 // Reset buttons if it fails so they can try again
                 submitBtns.forEach(btn => {
                     btn.innerText = "Submit Reservation";
@@ -1619,7 +1619,7 @@
         
             } catch (err) {
                 console.error("Error during capture:", err);
-                alert("Error capturing document. Is the camera server running?");
+                window.showCustomAlert("Camera Error", "Error capturing document. Is the camera server running?", true);
                 captureBtn.disabled = false;
                 captureBtnText.innerText = "Capture Document";
             }
@@ -1780,7 +1780,7 @@
         
             } catch (err) {
                 console.error("Error during upload/validation:", err);
-                alert("Validation failed. Please check your network connection to the camera server.");
+                window.showCustomAlert("Validation Failed", "Please check your network connection to the camera server.", true);
                 uploadLoading.classList.add('hidden');
                 previewActions.classList.remove('hidden');
                 previewActions.classList.add('flex');
