@@ -563,11 +563,18 @@
 
         
         function renderTimeline(request) {
-            // FIX: Force Dept Head to always be 'Approved' so old requests don't get stuck in 'In Progress'
+            // FIX: Force Dept Head to always be 'Approved'
             const deptHeadStatus = 'Approved';
             
-            // FIX: Securely check if stamped is true (handles both boolean and string formats)
+            // FIX: Securely check if stamped is true
             const isStamped = request.stamped === true || request.stamped === "true";
+
+            // FIX: Use pristine SVG icons instead of raw text characters for perfect centering
+            const iconCheck = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+            const iconCalendar = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`;
+            const iconCross = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+            const iconClock = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            const iconCircle = `<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle></svg>`;
 
             const steps = [
                 {
@@ -575,7 +582,7 @@
                     sublabel: 'Successfully processed by Applicant.',
                     status: 'Approved',
                     date: request.filingDate || request.timestamp,
-                    icon: '✓'
+                    icon: iconCheck
                 },
                 {
                     label: 'Endorsed/Reviewed',
@@ -583,7 +590,7 @@
                     status: deptHeadStatus,
                     date: request.approvals?.deptHead?.date || request.filingDate || request.timestamp,
                     remarks: request.approvals?.deptHead?.remarks || '',
-                    icon: '✓'
+                    icon: iconCheck
                 },
                 {
                     label: 'Recommended',
@@ -591,9 +598,9 @@
                     status: request.approvals?.pmOfficer?.status || 'Pending',
                     date: request.approvals?.pmOfficer?.date || '',
                     remarks: request.approvals?.pmOfficer?.remarks || '',
-                    icon: request.approvals?.pmOfficer?.status === 'Approved' ? '✓' : 
-                          request.approvals?.pmOfficer?.status === 'Appointment Set' ? '📅' :
-                          request.approvals?.pmOfficer?.status === 'Rejected' ? '✕' : '⏱'
+                    icon: request.approvals?.pmOfficer?.status === 'Approved' ? iconCheck : 
+                          request.approvals?.pmOfficer?.status === 'Appointment Set' ? iconCalendar :
+                          request.approvals?.pmOfficer?.status === 'Rejected' ? iconCross : iconClock
                 },
                 {
                     label: 'Final Approval',
@@ -601,16 +608,16 @@
                     status: request.approvals?.pmgsdDirector?.status || 'Pending',
                     date: request.approvals?.pmgsdDirector?.date || '',
                     remarks: request.approvals?.pmgsdDirector?.remarks || '',
-                    icon: request.approvals?.pmgsdDirector?.status === 'Approved' ? '✓' :
-                          request.approvals?.pmgsdDirector?.status === 'Appointment Set' ? '📅' :
-                          request.approvals?.pmgsdDirector?.status === 'Rejected' ? '✕' : '○'
+                    icon: request.approvals?.pmgsdDirector?.status === 'Approved' ? iconCheck :
+                          request.approvals?.pmgsdDirector?.status === 'Appointment Set' ? iconCalendar :
+                          request.approvals?.pmgsdDirector?.status === 'Rejected' ? iconCross : iconCircle
                 },
                 {
                     label: 'Document Stamping',
                     sublabel: '',
                     status: isStamped ? 'Approved' : 'Pending',
                     date: request.stampedDate || '',
-                    icon: isStamped ? '✓' : '○'
+                    icon: isStamped ? iconCheck : iconCircle
                 }
             ];
 
@@ -619,7 +626,6 @@
                 const isAppointment = step.status === 'Appointment Set';
                 const isRejected = step.status === 'Rejected';
                 const isInProgress = step.status === 'Pending' && index > 0 && steps[index - 1].status === 'Approved';
-                const isPending = step.status === 'Pending' && !isInProgress;
                 
                 let dotClass = 'bg-gray-200 text-gray-400';
                 let textClass = 'text-gray-400';
@@ -660,10 +666,11 @@
                     statusText = `<span class="text-xs font-semibold text-yellow-600">In Progress</span>`;
                 }
 
+                // FIX: Added left-[19px] to perfectly center the connecting line under the 40px icon.
                 return `
                     <div class="relative flex items-start space-x-4 pb-8 ${index === steps.length - 1 ? 'pb-0' : ''}">
-                        ${index < steps.length - 1 ? '<div class="absolute left-5 top-12 w-0.5 h-full bg-gray-200"></div>' : ''}
-                        <div class="timeline-dot ${dotClass} w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 z-10">
+                        ${index < steps.length - 1 ? '<div class="absolute left-[19px] top-10 w-0.5 h-full bg-gray-200"></div>' : ''}
+                        <div class="timeline-dot ${dotClass} w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 z-10">
                             ${step.icon}
                         </div>
                         <div class="flex-1 pt-1">
