@@ -396,7 +396,7 @@
 
                 <h2 class="text-2xl font-bold text-gray-700 mb-1 text-center px-6">Step 1: Request Letter</h2>
                 <p class="text-sm text-gray-500 italic text-center mb-2">
-                    INSERT YOUR REQUEST LETTER TOP-EDGE FIRST AND ALIGN YOUR DOCUMENT WITHIN THE BOUNDS AND CLICK CAPTURE.
+                    INSERT THE TOP OF YOUR LETTER INTO THE UPPER SLOT. ALIGN IT WITHIN THE FRAME AND CLICK CAPTURE.
                 </p>
                 
                 <div class="flex justify-center mb-4 gap-6" id="pageSelectionDiv">
@@ -1094,14 +1094,14 @@
             const btn = document.getElementById('stampingBtn');
             if (stampingStep === 1) {
                 title.innerText = "Step 1: Insert Request Letter";
-                desc.innerHTML = "Please insert your <strong>Form 1 (Request Letter)</strong> into the document slot.";
-                desc.innerHTML = "<strong>Please insert the document bottom-edge first.</strong>";
+                desc.innerHTML = "PLEASE INSERT YOUR <strong>FORM 1 (REQUEST LETTER)</strong> INTO THE LOWER SLOT .";
+                desc.innerHTML = "<strong>PLEASE INSERT THE DOCUMENT BOTTOM-EDGE FIRST.</strong>";
                 btn.innerText = "Insert Letter & Stamp";
                 btn.onclick = () => window.processStamping(1);
             } else if (stampingStep === 2) {
                 title.innerText = "Step 2: Insert Request Form";
-                desc.innerHTML = "Please insert your <strong>Form 2 (Request Form)</strong> into the document slot.";
-                desc.innerHTML = "<strong>Please insert the document bottom-edge first.</strong>";
+                desc.innerHTML = "PLEASE INSERT YOUR <strong>FORM 2 (REQUEST FORM)</strong> INTO THE LOWER SLOTt.";
+                desc.innerHTML = "<strong>PLEASE INSERT THE DOCUMENT BOTTOM-EDGE FIRST.</strong>";
                 btn.innerText = "Insert Form & Stamp";
                 btn.onclick = () => window.processStamping(2);
             }
