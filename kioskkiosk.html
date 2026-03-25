@@ -342,6 +342,15 @@
                 </div>
             </div>
 
+            <div id="customAlertModal" class="fixed inset-0 z-[999999] hidden items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-opacity">
+                <div class="bg-white p-6 rounded-xl shadow-2xl text-center max-w-md w-full border-t-8 border-[#15803d] flex flex-col items-center">
+                    <div id="customAlertIcon" class="mb-4"></div>
+                    <h4 id="customAlertTitle" class="text-2xl font-bold text-gray-800 mb-2">Notice</h4>
+                    <p id="customAlertMessage" class="text-gray-600 mb-6 text-lg whitespace-pre-wrap leading-relaxed"></p>
+                    <button class="kiosk-btn w-full" onclick="closeCustomAlert()">Acknowledge</button>
+                </div>
+            </div> 
+            
             <div id="confirmModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 p-4">
                 <div class="bg-white p-6 rounded-xl shadow-2xl text-center max-w-sm w-full border-t-8 border-green-600">
                     <h4 class="text-xl font-bold mb-2">Confirm Placement</h4>
@@ -961,6 +970,36 @@
 
         window.getDaysInMonth = function(year, month) { return new Date(year, month + 1, 0).getDate(); };
 
+        // --- CUSTOM ALERT SYSTEM ---
+        window.showCustomAlert = function(title, message, isError = false) {
+            const modal = document.getElementById('customAlertModal');
+            const titleEl = document.getElementById('customAlertTitle');
+            const messageEl = document.getElementById('customAlertMessage');
+            const iconEl = document.getElementById('customAlertIcon');
+            const modalBox = modal.querySelector('div.bg-white');
+        
+            titleEl.innerText = title;
+            messageEl.innerText = message;
+        
+            // Style dynamically based on error status
+            if (isError) {
+                modalBox.classList.replace('border-[#15803d]', 'border-red-600');
+                iconEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`;
+            } else {
+                modalBox.classList.replace('border-red-600', 'border-[#15803d]');
+                iconEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-[#15803d]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            }
+        
+            modal.style.display = 'flex';
+            modal.classList.remove('hidden');
+        };
+        
+        window.closeCustomAlert = function() {
+            const modal = document.getElementById('customAlertModal');
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+        };
+
         window.showView = function(id) {
             // 🚨 Always wipe data when returning to the Start Screen! 🚨
             if (id === 'landingView') {
@@ -987,9 +1026,10 @@
             const code = document.getElementById('verificationCodeInput').value.trim();
             const btnText = document.getElementById('verifyBtnText');
             const spinner = document.getElementById('verifySpinner');
-            if (!code) return alert("Please enter a code.");
             
-            btnText.innerText = "Checking Form 1 & Form 2 Approval...";
+            if (!code) return window.showCustomAlert("Input Required", "Please enter a tracking code to continue.", true);
+            
+            btnText.innerText = "Checking Database...";
             spinner.classList.remove('hidden');
             
             const requestRef = window.ref(window.db, 'requests/' + code);
@@ -997,27 +1037,52 @@
                 setTimeout(() => {
                     btnText.innerText = "Check Status";
                     spinner.classList.add('hidden');
+                    
                     if (snapshot.exists()) {
                         const data = snapshot.val();
+                        
+                        // --- NEW LOCKOUT LOGIC ---
+                        // If Firebase says this document has already been stamped, block them.
+                        if (data.stamped === true) {
+                            let stampDateStr = data.stampedDate ? new Date(data.stampedDate).toLocaleString() : "a previous date";
+                            window.showCustomAlert(
+                                "Already Stamped", 
+                                `Transaction code ${code} was already stamped on ${stampDateStr}.\n\nThis code cannot be reused. If you need new copies, please submit a new request.`, 
+                                true
+                            );
+
+                            // Clear the input box so it can't be clicked again
+                            document.getElementById('verificationCodeInput').value = '';
+                            
+                            window.showView('verificationView');
+                            return; // Stop the function here
+                        }
+                        // -------------------------
+        
                         document.getElementById('displayVerifiedCode').innerText = code;
                         const isForm1Approved = true; // Form 1 is assumed approved
                         const isForm2Approved = data.approvals?.pmgsdDirector?.status === "Approved";
+                        
                         if (isForm1Approved && isForm2Approved) {
                             stampingStep = 1;
                             window.updateStampingUI();
                             window.showView('stampingActionView');
                         } else {
-                            alert("❌ Forms are not fully approved yet.\nForm 1: " + (isForm1Approved ? "✅" : "❌") + "\nForm 2: " + (isForm2Approved ? "✅" : "❌"));
+                            window.showCustomAlert(
+                                "Approval Pending", 
+                                "Forms are not fully approved yet.\nForm 1: " + (isForm1Approved ? "✅" : "❌") + "\nForm 2: " + (isForm2Approved ? "✅" : "❌"), 
+                                true
+                            );
                             window.showView('verificationView');
                         }
                     } else {
-                        alert("❌ No reservation found with code: " + code);
+                        window.showCustomAlert("Not Found", "No reservation found with code: " + code, true);
                         window.showView('verificationView');
                     }
-                }, 1500);
+                }, 1500); // Small delay for UX
             }).catch((error) => {
                 console.error("Error checking status:", error);
-                alert("Network error. Please try again.");
+                window.showCustomAlert("Network Error", "Could not connect to the database. Please try again.", true);
                 btnText.innerText = "Check Status";
                 spinner.classList.add('hidden');
             });
@@ -1065,12 +1130,12 @@
                     }
                 } else {
                     const errorData = await response.json().catch(() => ({}));
-                    alert("Hardware error: " + (errorData.error || "The motor did not respond."));
+                    window.showCustomAlert("Hardware Error", (errorData.error || "The motor did not respond."), true);
                     btn.innerText = "Try Again";
                 }
             } catch (err) {
                 console.error("Hardware connection error:", err);
-                alert("Network error: Cannot reach the Raspberry Pi hardware controller.");
+                window.showCustomAlert("Network Error", "Cannot reach the Raspberry Pi hardware controller.", true);
                 btn.innerText = "Try Again";
             } finally {
                 // --- THIS PART FIXES THE STUCK BUTTON ---
@@ -1136,7 +1201,7 @@
 
         window.showEventDetailsFromCalendar = function(dateString) {
             const event = globalEvents.find(e => e.date === dateString);
-            if (event) alert(`📅 OCCUPIED\n\nEvent: ${event.title}\nTime: ${event.time}\nStatus: ${event.status.toUpperCase()}`);
+            if (event) window.showCustomAlert("Schedule Occupied", \Event: ${event.title}\nTime: ${event.time}\nStatus: ${event.status.toUpperCase()}`);`
         };
 
         window.setReservationDateAndShowUpload = function(dateString) {
@@ -1238,28 +1303,28 @@
         
             // 1. Validate Requestor Name
             if (!requestedBy) {
-                alert("⚠️ Required Field: Please enter your Name (Requested by) at the bottom of the form before proceeding.");
+                window.showCustomAlert("Missing Information", "Please enter your Name (Requested by) at the bottom of the form before proceeding.", true);
                 formView.querySelector('input[placeholder="[Enter Your Name]"]').focus();
                 return;
             }
             
             // 2. Validate Department
             if (!department) {
-                alert("⚠️ Required Field: Please enter your Department before proceeding.");
+                window.showCustomAlert("Missing Information", "Please enter your Department before proceeding.", true);
                 formView.querySelector('input[placeholder="Department"]').focus();
                 return;
             }
         
             // 3. Validate Activity Name
             if (!activityName) {
-                alert("⚠️ Required Field: Please enter the Activity Name/Title/Purpose before proceeding.");
+                window.showCustomAlert("Please enter the Activity Name/Title/Purpose before proceeding.", true);
                 formView.querySelector('input[placeholder="Activity Name/Title/Purpose"]').focus();
                 return;
             }
         
             // 4. Validate Time
             if (!time) {
-                alert("⚠️ Required Field: Please enter the Time of your activity before proceeding.");
+                window.showCustomAlert("Please enter the Time of your activity before proceeding.", true);
                 formView.querySelector('input[type="time"]').focus();
                 return;
             }
@@ -1268,7 +1333,7 @@
             const venueSection = formView.querySelectorAll('.border-t-0')[0];
             const venueCheckboxes = venueSection.querySelectorAll('input[type="checkbox"]:checked');
             if (venueCheckboxes.length === 0) {
-                alert("⚠️ Required Field: Please select at least one Venue (e.g., Gym Stage, Classroom) for your reservation.");
+                window.showCustomAlert("Please select at least one Venue (e.g., Gym Stage, Classroom) for your reservation.", true);
                 return;
             }
         
