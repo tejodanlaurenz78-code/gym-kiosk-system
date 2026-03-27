@@ -127,7 +127,7 @@
             background-color: #cbd5e1; 
             padding: 8px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-            z-index: 99999; 
+            z-index: 1000; 
             border-radius: 10px;
             border: 3px solid var(--pnc-blue);
             display: none; 
@@ -174,6 +174,25 @@
             background: linear-gradient(135deg, transparent 50%, #475569 50%);
             border-bottom-right-radius: 6px;
             touch-action: none;
+        }
+
+        #customAlertModal {
+            z-index: 2000 !important; 
+        }
+
+        /* The Confirmation Modal (Step 2 of stamping) */
+        #confirmModal {
+            z-index: 1500 !important;
+        }
+
+        /* Full-screen image preview (from Step 1) */
+        #imageModal {
+            z-index: 1800 !important;
+        }
+
+        /* Ensure the flash message is also visible over the keyboard */
+        #flashMessage {
+            z-index: 2100 !important;
         }
 
         /* --- KEYBOARD LIVE PREVIEW --- */
@@ -984,8 +1003,14 @@
 
         window.getDaysInMonth = function(year, month) { return new Date(year, month + 1, 0).getDate(); };
 
-        // --- CUSTOM ALERT SYSTEM ---
+      
         window.showCustomAlert = function(title, message, isError = false) {
+            // 1. FORCE HIDE THE KEYBOARD IMMEDIATELY
+            // This ensures the user sees the full alert and the 'Acknowledge' button
+            if (typeof window.hideVirtualKeyboard === "function") {
+                window.hideVirtualKeyboard();
+            }
+        
             const modal = document.getElementById('customAlertModal');
             const titleEl = document.getElementById('customAlertTitle');
             const messageEl = document.getElementById('customAlertMessage');
@@ -995,13 +1020,12 @@
             titleEl.innerText = title;
             messageEl.innerText = message;
         
-            // Style dynamically based on error status
             if (isError) {
                 modalBox.classList.replace('border-[#15803d]', 'border-red-600');
-                iconEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`;
+                iconEl.innerHTML = `<svg ... >[Error Icon Content]</svg>`;
             } else {
                 modalBox.classList.replace('border-red-600', 'border-[#15803d]');
-                iconEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-[#15803d]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+                iconEl.innerHTML = `<svg ... >[Notice Icon Content]</svg>`;
             }
         
             modal.style.display = 'flex';
@@ -1124,21 +1148,25 @@
         // --- UPDATED STAMPING INTEGRATION ---
         window.processStamping = async function(step) {
             const btn = document.getElementById('stampingBtn');
-            const originalText = btn.innerText; // Store "Insert Letter & Stamp" or similar
+            const originalText = btn.innerText; 
             
             btn.innerText = "Stamping Motor Running...";
             btn.disabled = true;
         
             try {
+                // THE FIX: Added a secret API Key to the headers
                 const response = await fetch('http://192.168.100.57:5000/api/trigger_stamp', {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': 'PNC-Kiosk-Secret-Key-2024' // Must match the Python backend exactly
+                    }
                 });
         
                 if (response.ok) {
                     if (step === 1) {
                         stampingStep = 2;
                         window.updateStampingUI();
-                        // Button is re-enabled by updateStampingUI() or manually below
                     } else {
                         window.simulateStampingProcess(); 
                     }
@@ -1152,11 +1180,7 @@
                 window.showCustomAlert("Network Error", "Cannot reach the Raspberry Pi hardware controller.", true);
                 btn.innerText = "Try Again";
             } finally {
-                // --- THIS PART FIXES THE STUCK BUTTON ---
-                // We re-enable the button so it's ready for the next attempt or next user.
                 btn.disabled = false;
-                
-                // If it wasn't a success that changed the view, restore the text
                 if (btn.innerText === "Stamping Motor Running...") {
                     btn.innerText = originalText;
                 }
@@ -1240,11 +1264,11 @@
             for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
             for (let i = 1; i <= daysInMonth; i++) {
                 // FIX: Manually format date to avoid TimeZone shifts caused by toISOString()
+                // FIX: Manually format date to avoid TimeZone shifts
                 const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 
-                // We still need dayDate for the 'isCurrentDay' logic if you used it for other logic, 
-                // but for matching the event, strictly use dateString above.
-                const event = globalEvents.find(e => e.date === dateString);
+                // FIX: Use .startsWith() to ignore any time suffixes (like T00:00:00.000Z) saved in Firebase
+                const event = globalEvents.find(e => e.date && e.date.startsWith(dateString));
                 const isCurrentDay = (i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear());
                 let dayClass = 'readonly-day border border-gray-200';
                 let statusText = 'Available';
@@ -1269,8 +1293,9 @@
                 
                 // FIX: Manually format date to avoid TimeZone shifts
                 const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                
-                const event = globalEvents.find(e => e.date === dateString);
+
+                // FIX: Use .startsWith() to ignore any time suffixes (like T00:00:00.000Z) saved in Firebase
+                const event = globalEvents.find(e => e.date && e.date.startsWith(dateString));
                 const isEligible = dayDate >= minReservationDate;
                 const isCurrentDay = (i === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear());
                 let dayClass = 'bg-white border hover:bg-green-50';
@@ -1349,6 +1374,40 @@
             if (venueCheckboxes.length === 0) {
                 window.showCustomAlert("Missing Information", "Please select at least one Venue (e.g., Gym Stage, Classroom) for your reservation.", true);
                 return;
+            }
+
+
+            // 6. Validate Dependent Inputs (The "Ghost" Fix)
+            let missingDetails = false;
+            // Find all checkboxes that the user checked
+            const checkedBoxes = formView.querySelectorAll('input[type="checkbox"]:checked');
+            
+            checkedBoxes.forEach(cb => {
+                const parent = cb.parentElement;
+                // Find any text or number inputs sitting right next to the checkbox
+                const dependentInputs = parent.querySelectorAll('input[type="text"], input[type="number"]');
+                
+                dependentInputs.forEach(input => {
+                    if (input.value.trim() === '') {
+                        missingDetails = true;
+                        // Add a red border and background to highlight the missing field
+                        input.classList.add('border-red-500', 'bg-red-50', 'border-b-2');
+                        
+                        // Remove the error styling once the user starts typing
+                        input.addEventListener('input', () => {
+                            input.classList.remove('border-red-500', 'bg-red-50', 'border-b-2');
+                        }, { once: true });
+                    }
+                });
+            });
+        
+            if (missingDetails) {
+                window.showCustomAlert(
+                    "Missing Details", 
+                    "You selected an item (like 'Others', 'Classroom', or Equipment) but left the quantity or description blank.\n\nPlease fill in the highlighted red fields.", 
+                    true
+                );
+                return; // Stop the submission
             }
         
             // If all checks pass, proceed to the next view
@@ -1576,6 +1635,43 @@
                 window.renderCalendar();
                 window.renderReadOnlyCalendar();
             });
+
+            // --- ADD PART 2 RIGHT HERE ---
+            // The "Ghost" Input Locker (Real-Time Checkbox Listeners)
+            const allFormCheckboxes = document.querySelectorAll('#formView input[type="checkbox"]');
+            
+            allFormCheckboxes.forEach(cb => {
+                const parent = cb.parentElement;
+                const dependentInputs = parent.querySelectorAll('input[type="text"], input[type="number"]');
+                
+                // 1. Initially disable text boxes if the checkbox isn't checked (ignoring the auto-selected Gym)
+                if (!cb.checked && cb.id !== 'gymCheckbox') {
+                    dependentInputs.forEach(input => {
+                        input.disabled = true;
+                        input.classList.add('input-disabled');
+                    });
+                }
+                
+                // 2. Add a listener to toggle the text boxes when the user clicks the checkbox
+                cb.addEventListener('change', function() {
+                    dependentInputs.forEach(input => {
+                        if (this.checked) {
+                            // Unlock the field
+                            input.disabled = false;
+                            input.classList.remove('input-disabled');
+                            input.focus(); // Automatically pop up the virtual keyboard!
+                        } else {
+                            // Lock the field and wipe out whatever they typed
+                            input.disabled = true;
+                            input.value = ''; 
+                            input.classList.add('input-disabled');
+                            input.classList.remove('border-red-500', 'bg-red-50', 'border-b-2'); // Clear error styling
+                        }
+                    });
+                });
+            });
+            // --- END OF PART 2 ---
+
         };
         
         window.debugFirebase = function() {
@@ -1618,7 +1714,12 @@
                 }
         
                 // Show the Preview image
+                // FIX: Clear the old image from memory before creating a new one
+                if (previewImg.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(previewImg.src);
+                }
                 previewImg.src = URL.createObjectURL(pendingCaptureBlob);
+                
                 previewContainer.classList.remove('hidden');
                 
                 // Setup UI for the "Review" phase
@@ -1681,8 +1782,16 @@
             }
         };
        
+        // Add a global lock flag right above the function to prevent double-execution
+        window.isConfirmingUpload = false;
+        
         window.confirmAndUpload = async function() {
-            if (!pendingCaptureBlob) return;
+            // 1. THE FIX: Instant asynchronous lock
+            // If there is no image, OR if it's already uploading, stop immediately.
+            if (!pendingCaptureBlob || window.isConfirmingUpload) return;
+            
+            // Lock the function so subsequent clicks are ignored
+            window.isConfirmingUpload = true;
         
             const previewActions = document.getElementById('previewActions');
             const uploadLoading = document.getElementById('uploadLoading');
@@ -1690,6 +1799,16 @@
             const previewImageWrapper = document.getElementById('previewImageWrapper');
             const nextBtn = document.getElementById('fileNextBtn');
         
+            // 2. THE FIX: Physically disable the buttons so they cannot be clicked again
+            const actionButtons = previewActions.querySelectorAll('button');
+            actionButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.style.pointerEvents = 'none'; // Extra touchscreen safety
+            });
+            // Change text for instant visual feedback before it hides
+            if (actionButtons[0]) actionButtons[0].innerText = "Processing...";
+        
+            // Now hide the container
             previewActions.classList.add('hidden');
             previewActions.classList.remove('flex');
             uploadLoading.classList.remove('hidden');
@@ -1712,6 +1831,8 @@
                 previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black w-[200px]";
                 nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 nextBtn.disabled = false;
+                
+                window.isConfirmingUpload = false; // Release the lock
                 return;
             }
         
@@ -1726,6 +1847,12 @@
                 const validationResponse = await fetch('http://192.168.100.57:5000/api/upload_scan', {
                     method: 'POST',
                     body: formData
+                    headers: {
+                        'X-API-Key': 'PNC-Kiosk-Secret-Key-2024' 
+                        // Note: Do NOT set 'Content-Type' manually here. 
+                        // The browser automatically sets the correct multipart boundary for FormData.
+                    }
+                            
                 });
         
                 const validationData = await validationResponse.json();
@@ -1754,8 +1881,18 @@
                 if (!validationResponse.ok || validationData.status === "error") {
                     console.error("Validation Failed:", validationData);
                     uploadLoading.innerHTML = `<span class="text-red-600 font-bold">Document Rejected ❌<br>${validationData.message}</span>`;
+                    
+                    // Reset buttons so user can try again
+                    actionButtons.forEach(btn => {
+                        btn.disabled = false;
+                        btn.style.pointerEvents = 'auto';
+                    });
+                    if (actionButtons[0]) actionButtons[0].innerText = "Confirm & Upload";
+                    
                     previewActions.classList.remove('hidden');
                     previewActions.classList.add('flex');
+                    
+                    window.isConfirmingUpload = false; // Release the lock
                     return;
                 }
         
@@ -1769,6 +1906,7 @@
                     uploadLoading.innerText = `Valid Code Found: ${foundCode}. Transitioning to Page 2...`;
                     setTimeout(() => {
                         window.prepareForPage2();
+                        window.isConfirmingUpload = false; // Release the lock after prep
                     }, 2500);
                 } else {
                     savedBlob1 = pendingCaptureBlob; // Save single page
@@ -1790,14 +1928,26 @@
                     previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black w-[200px]";
                     nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                     nextBtn.disabled = false;
+                    
+                    window.isConfirmingUpload = false; // Release the lock
                 }
         
             } catch (err) {
                 console.error("Error during upload/validation:", err);
                 window.showCustomAlert("Validation Failed", "Please check your network connection to the camera server.", true);
                 uploadLoading.classList.add('hidden');
+                
+                // Reset buttons so user can try again
+                actionButtons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.style.pointerEvents = 'auto';
+                });
+                if (actionButtons[0]) actionButtons[0].innerText = "Confirm & Upload";
+                
                 previewActions.classList.remove('hidden');
                 previewActions.classList.add('flex');
+                
+                window.isConfirmingUpload = false; // Release the lock
             }
         };
     </script>
@@ -1965,6 +2115,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
 
