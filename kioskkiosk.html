@@ -511,7 +511,19 @@
                         <div class="flex flex-wrap gap-4">
                             <div class="flex-1"><label>Transaction Number:</label><input type="text" class="line-input" placeholder="(Auto-Generated)" readonly></div>
                             <div class="flex-1"><label>Date of Filing:</label><input type="date" id="filingDateInput" class="line-input input-disabled" readonly></div>
-                            <div class="flex-1"><label>Department:<span class="text-red-600 font-bold ml-1">*</span></label><input type="text" class="line-input" placeholder="Department"></div>
+                            <div class="flex-1">
+                                <label>Department:<span class="text-red-600 font-bold ml-1">*</span></label>
+                                <select id="departmentSelect" class="line-input cursor-pointer bg-transparent appearance-none">
+                                    <option value="" disabled selected>Select your Department...</option>
+                                    <option value="COLLEGE OF ENGINEERING">COLLEGE OF ENGINEERING</option>
+                                    <option value="COLLEGE OF COMPUTING STUDIES">COLLEGE OF COMPUTING STUDIES</option>
+                                    <option value="COLLEGE HEALTH AND SCIENCE">COLLEGE HEALTH AND SCIENCE</option>
+                                    <option value="COLLEGE OF ALLIED SCIENCE">COLLEGE OF ALLIED SCIENCE</option>
+                                    <option value="COLLEGE OF BUSINESS AND ADMINISTRATION">COLLEGE OF BUSINESS AND ADMINISTRATION</option>
+                                    <option value="COLLEGE OF EDUCATION">COLLEGE OF EDUCATION</option>
+                                    <option value="NON-ACADEMIC ORGANIZATION">NON-ACADEMIC ORGANIZATION</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="flex flex-wrap gap-4">
                             <div class="flex-1"><label>Activity Date (Pre-selected):</label><input type="date" id="activityDateInput" class="line-input input-disabled" readonly></div>
@@ -900,10 +912,12 @@
 
             // 3. Reset Step 2 (Form Inputs)
             // Select literally every input in the form
-            const formInputs = document.querySelectorAll('#formView input, #formView textarea');
+            const formInputs = document.querySelectorAll('#formView input, #formView textarea, #formView select');
             formInputs.forEach(input => {
                 if (input.type === 'checkbox' || input.type === 'radio') {
                     input.checked = false;
+                } else if (input.tagName.toLowerCase() === 'select') {
+                    input.selectedIndex = 0; // NEW: Resets dropdowns to the first option
                 } else if (input.type !== 'button' && input.type !== 'submit') {
                     input.value = ''; 
                 }
@@ -1309,9 +1323,23 @@
             }
             
             // 2. Validate Department
+            // Grab the values from the essential text inputs
+            const requestedBy = formView.querySelector('input[placeholder="[Enter Your Name]"]')?.value.trim();
+            const department = document.getElementById('departmentSelect')?.value; // <-- UPDATED
+            const activityName = formView.querySelector('input[placeholder="Activity Name/Title/Purpose"]')?.value.trim();
+            const time = formView.querySelector('input[type="time"]')?.value;
+            
+            // 1. Validate Requestor Name
+            if (!requestedBy) {
+                window.showCustomAlert("Missing Information", "Please enter your Name (Requested by) at the bottom of the form before proceeding.", true);
+                formView.querySelector('input[placeholder="[Enter Your Name]"]').focus();
+                return;
+            }
+            
+            // 2. Validate Department <-- UPDATED
             if (!department) {
-                window.showCustomAlert("Missing Information", "Please enter your Department before proceeding.", true);
-                formView.querySelector('input[placeholder="Department"]').focus();
+                window.showCustomAlert("Missing Information", "Please select your Department from the dropdown menu before proceeding.", true);
+                document.getElementById('departmentSelect').focus();
                 return;
             }
         
@@ -1381,7 +1409,7 @@
             
             // --- 1. Scrape Basic Info ---
             const activityName = formView.querySelector('input[placeholder="Activity Name/Title/Purpose"]')?.value || "Gym Reservation";
-            const department = formView.querySelector('input[placeholder="Department"]')?.value || "";
+            const department = document.getElementById('departmentSelect')?.value || "";
             const activityDate = formView.querySelector('#activityDateInput')?.value || selectedReservationDate;
             const time = formView.querySelector('input[type="time"]')?.value || "09:00";
             const internalParticipants = formView.querySelector('input[placeholder="Internal"]')?.value || "0";
