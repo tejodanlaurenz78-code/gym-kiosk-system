@@ -1892,20 +1892,7 @@
                 }, { capture: true }); 
             });
 
-            // --- BULLETPROOF HIDE LOGIC ---
-            ['pointerdown', 'touchstart', 'mousedown'].forEach(evt => {
-                document.addEventListener(evt, (e) => {
-                    const kbWrapper = document.getElementById('keyboard-wrapper');
-                    if (kbWrapper && kbWrapper.classList.contains('show')) {
-                        const isInput = (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA');
-                        const isInsideKeyboard = kbWrapper.contains(e.target);
-                        
-                        if (!isInput && !isInsideKeyboard) {
-                            window.hideVirtualKeyboard();
-                        }
-                    }
-                }, { capture: true });
-            });
+            
 
             window.hideVirtualKeyboard = function() {
                 const wrapper = document.getElementById('keyboard-wrapper');
