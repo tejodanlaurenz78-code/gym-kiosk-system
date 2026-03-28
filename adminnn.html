@@ -43,8 +43,23 @@
             width: 100%;
             padding-left: 0.25rem;
             font-weight: bold;
-            min-height: 24px;
-            display: inline-block;
+            min-height: 20px;
+            display: block; /* Changed from inline-block to prevent overlap */
+            line-height: 1.2;
+        }
+
+        /* Specific fix for the X marks */
+        .check-box-fixed {
+            width: 16px;
+            height: 16px;
+            border: 1px solid black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 12px;
+            background-color: #f3f4f6; /* Light gray to help visibility in PDF */
+            flex-shrink: 0;
         }
         .border-black { border-color: black; }
         .accent-black { accent-color: black; }
@@ -1225,9 +1240,8 @@
 
             // 🚨 PDF-SAFE CHECKBOX (Fixes html2canvas disappearing bug)
             const checkIcon = (condition) => condition 
-                ? `<div class="w-4 h-4 border border-black flex items-center justify-center font-bold text-xs bg-gray-200 shrink-0">X</div>` 
-                : `<div class="w-4 h-4 border border-black shrink-0"></div>`;
-
+                ? `<div class="check-box-fixed">X</div>` 
+                : `<div class="check-box-fixed"></div>`;
             // 3. HTML Template (Combined your format + the anti-overlap locks)
             return `
                 <div class="bg-white p-8 border border-gray-300 relative text-black mx-auto" style="width: 1000px; min-width: 1000px; max-width: 1000px; box-sizing: border-box;">
@@ -1246,33 +1260,17 @@
 
                     <div class="form-title text-black bg-gray-300" style="border: none;">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
 
-                    <div class="border-b border-black p-4 space-y-4 text-sm text-black">
-                        <div class="flex flex-wrap gap-4">
-                            <div class="flex-1">
-                                <label class="font-normal text-gray-600">Transaction Number:</label>
-                                <div class="read-only-field">${val(request.id)}</div>
-                            </div>
-                            <div class="flex-1">
-                                <label class="font-normal text-gray-600">Date of Filing:</label>
-                                <div class="read-only-field">${formatDate(request.filingDate)}</div>
-                            </div>
-                            <div class="flex-1">
-                                <label class="font-normal text-gray-600">Department:</label>
-                                <div class="read-only-field">${val(request.department)}</div>
+                    <div class="border border-black border-t-0 flex w-full text-black">
+                        <div class="font-bold p-3 bg-gray-50 border-r border-black" style="width: 180px; min-width: 180px; flex-shrink: 0; box-sizing: border-box;">
+                            <p>Equipment Reservation</p>
+                            <p class="mt-4 text-xs font-bold">Set-up Details:</p>
+                            <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
+                                <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black pb-1 align-bottom">${formatDate(request.ingressDate)}</span></p>
+                                <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black pb-1 align-bottom">${val(request.ingressTime)}</span></p>
+                                <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black pb-1 align-bottom">${formatDate(request.egressDate)}</span></p>
+                                <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black pb-1 align-bottom">${val(request.egressTime)}</span></p>
                             </div>
                         </div>
-                        
-                        <div class="flex flex-wrap gap-4">
-                            <div class="flex-1">
-                                <label class="font-normal text-gray-600">Activity Date:</label>
-                                <div class="read-only-field">${formatDate(request.activityDate)}</div>
-                            </div>
-                            <div class="flex-1">
-                                <label class="font-normal text-gray-600">Time:</label>
-                                <div class="read-only-field">${val(request.time)}</div>
-                            </div>
-                        </div>
-
                         <div>
                             <label class="font-normal text-gray-600">Activity Name/Title/Purpose:</label>
                             <div class="read-only-field">${val(request.activityName)}</div>
