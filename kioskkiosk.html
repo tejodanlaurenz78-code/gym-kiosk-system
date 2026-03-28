@@ -864,16 +864,15 @@
             selectedReservationDate = null;
             globalSelectedPersonnel = {};
             globalScannedDocumentUrl = null;
-            globalScannedDocumentUrl2 = null; // NEW
+            globalScannedDocumentUrl2 = null; 
             pendingCaptureBlob = null; 
-            savedBlob1 = null;                // NEW
-            savedBlob2 = null;                // NEW
+            savedBlob1 = null;                
+            savedBlob2 = null;                
             stampingStep = 0;
-            totalPagesToCapture = 1;          // NEW
-            currentPageCapturing = 1;         // NEW
+            totalPagesToCapture = 1;          
+            currentPageCapturing = 1;         
         
             // 2. Reset Step 1 (Camera & UI)
-            // NEW: Reset UI Toggle for multiple pages
             const pageRadios = document.getElementsByName('pageCount');
             if(pageRadios.length > 0) pageRadios[0].checked = true;
             
@@ -891,7 +890,6 @@
                 previewActions.classList.add('hidden');
                 previewActions.classList.remove('flex');
 
-                // 🚨 FIX: Un-stuck the preview action buttons 🚨
                 const actionButtons = previewActions.querySelectorAll('button');
                 if (actionButtons.length >= 2) {
                     actionButtons[0].innerText = "Confirm & Upload";
@@ -903,9 +901,7 @@
                 });
             }
             
-            // 🚨 FIX: Reset the double-click prevention lock 🚨
             window.isConfirmingUpload = false;
-                
         
             const uploadLoading = document.getElementById('uploadLoading');
             if (uploadLoading) uploadLoading.classList.add('hidden');
@@ -925,9 +921,8 @@
             if (captureBtnText) captureBtnText.innerText = "Capture Document";
             
             const previewImg = document.getElementById('scanPreviewImage');
-            if (previewImg) previewImg.src = ""; // Erases the old photo completely
+            if (previewImg) previewImg.src = "";
 
-            // Wake up camera
             const camStream = document.getElementById('kioskCameraStream');
             if (camStream) {
                 camStream.style.display = 'block'; 
@@ -935,7 +930,6 @@
                 camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
             }
 
-            // Reset green success border
             const previewStatusText = document.getElementById('previewStatusText');
             if (previewStatusText) {
                 previewStatusText.innerText = "Review Captured Image";
@@ -946,7 +940,6 @@
                 previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-blue-500 shadow-lg bg-black w-[200px] cursor-pointer group transition-all hover:border-blue-300";
             }
 
-            // Reset OCR text
             const ocrContainer = document.getElementById('ocrTextContainer');
             if (ocrContainer) {
                 ocrContainer.classList.add('hidden');
@@ -956,29 +949,26 @@
             if (ocrDisplay) ocrDisplay.value = '';
 
             // 3. Reset Step 2 (Form Inputs)
-            // Select literally every input in the form
             const formInputs = document.querySelectorAll('#formView input, #formView textarea, #formView select');
             formInputs.forEach(input => {
                 if (input.type === 'checkbox' || input.type === 'radio') {
                     input.checked = false;
                 } else if (input.tagName.toLowerCase() === 'select') {
-                    input.selectedIndex = 0; // NEW: Resets dropdowns to the first option
+                    input.selectedIndex = 0; 
                 } else if (input.type !== 'button' && input.type !== 'submit') {
                     input.value = ''; 
                 }
             });
 
-            // NEW: Ensure the mandatory Gym checkbox stays checked after a reset
             const gymCb = document.getElementById('gymCheckbox');
             if (gymCb) gymCb.checked = true;
 
-            // 🚨 CRITICAL FIX: Re-disable all conditionally enabled text fields! 🚨
             const dependentInputs = ['classroomNum', 'labNum', 'otherVenue', 'chairCount', 'chairType', 'tableCount', 'tableType', 'micCount', 'otherEquip', 'techCount', 'hkCount'];
             dependentInputs.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.value = '';
-                    el.disabled = true; // Locks the inputs until checked again
+                    el.disabled = true; 
                 }
             });
 
