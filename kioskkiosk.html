@@ -1699,7 +1699,14 @@
         
             try {
                 console.log("Attempting to fetch high-res snapshot from Pi...");
-                const response = await fetch('http://192.168.100.57:5000/api/snapshot?t=' + new Date().getTime(), { cache: 'no-store' });
+                
+                // THE FIX: Added X-API-Key to the snapshot request
+                const response = await fetch('http://192.168.100.57:5000/api/snapshot?t=' + new Date().getTime(), { 
+                    cache: 'no-store',
+                    headers: {
+                        'X-API-Key': 'PNC-Kiosk-Secret-Key-2024'
+                    }
+                });
                 
                 if (!response.ok) {
                     throw new Error(`Camera capture failed with status: ${response.status}`);
@@ -1713,8 +1720,7 @@
                     camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
                 }
         
-                // Show the Preview image
-                // FIX: Clear the old image from memory before creating a new one
+                // THE FIX: Clear the old image from memory to prevent RAM crashes
                 if (previewImg.src.startsWith('blob:')) {
                     URL.revokeObjectURL(previewImg.src);
                 }
@@ -1725,7 +1731,7 @@
                 // Setup UI for the "Review" phase
                 previewStatusText.innerText = "Review Captured Image";
                 previewStatusText.className = "text-blue-700 font-bold mb-2 flex items-center justify-center gap-1 text-sm";
-                previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-blue-500 shadow-lg bg-black w-[200px]";
+                previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-blue-500 shadow-lg bg-black w-[200px] cursor-pointer group transition-all hover:border-blue-300";
         
                 // Hide Capture button, show Confirm/Retake buttons
                 captureBtn.classList.add('hidden');
@@ -1782,15 +1788,12 @@
             }
         };
        
-        // Add a global lock flag right above the function to prevent double-execution
+        // Global lock flag to prevent double-execution
         window.isConfirmingUpload = false;
-        
+
         window.confirmAndUpload = async function() {
-            // 1. THE FIX: Instant asynchronous lock
-            // If there is no image, OR if it's already uploading, stop immediately.
+            // THE FIX: Instant asynchronous lock
             if (!pendingCaptureBlob || window.isConfirmingUpload) return;
-            
-            // Lock the function so subsequent clicks are ignored
             window.isConfirmingUpload = true;
         
             const previewActions = document.getElementById('previewActions');
@@ -1799,23 +1802,21 @@
             const previewImageWrapper = document.getElementById('previewImageWrapper');
             const nextBtn = document.getElementById('fileNextBtn');
         
-            // 2. THE FIX: Physically disable the buttons so they cannot be clicked again
+            // Disable buttons physically so they cannot be double-tapped
             const actionButtons = previewActions.querySelectorAll('button');
             actionButtons.forEach(btn => {
                 btn.disabled = true;
-                btn.style.pointerEvents = 'none'; // Extra touchscreen safety
+                btn.style.pointerEvents = 'none';
             });
-            // Change text for instant visual feedback before it hides
             if (actionButtons[0]) actionButtons[0].innerText = "Processing...";
         
-            // Now hide the container
             previewActions.classList.add('hidden');
             previewActions.classList.remove('flex');
             uploadLoading.classList.remove('hidden');
         
-            // --- NEW: SKIP OCR IF WE ARE ON PAGE 2 ---
+            // --- SKIP OCR IF ON PAGE 2 ---
             if (currentPageCapturing === 2) {
-                savedBlob2 = pendingCaptureBlob; // Save the second page
+                savedBlob2 = pendingCaptureBlob; 
                 uploadLoading.classList.add('hidden');
                 previewStatusText.innerHTML = `
                     <div class="flex flex-col items-center">
@@ -1832,7 +1833,7 @@
                 nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 nextBtn.disabled = false;
                 
-                window.isConfirmingUpload = false; // Release the lock
+                window.isConfirmingUpload = false; 
                 return;
             }
         
@@ -1844,15 +1845,13 @@
                 const formData = new FormData();
                 formData.append('document', pendingCaptureBlob, 'request_letter.jpg');
         
+                // THE FIX: Adding the secret API Key for uploads
                 const validationResponse = await fetch('http://192.168.100.57:5000/api/upload_scan', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
                     headers: {
-                        'X-API-Key': 'PNC-Kiosk-Secret-Key-2024' 
-                        // Note: Do NOT set 'Content-Type' manually here. 
-                        // The browser automatically sets the correct multipart boundary for FormData.
+                        'X-API-Key': 'PNC-Kiosk-Secret-Key-2024'
                     }
-                            
                 });
         
                 const validationData = await validationResponse.json();
@@ -1878,11 +1877,13 @@
                     pendingCaptureBlob = new Blob([byteArray], {type: 'image/jpeg'});
                 }
         
+                // Handles 400 Bad Request, 401 Unauthorized, and 500 Server Errors gracefully
                 if (!validationResponse.ok || validationData.status === "error") {
                     console.error("Validation Failed:", validationData);
-                    uploadLoading.innerHTML = `<span class="text-red-600 font-bold">Document Rejected ❌<br>${validationData.message}</span>`;
                     
-                    // Reset buttons so user can try again
+                    // Displays the exact error message your Python script returned (e.g., "Image is too blurry")
+                    uploadLoading.innerHTML = `<span class="text-red-600 font-bold">Document Rejected ❌<br>${validationData.message || "Unknown error occurred."}</span>`;
+                    
                     actionButtons.forEach(btn => {
                         btn.disabled = false;
                         btn.style.pointerEvents = 'auto';
@@ -1892,7 +1893,7 @@
                     previewActions.classList.remove('hidden');
                     previewActions.classList.add('flex');
                     
-                    window.isConfirmingUpload = false; // Release the lock
+                    window.isConfirmingUpload = false;
                     return;
                 }
         
@@ -1900,16 +1901,16 @@
                 const foundCode = validationData.code; 
                 console.log("Validation Success! Found Code:", foundCode);
         
-                // --- NEW: MULTI-PAGE TRANSITION LOGIC ---
+                // MULTI-PAGE TRANSITION LOGIC
                 if (totalPagesToCapture === 2) {
-                    document.getElementById('pageSelectionDiv').classList.add('hidden'); // Lock the toggle
+                    document.getElementById('pageSelectionDiv').classList.add('hidden'); 
                     uploadLoading.innerText = `Valid Code Found: ${foundCode}. Transitioning to Page 2...`;
                     setTimeout(() => {
                         window.prepareForPage2();
-                        window.isConfirmingUpload = false; // Release the lock after prep
+                        window.isConfirmingUpload = false; 
                     }, 2500);
                 } else {
-                    savedBlob1 = pendingCaptureBlob; // Save single page
+                    savedBlob1 = pendingCaptureBlob; 
                     uploadLoading.classList.add('hidden');
                     previewStatusText.innerHTML = `
                         <div class="flex flex-col items-center">
@@ -1925,11 +1926,11 @@
                         </div>
                     `;
                     previewStatusText.className = "mb-3"; 
-                    previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black w-[200px]";
+                    previewImageWrapper.className = "relative rounded-lg overflow-hidden border-2 border-green-500 shadow-lg bg-black w-[200px] cursor-pointer group transition-all hover:border-green-300";
                     nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                     nextBtn.disabled = false;
                     
-                    window.isConfirmingUpload = false; // Release the lock
+                    window.isConfirmingUpload = false; 
                 }
         
             } catch (err) {
@@ -1937,7 +1938,6 @@
                 window.showCustomAlert("Validation Failed", "Please check your network connection to the camera server.", true);
                 uploadLoading.classList.add('hidden');
                 
-                // Reset buttons so user can try again
                 actionButtons.forEach(btn => {
                     btn.disabled = false;
                     btn.style.pointerEvents = 'auto';
@@ -1947,9 +1947,9 @@
                 previewActions.classList.remove('hidden');
                 previewActions.classList.add('flex');
                 
-                window.isConfirmingUpload = false; // Release the lock
+                window.isConfirmingUpload = false; 
             }
-        };
+        }; 
     </script>
 
     <script>
