@@ -828,6 +828,17 @@
             previewActions.classList.add('hidden');
             previewActions.classList.remove('flex');
             
+            // 🚨 FIX: Un-stuck the buttons for Page 2's review screen 🚨
+            const actionButtons = previewActions.querySelectorAll('button');
+            if (actionButtons.length >= 2) {
+                actionButtons[0].innerText = "Confirm & Upload";
+                actionButtons[1].innerText = "Retake Document";
+            }
+            actionButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.style.pointerEvents = 'auto';
+            });
+            
             const captureBtn = document.getElementById('captureBtn');
             captureBtn.classList.remove('hidden');
             captureBtn.disabled = false;
@@ -879,6 +890,22 @@
             if (previewActions) {
                 previewActions.classList.add('hidden');
                 previewActions.classList.remove('flex');
+
+                // 🚨 FIX: Un-stuck the preview action buttons 🚨
+                const actionButtons = previewActions.querySelectorAll('button');
+                if (actionButtons.length >= 2) {
+                    actionButtons[0].innerText = "Confirm & Upload";
+                    actionButtons[1].innerText = "Retake Document";
+                }
+                actionButtons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.style.pointerEvents = 'auto';
+                });
+            }
+            
+            // 🚨 FIX: Reset the double-click prevention lock 🚨
+            window.isConfirmingUpload = false;
+                
             }
         
             const uploadLoading = document.getElementById('uploadLoading');
@@ -1750,17 +1777,13 @@
             // Clear the pending image
             pendingCaptureBlob = null;
             
-            // --- NEW FIX: Force the live camera feed to refresh and reset its zoom/crop ---
+            // Force the live camera feed to refresh and reset its zoom/crop
             const camStream = document.getElementById('kioskCameraStream');
             if (camStream) {
-
-                // Ensure the image is visible again in case it previously errored out
                 camStream.style.display = 'block'; 
                 document.getElementById('camOffline').style.display = 'none';
-                // Adding a timestamp forces the browser to pull a fresh, un-glitched stream from the Pi
                 camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
             }
-            // ------------------------------------------------------------------------------
             
             // Reset UI back to default Capture state
             document.getElementById('scanPreviewContainer').classList.add('hidden');
@@ -1768,6 +1791,20 @@
             const previewActions = document.getElementById('previewActions');
             previewActions.classList.add('hidden');
             previewActions.classList.remove('flex');
+
+            // 🚨 FIX: Ensure buttons are completely unlocked and text is reset 🚨
+            const actionButtons = previewActions.querySelectorAll('button');
+            if (actionButtons.length >= 2) {
+                actionButtons[0].innerText = "Confirm & Upload";
+                actionButtons[1].innerText = "Retake Document";
+            }
+            actionButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.style.pointerEvents = 'auto';
+            });
+            
+            // 🚨 FIX: Reset the global double-click lock 🚨
+            window.isConfirmingUpload = false;
             
             const captureBtn = document.getElementById('captureBtn');
             captureBtn.classList.remove('hidden');
