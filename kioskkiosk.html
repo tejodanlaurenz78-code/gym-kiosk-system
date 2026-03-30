@@ -119,25 +119,38 @@
             position: fixed;
             top: 60%; 
             left: 50%;
-            transform: translate(-50%, -50%); 
+            /* Start slightly lower and scaled down for the animation */
+            transform: translate(-50%, -40%) scale(0.95); 
             width: 700px; 
             height: 350px; 
-            min-width: 300px; /* Reduced minimum width */
-            min-height: 200px; /* Reduced minimum height */
+            min-width: 300px; 
+            min-height: 200px; 
             background-color: #cbd5e1; 
             padding: 8px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
             z-index: 1000; 
             border-radius: 10px;
             border: 3px solid var(--pnc-blue);
-            display: none; 
+            
+            /* ANIMATION MAGIC REPLACES display: none; */
+            display: flex; 
             flex-direction: column;
-            /* CRITICAL FIX: Enables the font to scale relative to this specific box */
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none; /* Prevents invisible ghost clicks */
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy spring effect */
+            
             container-type: inline-size; 
         }
+
         #keyboard-wrapper.show {
-            display: flex; 
+            /* Slide up to true center, scale to 100%, and fade in */
+            transform: translate(-50%, -50%) scale(1); 
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto; /* Re-enables clicking */
         }
+        
         .keyboard-header {
             display: flex;
             justify-content: space-between;
@@ -2032,9 +2045,18 @@
                 }
             }
 
-            // --- BULLETPROOF TOUCHSCREEN TRIGGERS ---
-            ['focus', 'pointerdown', 'touchstart', 'click'].forEach(evt => {
+            // --- SCROLL-AWARE TOUCHSCREEN TRIGGERS ---
+            let isScrolling = false;
+
+            // Track if the finger is moving
+            document.addEventListener('touchstart', () => { isScrolling = false; }, { passive: true });
+            document.addEventListener('touchmove', () => { isScrolling = true; }, { passive: true });
+
+            // Only trigger on a clean click or focus, and ONLY if no scrolling occurred
+            ['focus', 'click'].forEach(evt => {
                 document.addEventListener(evt, (e) => {
+                    if (isScrolling) return; // Abort the keyboard popup if they were just scrolling!
+
                     const el = e.target;
                     
                     if ((el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'number')) || el.tagName === 'TEXTAREA') {
@@ -2043,7 +2065,7 @@
                         selectedInput = el;
                         keyboard.setInput(el.value); 
                         
-                        // NEW: Populate the preview bar with the existing text when opening
+                        // Populate the preview bar with the existing text when opening
                         kbPreview.value = el.value; 
                         
                         let placeholder = el.getAttribute('placeholder') || 'Typing...';
@@ -2053,7 +2075,6 @@
                     }
                 }, { capture: true }); 
             });
-
             
 
             window.hideVirtualKeyboard = function() {
