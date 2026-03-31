@@ -447,7 +447,7 @@
                          style="aspect-ratio: 3280 / 2464;">
                 
                         <img id="kioskCameraStream"
-                             src="http://192.168.100.57:5000/video_feed"
+                             src="http://localhost:5000/video_feed"
                              class="absolute inset-0 w-full h-full object-contain"
                              alt="Camera Feed"
                              onerror="this.style.display='none'; document.getElementById('camOffline').style.display='flex';">
@@ -866,7 +866,7 @@
             if (camStream) {
                 camStream.style.display = 'block'; 
                 document.getElementById('camOffline').style.display = 'none';
-                camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
+                camStream.src = "http://localhost:5000/video_feed?" + new Date().getTime();
             }
         };
 
@@ -940,7 +940,7 @@
             if (camStream) {
                 camStream.style.display = 'block'; 
                 document.getElementById('camOffline').style.display = 'none';
-                camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
+                camStream.src = "http://localhost:5000/video_feed?" + new Date().getTime();
             }
 
             const previewStatusText = document.getElementById('previewStatusText');
@@ -1184,7 +1184,7 @@
         
             try {
                 // THE FIX: Added a secret API Key to the headers
-                const response = await fetch('http://192.168.100.57:5000/api/trigger_stamp', {
+                const response = await fetch('http://localhost:5000/api/trigger_stamp', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1730,7 +1730,7 @@
                 console.log("Attempting to fetch high-res snapshot from Pi...");
                 
                 // THE FIX: Added X-API-Key to the snapshot request
-                const response = await fetch('http://192.168.100.57:5000/api/snapshot?t=' + new Date().getTime(), { 
+                const response = await fetch('http://localhost:5000/api/snapshot?t=' + new Date().getTime(), { 
                     cache: 'no-store',
                     headers: {
                         'X-API-Key': 'PNC-Kiosk-Secret-Key-2024'
@@ -1746,7 +1746,7 @@
 
                 const camStream = document.getElementById('kioskCameraStream');
                 if (camStream) {
-                    camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
+                    camStream.src = "http://localhost:5000/video_feed?" + new Date().getTime();
                 }
         
                 // THE FIX: Clear the old image from memory to prevent RAM crashes
@@ -1784,7 +1784,7 @@
             if (camStream) {
                 camStream.style.display = 'block'; 
                 document.getElementById('camOffline').style.display = 'none';
-                camStream.src = "http://192.168.100.57:5000/video_feed?" + new Date().getTime();
+                camStream.src = "http://localhost:5000/video_feed?" + new Date().getTime();
             }
             
             // Reset UI back to default Capture state
@@ -1885,7 +1885,7 @@
                 formData.append('document', pendingCaptureBlob, 'request_letter.jpg');
         
                 // THE FIX: Adding the secret API Key for uploads
-                const validationResponse = await fetch('http://192.168.100.57:5000/api/upload_scan', {
+                const validationResponse = await fetch('http://localhost:5000/api/upload_scan', {
                     method: 'POST',
                     body: formData,
                     headers: {
