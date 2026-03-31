@@ -24,14 +24,6 @@
             max-width: 1000px !important;
             box-sizing: border-box !important;
         }
-        .pdf-col-180 {
-            width: 180px !important;
-            min-width: 180px !important;
-            flex-shrink: 0 !important;
-        }
-        .pdf-col-rest {
-            width: calc(100% - 180px) !important;
-        }
         
         /* Base form container (Responsive for UI) */
         .form-container {
@@ -113,12 +105,19 @@
         
         .request-item:hover { background-color: #F0FDF4; cursor: pointer; }
 
-        /* Sidebar Transitions */
+        /* Sidebar Transitions - Restored strict zeroing for Desktop */
         #sidebarPanel {
-            transition: transform 0.3s ease-in-out;
+            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out, min-width 0.3s ease-in-out, flex-basis 0.3s ease-in-out;
+            overflow: hidden;
         }
         #sidebarPanel.hidden-sidebar {
+            width: 0 !important;
+            min-width: 0 !important;
+            flex-basis: 0 !important;
             transform: translateX(-100%);
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
         }
 
         /* Calendar Styles */
@@ -564,7 +563,6 @@
             if (mainArea) {
                 mainArea.addEventListener('scroll', function() {
                     const sidebar = document.getElementById('sidebarPanel');
-                    // Auto close sidebar on mobile when scrolling main area
                     if (window.innerWidth < 768 && sidebar && !sidebar.classList.contains('hidden-sidebar')) {
                         sidebar.classList.add('hidden-sidebar');
                     }
@@ -683,7 +681,6 @@
             document.getElementById('currentStatusTag').innerText = `Status: ${activeRequest.status}`;
             document.getElementById('currentStatusTag').className = `px-2 md:px-3 py-1 text-xs md:text-sm font-semibold rounded-full ${getStatusClass(activeRequest.status)}`;
             
-            // Auto close sidebar on mobile when a request is opened
             if (window.innerWidth < 768) {
                 document.getElementById('sidebarPanel').classList.add('hidden-sidebar');
             }
@@ -747,7 +744,6 @@
                     const completedRequest = JSON.parse(JSON.stringify(request));
                     completedRequest.approvals[currentStepKey] = { status: action, name: currentUserName, remarks: remarks, date: updates[`${basePath}/approvals/${currentStepKey}/date`] };
 
-                    // Trigger strict PDF layout generator inside an off-screen element
                     const offScreenDiv = document.createElement('div');
                     offScreenDiv.style.position = 'absolute'; offScreenDiv.style.top = '-9999px'; offScreenDiv.style.left = '-9999px';
                     
@@ -759,10 +755,9 @@
 
                     await new Promise(r => setTimeout(r, 300));
 
-                    // Use 8.5 x 13 format for output
                     const canvas = await window.html2canvas(offScreenDiv.firstElementChild, { scale: 2, useCORS: true, windowWidth: 1000, width: 1000 });
                     const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                    const pdf = new window.jspdf.jsPDF({ orientation: 'p', unit: 'mm', format: [215.9, 330.2] });
+                    const pdf = new window.jspdf.jsPDF({ orientation: 'p', unit: 'mm', format: [215.9, 330.2] }); // Legal Folio Size 8.5x13
                     
                     const pdfWidth = pdf.internal.pageSize.getWidth();
                     const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -989,10 +984,9 @@
         }
 
         function renderReadOnlyForm(request) {
-            document.getElementById('formWrapperDynamic').innerHTML = renderForm2Content(request, false); // false = UI Responsive Mode
+            document.getElementById('formWrapperDynamic').innerHTML = renderForm2Content(request, false); 
         }
 
-        // isPdf = true forces rigid formatting. isPdf = false allows responsive stacking.
         function renderForm2Content(request, isPdf = false) {
             if (!request) return '';
 
@@ -1021,83 +1015,79 @@
 
             const checkIcon = (condition) => condition ? `<div class="check-box-fixed">&#10003;</div>` : `<div class="check-box-fixed"></div>`;
 
-            // Condition Layout Generators
-            const wrapperClass = isPdf ? 'pdf-strict-container p-8 border border-gray-300 relative text-black mx-auto' : 'w-full text-black';
-            const rowClass = isPdf ? 'flex' : 'flex flex-col md:flex-row';
-            const col1Class = isPdf ? 'pdf-col-180 p-3 bg-gray-50 border-r border-black flex flex-col justify-center font-bold' : 'w-full md:w-[180px] shrink-0 p-3 bg-gray-50 border-b md:border-b-0 md:border-r border-black font-bold flex md:items-center';
-            const col2Class = isPdf ? 'pdf-col-rest p-2 text-sm' : 'w-full p-2 text-sm';
+            const wrapperClass = isPdf ? 'form-container pdf-strict-container text-black mx-auto' : 'form-container w-full text-black mx-auto';
 
             return `
                 <div class="${wrapperClass}">
                     
-                    <div class="form-header flex flex-col sm:flex-row items-center justify-center space-x-0 sm:space-x-4 space-y-2 sm:space-y-0 mb-6">
+                    <div class="form-header flex flex-col md:flex-row items-center justify-center space-x-0 md:space-x-4 space-y-2 md:space-y-0 mb-6">
                         <img src="pnc-logo.jpg" alt="PnC Logo" class="w-16 h-16 rounded-full border-2 border-gray-200 shadow-md">
                         <div class="text-center">
-                            <p class="text-xs sm:text-sm">Republic of the Philippines</p>
-                            <h2 class="text-xl sm:text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
-                            <p class="text-xs sm:text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
-                            <p class="text-xs sm:text-sm italic">Administration and Finance Division</p>
-                            <p class="font-bold text-gray-700 mt-1 text-sm sm:text-base">Property Management and General Services Department</p>
-                            <p class="text-[10px] sm:text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna</p>
+                            <p class="text-xs md:text-sm">Republic of the Philippines</p>
+                            <h2 class="text-xl md:text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
+                            <p class="text-xs md:text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
+                            <p class="text-xs md:text-sm italic">Administration and Finance Division</p>
+                            <p class="font-bold text-gray-700 mt-1 text-sm md:text-base">Property Management and General Services Department</p>
+                            <p class="text-[10px] md:text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna</p>
                         </div>
                     </div>
 
-                    <div class="form-title text-black bg-gray-300 border-x border-t border-black text-xs sm:text-sm md:text-base">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
+                    <div class="form-title text-black bg-gray-300 border-x border-t border-black text-xs md:text-sm">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
 
-                    <div class="border border-black p-3 sm:p-4 space-y-4 text-xs sm:text-sm text-black mb-0 border-b-0">
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div><label class="font-normal text-gray-600 block">Transaction Number:</label><div class="read-only-field">${val(request.id)}</div></div>
-                            <div><label class="font-normal text-gray-600 block">Date of Filing:</label><div class="read-only-field">${formatDate(request.filingDate)}</div></div>
-                            <div><label class="font-normal text-gray-600 block">Department:</label><div class="read-only-field">${val(request.department)}</div></div>
+                    <div class="border border-black p-3 md:p-4 space-y-4 text-sm text-black mb-0 border-b-0">
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="flex-1"><label class="font-normal text-gray-600 block md:inline">Transaction Number:</label><div class="read-only-field">${val(request.id)}</div></div>
+                            <div class="flex-1"><label class="font-normal text-gray-600 block md:inline">Date of Filing:</label><div class="read-only-field">${formatDate(request.filingDate)}</div></div>
+                            <div class="flex-1"><label class="font-normal text-gray-600 block md:inline">Department:</label><div class="read-only-field">${val(request.department)}</div></div>
                         </div>
                         
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div><label class="font-normal text-gray-600 block">Activity Date:</label><div class="read-only-field">${formatDate(request.activityDate)}</div></div>
-                            <div><label class="font-normal text-gray-600 block">Time:</label><div class="read-only-field">${val(request.time)}</div></div>
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="flex-1"><label class="font-normal text-gray-600 block md:inline">Activity Date:</label><div class="read-only-field">${formatDate(request.activityDate)}</div></div>
+                            <div class="flex-1"><label class="font-normal text-gray-600 block md:inline">Time:</label><div class="read-only-field">${val(request.time)}</div></div>
                         </div>
 
                         <div>
-                            <label class="font-normal text-gray-600 block">Activity Name/Title/Purpose:</label>
+                            <label class="font-normal text-gray-600 block md:inline">Activity Name/Title/Purpose:</label>
                             <div class="read-only-field">${val(request.activityName)}</div>
                         </div>
 
-                        <div class="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4">
+                        <div class="flex flex-col md:flex-row md:items-end gap-2 md:gap-4">
                             <div class="font-normal text-gray-600 whitespace-nowrap">Expected # of Participants:</div>
                             <div class="flex items-end"><span class="mr-2">Internal:</span><div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div></div>
                             <div class="flex items-end"><span class="mr-2">External:</span><div class="read-only-field w-20 text-center">${val(request.externalParticipants)}</div></div>
                         </div>
                     </div>
 
-                    <div class="border border-black ${rowClass} text-black border-b-0">
-                        <div class="${col1Class}">Venue Reservation</div>
-                        <div class="${col2Class} grid grid-cols-1 ${isPdf ? 'grid-cols-2' : 'sm:grid-cols-2'} gap-x-4 gap-y-2">
+                    <div class="border border-black flex flex-col md:flex-row w-full text-black border-b-0">
+                        <div class="w-full md:w-[180px] md:min-w-[180px] shrink-0 p-3 bg-gray-50 border-b md:border-b-0 md:border-r border-black font-bold flex items-center">Venue Reservation</div>
+                        <div class="w-full p-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Gym Stage') || hasVenue('Gym'))} <span>Gym Stage / Court</span></div>
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Multi-Purpose'))} <span>Multi-Purpose Hall</span></div>
                             <div class="flex items-end space-x-2">${checkIcon(hasVenue('Classroom'))}<span class="whitespace-nowrap">Classroom #</span><div class="read-only-field w-16 text-center">${getVenueDetail('Classroom')}</div></div>
                             <div class="flex items-end space-x-2">${checkIcon(hasVenue('Laboratory'))}<span class="whitespace-nowrap">Laboratory #</span><div class="read-only-field w-16 text-center">${getVenueDetail('Laboratory')}</div></div>
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Library'))} <span>Library</span></div>
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Cafeteria'))} <span>Cafeteria</span></div>
-                            <div class="${isPdf ? 'col-span-2' : 'col-span-1 sm:col-span-2'} flex items-end space-x-2">${checkIcon(hasVenue('Others'))}<span class="whitespace-nowrap">Others:</span><div class="read-only-field flex-1">${getVenueDetail('Others:')}</div></div>
+                            <div class="col-span-1 md:col-span-2 flex items-end space-x-2">${checkIcon(hasVenue('Others'))}<span class="whitespace-nowrap">Others:</span><div class="read-only-field flex-1">${getVenueDetail('Others:')}</div></div>
                         </div>
                     </div>
 
-                    <div class="border border-black ${rowClass} text-black border-b-0">
-                        <div class="${col1Class} items-start md:items-start pt-3">
-                            <p>Equipment Reservation</p>
+                    <div class="border border-black flex flex-col md:flex-row w-full text-black border-b-0">
+                        <div class="w-full md:w-[180px] md:min-w-[180px] shrink-0 p-3 bg-gray-50 border-b md:border-b-0 md:border-r border-black block">
+                            <p class="font-bold">Equipment Reservation</p>
                             <p class="mt-4 text-xs font-bold">Set-up Details:</p>
                             <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
-                                <p>Ingress: <span class="border-b border-black font-bold text-black px-1">${formatDate(request.ingressDate)}</span></p>
-                                <p>Time: <span class="border-b border-black font-bold text-black px-1">${val(request.ingressTime)}</span></p>
-                                <p class="mt-2">Egress: <span class="border-b border-black font-bold text-black px-1">${formatDate(request.egressDate)}</span></p>
-                                <p>Time: <span class="border-b border-black font-bold text-black px-1">${val(request.egressTime)}</span></p>
+                                <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black whitespace-nowrap align-bottom">${formatDate(request.ingressDate)}</span></p>
+                                <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black whitespace-nowrap align-bottom">${val(request.ingressTime)}</span></p>
+                                <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black whitespace-nowrap align-bottom">${formatDate(request.egressDate)}</span></p>
+                                <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black whitespace-nowrap align-bottom">${val(request.egressTime)}</span></p>
                             </div>
                         </div>
-                        <div class="${col2Class}">
-                            <div class="grid grid-cols-1 gap-2 mb-3">
+                        <div class="w-full p-2 text-sm">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                                 <div class="flex items-end space-x-2">${checkIcon(hasEquip('Chair'))}<span class="whitespace-nowrap">Chair #</span><div class="read-only-field w-12 text-center font-bold">${getEquipDetail('Chair', 'count')}</div><span class="whitespace-nowrap ml-2">Type:</span><div class="read-only-field flex-1 font-bold">${getEquipDetail('Chair', 'type')}</div></div>
                                 <div class="flex items-end space-x-2">${checkIcon(hasEquip('Table'))}<span class="whitespace-nowrap">Table #</span><div class="read-only-field w-12 text-center font-bold">${getEquipDetail('Table', 'count')}</div><span class="whitespace-nowrap ml-2">Type:</span><div class="read-only-field flex-1 font-bold">${getEquipDetail('Table', 'type')}</div></div>
                             </div>
-                            <div class="grid grid-cols-1 ${isPdf ? 'grid-cols-2' : 'sm:grid-cols-2'} gap-x-4 gap-y-2">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Podium'))} <span>Podium/Rostrum</span></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Sound'))} <span>Sound System</span></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Electric'))} <span>Electric fans</span></div>
@@ -1112,21 +1102,21 @@
                         </div>
                     </div>
 
-                    <div class="border border-black ${rowClass} text-black">
-                        <div class="${col1Class}">Manpower Requirement</div>
-                        <div class="${col2Class} grid grid-cols-1 ${isPdf ? 'grid-cols-2' : 'sm:grid-cols-2'} gap-4">
+                    <div class="border border-black flex flex-col md:flex-row w-full text-black">
+                        <div class="w-full md:w-[180px] md:min-w-[180px] shrink-0 p-3 bg-gray-50 border-b md:border-b-0 md:border-r border-black font-bold flex items-center">Manpower Requirement</div>
+                        <div class="w-full p-2 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div class="flex items-end space-x-2">${checkIcon(hasMP('technical'))}<span class="whitespace-nowrap">Technical</span><div class="read-only-field flex-1 font-bold">${getMPDetail('technical')}</div></div>
                             <div class="flex items-end space-x-2">${checkIcon(hasMP('housekeeping'))}<span class="whitespace-nowrap">Housekeeping</span><div class="read-only-field flex-1 font-bold">${getMPDetail('housekeeping')}</div></div>
                         </div>
                     </div>
 
-                    <div class="text-[10px] sm:text-xs text-gray-600 mt-2 mb-6 space-y-1 italic p-2">
+                    <div class="text-[10px] md:text-xs text-gray-600 mt-2 mb-6 space-y-1 italic p-2">
                         <p>• Request must be submitted at least a week before the activity.</p>
                         <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required.</p>
                         <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
                     </div>
 
-                    <div class="grid grid-cols-1 ${isPdf ? 'grid-cols-4' : 'sm:grid-cols-2 md:grid-cols-4'} gap-6 text-center mt-4 text-black text-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 text-center mt-4 text-black text-xs">
                         <div>
                             <p class="font-bold mb-8 text-gray-700">Requested by:</p>
                             <div class="border-b border-black font-bold uppercase text-black whitespace-nowrap overflow-hidden text-ellipsis">${request.requestedBy}</div>
