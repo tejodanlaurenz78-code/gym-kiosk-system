@@ -64,14 +64,14 @@
             border-bottom: 1px solid black;
             width: 100%;
             padding-left: 0.25rem;
+            padding-bottom: 2px; 
             font-weight: bold;
-            min-height: 18px; 
-            display: inline-flex; 
+            min-height: 20px; 
+            display: flex; 
             align-items: flex-end; 
             line-height: 1.2;
-            word-wrap: break-word;
+            word-break: break-all; /* CHANGED: Forces long unbreakable strings to respect width */
             overflow-wrap: break-word;
-            white-space: normal;
         }
 
         .check-box-fixed {
@@ -172,13 +172,35 @@
 
         /* MOBILE FIXES */
         @media (max-width: 768px) {
-            .calendar-zoom-container {
-                min-width: 600px; /* Force minimum width to prevent grid squish */
+            #readOnlyFormContainer {
+                overflow: hidden !important; 
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                padding: 0 !important;
             }
+
+            .mobile-zoom-form {
+                width: 1000px !important;       
+                min-width: 1000px !important;
+                max-width: 1000px !important;
+                transform-origin: top center; /* Anchors the scaling safely */
+                margin: 0 auto;
+                /* Removed zoom - using precise JS transform scale instead */
+            }
+
+            .calendar-zoom-container {
+                width: 1000px !important;
+                transform-origin: top left;
+                transform: scale(0.35);
+            }
+            
             .calendar-overflow-wrapper {
                 overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch;
+                display: block;
+                width: 100%;
             }
+
             #sidebarPanel {
                 position: absolute;
                 z-index: 30;
@@ -704,6 +726,8 @@
             
             renderApprovalActions(activeRequest);
             renderReadOnlyForm(activeRequest);
+
+            setTimeout(window.scaleFormForMobile, 50);
         };
 
         window.processApproval = async function(requestId, action) {
@@ -1015,10 +1039,18 @@
 
             const checkIcon = (condition) => condition ? `<div class="check-box-fixed">&#10003;</div>` : `<div class="check-box-fixed"></div>`;
 
-            const wrapperClass = isPdf ? 'form-container pdf-strict-container text-black mx-auto' : 'form-container w-full text-black mx-auto';
+            // CRITICAL FIX: Only apply mobile zoom if it is NOT rendering a PDF
+            const wrapperClass = isPdf 
+                ? 'bg-white p-8 border border-gray-300 relative text-black mx-auto' 
+                : 'bg-white p-8 border border-gray-300 relative text-black mx-auto mobile-zoom-form';
+
+            // Added style overrrides for PDF generation
+            const inlineStyles = isPdf 
+                ? 'width: 1000px; min-width: 1000px; max-width: 1000px; box-sizing: border-box; zoom: 1 !important; transform: none !important;'
+                : 'width: 1000px; min-width: 1000px; max-width: 1000px; box-sizing: border-box;';
 
             return `
-                <div class="${wrapperClass}">
+                <div class="${wrapperClass}" style="${inlineStyles}">
                     
                     <div class="form-header flex flex-col md:flex-row items-center justify-center space-x-0 md:space-x-4 space-y-2 md:space-y-0 mb-6">
                         <img src="pnc-logo.jpg" alt="PnC Logo" class="w-16 h-16 rounded-full border-2 border-gray-200 shadow-md">
@@ -1063,8 +1095,8 @@
                         <div class="w-full p-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Gym Stage') || hasVenue('Gym'))} <span>Gym Stage / Court</span></div>
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Multi-Purpose'))} <span>Multi-Purpose Hall</span></div>
-                            <div class="flex items-end space-x-2">${checkIcon(hasVenue('Classroom'))}<span class="whitespace-nowrap">Classroom #</span><div class="read-only-field w-16 text-center">${getVenueDetail('Classroom')}</div></div>
-                            <div class="flex items-end space-x-2">${checkIcon(hasVenue('Laboratory'))}<span class="whitespace-nowrap">Laboratory #</span><div class="read-only-field w-16 text-center">${getVenueDetail('Laboratory')}</div></div>
+                            <div class="flex items-end space-x-2">${checkIcon(hasVenue('Classroom'))}<span class="whitespace-nowrap">Classroom #</span><div class="read-only-field w-16 justify-center">${getVenueDetail('Classroom')}</div></div>
+                            <div class="flex items-end space-x-2">${checkIcon(hasVenue('Laboratory'))}<span class="whitespace-nowrap">Laboratory #</span><div class="read-only-field w-16 justify-center">${getVenueDetail('Laboratory')}</div></div>
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Library'))} <span>Library</span></div>
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Cafeteria'))} <span>Cafeteria</span></div>
                             <div class="col-span-1 md:col-span-2 flex items-end space-x-2">${checkIcon(hasVenue('Others'))}<span class="whitespace-nowrap">Others:</span><div class="read-only-field flex-1">${getVenueDetail('Others:')}</div></div>
@@ -1076,28 +1108,28 @@
                             <p class="font-bold">Equipment Reservation</p>
                             <p class="mt-4 text-xs font-bold">Set-up Details:</p>
                             <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
-                                <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black whitespace-nowrap align-bottom">${formatDate(request.ingressDate)}</span></p>
-                                <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black whitespace-nowrap align-bottom">${val(request.ingressTime)}</span></p>
-                                <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black whitespace-nowrap align-bottom">${formatDate(request.egressDate)}</span></p>
-                                <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black whitespace-nowrap align-bottom">${val(request.egressTime)}</span></p>
+                                <p class="flex items-end">Ingress Date: <span class="read-only-field flex-1 ml-1 font-bold text-black whitespace-nowrap justify-center align-bottom">${formatDate(request.ingressDate)}</span></p>
+                                <p class="flex items-end">Time: <span class="read-only-field flex-1 ml-1 font-bold text-black whitespace-nowrap justify-center align-bottom">${val(request.ingressTime)}</span></p>
+                                <p class="flex items-end mt-1">Egress Date: <span class="read-only-field flex-1 ml-1 font-bold text-black whitespace-nowrap justify-center align-bottom">${formatDate(request.egressDate)}</span></p>
+                                <p class="flex items-end">Time: <span class="read-only-field flex-1 ml-1 font-bold text-black whitespace-nowrap justify-center align-bottom">${val(request.egressTime)}</span></p>
                             </div>
                         </div>
                         <div class="w-full p-2 text-sm">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                                <div class="flex items-end space-x-2">${checkIcon(hasEquip('Chair'))}<span class="whitespace-nowrap">Chair #</span><div class="read-only-field w-12 text-center font-bold">${getEquipDetail('Chair', 'count')}</div><span class="whitespace-nowrap ml-2">Type:</span><div class="read-only-field flex-1 font-bold">${getEquipDetail('Chair', 'type')}</div></div>
-                                <div class="flex items-end space-x-2">${checkIcon(hasEquip('Table'))}<span class="whitespace-nowrap">Table #</span><div class="read-only-field w-12 text-center font-bold">${getEquipDetail('Table', 'count')}</div><span class="whitespace-nowrap ml-2">Type:</span><div class="read-only-field flex-1 font-bold">${getEquipDetail('Table', 'type')}</div></div>
+                                <div class="flex items-end">${checkIcon(hasEquip('Chair'))}<span class="whitespace-nowrap ml-2">Chair #</span><div class="read-only-field w-16 justify-center font-bold ml-1">${getEquipDetail('Chair', 'count')}</div><span class="whitespace-nowrap ml-3">Type:</span><div class="read-only-field flex-1 font-bold ml-1">${getEquipDetail('Chair', 'type')}</div></div>
+                                <div class="flex items-end">${checkIcon(hasEquip('Table'))}<span class="whitespace-nowrap ml-2">Table #</span><div class="read-only-field w-16 justify-center font-bold ml-1">${getEquipDetail('Table', 'count')}</div><span class="whitespace-nowrap ml-3">Type:</span><div class="read-only-field flex-1 font-bold ml-1">${getEquipDetail('Table', 'type')}</div></div>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Podium'))} <span>Podium/Rostrum</span></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Sound'))} <span>Sound System</span></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Electric'))} <span>Electric fans</span></div>
-                                <div class="flex items-end space-x-2">${checkIcon(hasEquip('Microphone'))}<span class="whitespace-nowrap">Microphone #</span><div class="read-only-field w-12 text-center font-bold">${getEquipDetail('Microphone', 'count')}</div></div>
+                                <div class="flex items-end">${checkIcon(hasEquip('Microphone'))}<span class="whitespace-nowrap ml-2">Microphone #</span><div class="read-only-field w-16 justify-center font-bold ml-1">${getEquipDetail('Microphone', 'count')}</div></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Extension'))} <span>Extension Cord</span></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('White Board'))} <span>Panel/White Board</span></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Philippine Flag'))} <span>Philippine Flag</span></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Pamantasan'))} <span>PnC Flag</span></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Projector'))} <span>Projector</span></div>
-                                <div class="flex items-end space-x-2">${checkIcon(hasEquip('Others:'))}<span class="whitespace-nowrap">Others:</span><div class="read-only-field w-full font-bold">${getEquipDetail('Others:', 'name').replace('Others:', '').trim()}</div></div>
+                                <div class="flex items-end space-x-2">${checkIcon(hasEquip('Others:'))}<span class="whitespace-nowrap">Others:</span><div class="read-only-field flex-1">${getEquipDetail('Others:', 'name').replace('Others:', '').trim()}</div></div>
                             </div>
                         </div>
                     </div>
@@ -1117,29 +1149,29 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 text-center mt-4 text-black text-xs">
-                        <div>
+                        <div class="flex flex-col h-full">
                             <p class="font-bold mb-8 text-gray-700">Requested by:</p>
-                            <div class="border-b border-black font-bold uppercase text-black whitespace-nowrap overflow-hidden text-ellipsis">${request.requestedBy}</div>
+                            <div class="border-b border-black font-bold uppercase text-black break-words min-h-[20px] flex items-end justify-center pb-1">${request.requestedBy}</div>
                             <p class="mt-1 text-[10px]">Signature over Printed Name/Date</p>
                             <p class="text-[9px] mt-1 font-semibold">${formatDate(request.filingDate)}</p>
                         </div>
-                        <div class="opacity-90">
+                        <div class="flex flex-col h-full opacity-90">
                             <p class="font-bold mb-8 text-gray-700">Reviewed by:</p>
-                            <div class="border-b border-black font-bold uppercase text-black whitespace-nowrap overflow-hidden text-ellipsis">${deptHead.name || ''}</div>
+                            <div class="border-b border-black font-bold uppercase text-black break-words min-h-[20px] flex items-end justify-center pb-1">${deptHead.name || ''}</div>
                             <p class="mt-1 text-[10px]">Department/Division Head</p>
-                            ${deptHead.status === 'Approved' ? `<div class="text-[9px] font-bold bg-green-100 text-green-800 rounded-full inline-block px-2 mt-1">Approved</div><div class="text-[9px] mt-1 font-semibold">${formatDate(deptHead.date)}</div>` : ''}
+                            ${deptHead.status === 'Approved' ? `<div class="mt-1"><span class="text-[9px] font-bold bg-green-100 text-green-800 rounded-full inline-block px-2">Approved</span></div><div class="text-[9px] mt-1 font-semibold">${formatDate(deptHead.date)}</div>` : ''}
                         </div>
-                        <div class="opacity-90">
+                        <div class="flex flex-col h-full opacity-90">
                             <p class="font-bold mb-8 text-gray-700">Recommended by:</p>
-                            <div class="border-b border-black font-bold uppercase text-black whitespace-nowrap overflow-hidden text-ellipsis">${pmOfficer.name || 'Mr. Colin B. Garcia'}</div>
+                            <div class="border-b border-black font-bold uppercase text-black break-words min-h-[20px] flex items-end justify-center pb-1">${pmOfficer.name || 'Mr. Colin B. Garcia'}</div>
                             <p class="mt-1 text-[10px]">PM Officer</p>
-                            ${pmOfficer.status ? `<div class="text-[9px] font-bold ${pmOfficer.status.includes('Approved') ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} rounded-full inline-block px-2 mt-1">${pmOfficer.status}</div><div class="text-[9px] mt-1 font-semibold">${formatDate(pmOfficer.date)}</div>` : ''}
+                            ${pmOfficer.status ? `<div class="mt-1"><span class="text-[9px] font-bold ${pmOfficer.status.includes('Approved') ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} rounded-full inline-block px-2">${pmOfficer.status}</span></div><div class="text-[9px] mt-1 font-semibold">${formatDate(pmOfficer.date)}</div>` : ''}
                         </div>
-                        <div class="opacity-90">
+                        <div class="flex flex-col h-full opacity-90">
                             <p class="font-bold mb-8 text-gray-700">Approved by:</p>
-                            <div class="border-b border-black font-bold uppercase text-black whitespace-nowrap overflow-hidden text-ellipsis">${pmgsdDirector.name || 'Alfredo Glenn H. Beaño'}</div>
+                            <div class="border-b border-black font-bold uppercase text-black break-words min-h-[20px] flex items-end justify-center pb-1">${pmgsdDirector.name || 'Alfredo Glenn H. Beaño'}</div>
                             <p class="mt-1 text-[10px]">PMGSD Director</p>
-                            ${pmgsdDirector.status ? `<div class="text-[9px] font-bold ${pmgsdDirector.status.includes('Approved') ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} rounded-full inline-block px-2 mt-1">${pmgsdDirector.status}</div><div class="text-[9px] mt-1 font-semibold">${formatDate(pmgsdDirector.date)}</div>` : ''}
+                            ${pmgsdDirector.status ? `<div class="mt-1"><span class="text-[9px] font-bold ${pmgsdDirector.status.includes('Approved') ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} rounded-full inline-block px-2">${pmgsdDirector.status}</span></div><div class="text-[9px] mt-1 font-semibold">${formatDate(pmgsdDirector.date)}</div>` : ''}
                         </div>
                     </div>
                 </div>
@@ -1186,6 +1218,33 @@
             }
         }
 
+
+        // dynamically calculates exact scale needed to fit screen
+        window.scaleFormForMobile = function() {
+            const form = document.querySelector('.mobile-zoom-form');
+            const container = document.getElementById('readOnlyFormContainer');
+            
+            if (form && container) {
+                if (window.innerWidth <= 768) {
+                    // Divide exact screen width by the 1000px form
+                    const scale = (window.innerWidth - 10) / 1000; 
+                    form.style.transform = `scale(${scale})`;
+                    
+                    // Fixes the empty dead space that transforms leave behind
+                    setTimeout(() => {
+                        const rect = form.getBoundingClientRect();
+                        container.style.height = `${rect.height + 40}px`;
+                    }, 50);
+                } else {
+                    form.style.transform = 'none';
+                    container.style.height = 'auto';
+                }
+            }
+        };
+
+        // Re-scale if the user rotates their phone
+        window.addEventListener('resize', window.scaleFormForMobile);
+        
         window.onload = () => { 
             window.showView('landingView'); 
             const requestRef = window.ref(window.db, 'requests');
