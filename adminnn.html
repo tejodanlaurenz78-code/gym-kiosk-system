@@ -46,6 +46,9 @@
             min-height: 20px;
             display: block; /* Changed from inline-block to force a new line */
             line-height: 1.2;
+            word-wrap: break-word;        /* Prevents text from overflowing */
+            overflow-wrap: break-word;    /* Prevents text from overflowing */
+            white-space: normal;
         }
         .check-box-fixed {
             width: 16px;
@@ -55,7 +58,7 @@
             align-items: center;
             justify-content: center;
             font-weight: 900;
-            font-size: 12px;
+            font-size: 14px;
             background-color: #f3f4f6;
             flex-shrink: 0;
         }
@@ -375,7 +378,7 @@
                          </button>
                     </div>
 
-                    <div id="readOnlyFormContainer" class="relative pb-20">
+                    <div id="readOnlyFormContainer" class="relative pb-20 w-full flex justify-center overflow-x-auto">
                         <div class="form-container shadow-xl border-gray-300">
                             </div>
                     </div>
@@ -810,33 +813,30 @@
             document.getElementById('activityTitleHeader').innerText = `Activity: ${activeRequest.activityName}`;
             document.getElementById('currentStatusTag').innerText = `Status: ${activeRequest.status}`;
             document.getElementById('currentStatusTag').className = `px-3 py-1 text-sm font-semibold rounded-full ${getStatusClass(activeRequest.status)}`;
-
+        
             const stepKey = getCurrentApprovalStep(activeRequest);
             
+            // FIX: Remove the 'if' condition so documents are ALWAYS visible
             const docContainer = document.getElementById('supportingDocTrigger');
-            if (['pmOfficer', 'pmgsdDirector'].includes(stepKey)) {
-                docContainer.classList.remove('hidden');
-                
-                // Always show the Form 1 button
-                let buttonsHTML = `
-                     <button onclick="openForm1Modal()" class="flex items-center space-x-2 text-[#15803d] hover:text-green-800 font-bold bg-green-50 px-4 py-2 rounded-lg border border-green-200 w-full justify-center hover:bg-green-100 transition shadow-sm">
-                        <span>📄 View Approved Proposal Letter (Form 1)</span>
-                     </button>
+            docContainer.classList.remove('hidden');
+            
+            let buttonsHTML = `
+                 <button onclick="openForm1Modal()" class="flex items-center space-x-2 text-[#15803d] hover:text-green-800 font-bold bg-green-50 px-4 py-2 rounded-lg border border-green-200 w-full justify-center hover:bg-green-100 transition shadow-sm">
+                    <span>📄 View Approved Proposal Letter (Form 1)</span>
+                 </button>
+            `;
+            
+            // If the Kiosk successfully created and saved a Form 2 PDF, show the button for it!
+            if (activeRequest.form2PdfUrl) {
+                buttonsHTML += `
+                 <a href="${activeRequest.form2PdfUrl}" target="_blank" class="flex items-center space-x-2 text-blue-700 hover:text-blue-900 font-bold bg-blue-50 px-4 py-2 rounded-lg border border-blue-200 w-full justify-center hover:bg-blue-100 transition shadow-sm mt-2">
+                    <span>🖨️ View Official Request Form (Form 2 PDF)</span>
+                 </a>
                 `;
-                
-                // If the Kiosk successfully created and saved a Form 2 PDF, show the button for it!
-                if (activeRequest.form2PdfUrl) {
-                    buttonsHTML += `
-                     <a href="${activeRequest.form2PdfUrl}" target="_blank" class="flex items-center space-x-2 text-blue-700 hover:text-blue-900 font-bold bg-blue-50 px-4 py-2 rounded-lg border border-blue-200 w-full justify-center hover:bg-blue-100 transition shadow-sm mt-2">
-                        <span>🖨️ View Official Request Form (Form 2 PDF)</span>
-                     </a>
-                    `;
-                }
-                
-                docContainer.innerHTML = buttonsHTML;
-            } else {
-                docContainer.classList.add('hidden');
             }
+            
+            docContainer.innerHTML = buttonsHTML;
+            
             renderApprovalActions(activeRequest);
             renderReadOnlyForm(activeRequest);
         };
@@ -882,11 +882,7 @@
                 updates[`${basePath}/approvals/${currentStepKey}/remarks`] = remarks;
                 updates[`${basePath}/approvals/${currentStepKey}/date`] = new Date().toISOString().split('T')[0];
 
-                // 🚨 THE MAGIC HAPPENS HERE 🚨
-                // If this is the FINAL approval, generate the stamped PDF!
                 if (newGlobalStatus === 'Approved (Completed)') {
-                    
-                    // 1. Create a simulated request object that includes THIS final approval
                     const completedRequest = JSON.parse(JSON.stringify(request));
                     completedRequest.approvals[currentStepKey] = {
                         status: action,
@@ -895,57 +891,73 @@
                         date: updates[`${basePath}/approvals/${currentStepKey}/date`]
                     };
 
-                    // 2. Build a secret, perfect 1000px form off-screen
                     const offScreenDiv = document.createElement('div');
                     offScreenDiv.style.position = 'absolute';
                     offScreenDiv.style.top = '-9999px';
                     offScreenDiv.style.left = '-9999px';
                     offScreenDiv.style.width = '1000px';
-                    offScreenDiv.style.backgroundColor = 'white';
-                    offScreenDiv.innerHTML = `<div class="form-container" style="min-width: 1000px !important; width: 1000px !important; max-width: 1000px !important; padding: 2rem !important; margin: 0 !important; border: none !important; zoom: 1 !important; transform: none !important;">${renderForm2Content(completedRequest)}</div>`;
+                    
+                    // Wrapped for absolute centering in Canvas
+                    offScreenDiv.innerHTML = `
+                        <div style="display: flex; justify-content: center; align-items: flex-start; background: white; width: 1000px;">
+                            <div class="form-container" style="min-width: 1000px !important; width: 1000px !important; max-width: 1000px !important; padding: 2rem !important; margin: 0 auto !important; border: none !important; box-sizing: border-box;">
+                                ${renderForm2Content(completedRequest)}
+                            </div>
+                        </div>`;
                     document.body.appendChild(offScreenDiv);
 
-                    // 3. Give browser 200ms to render the HTML layout
                     await new Promise(r => setTimeout(r, 200));
 
-                    // 4. Snap the high-res PDF photo
-                    const canvas = await window.html2canvas(offScreenDiv, { scale: 3, useCORS: true, windowWidth: 1000, width: 1000 });
+                    // Dynamic PDF Centering and Scaling
+                    const canvas = await window.html2canvas(offScreenDiv.firstElementChild, { scale: 2, useCORS: true, windowWidth: 1000, width: 1000 });
                     const imgData = canvas.toDataURL('image/jpeg', 1.0);
                     const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                    
                     const pdfWidth = pdf.internal.pageSize.getWidth();
-                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    
+                    // Set 10mm margin around the PDF
+                    const margin = 10; 
+                    const maxRenderWidth = pdfWidth - (margin * 2);
+                    const maxRenderHeight = pdfHeight - (margin * 2);
+                    
+                    let renderWidth = maxRenderWidth;
+                    let renderHeight = (canvas.height * renderWidth) / canvas.width;
+                    
+                    if (renderHeight > maxRenderHeight) {
+                        renderHeight = maxRenderHeight;
+                        renderWidth = (canvas.width * renderHeight) / canvas.height;
+                    }
+                    
+                    // Perfectly center the image using calculated offsets
+                    const xOffset = (pdfWidth - renderWidth) / 2;
+                    const yOffset = (pdfHeight - renderHeight) / 2;
+                    
+                    pdf.addImage(imgData, 'JPEG', xOffset, yOffset, renderWidth, renderHeight);
                     const pdfBlob = pdf.output('blob');
 
-                    // 5. Upload PDF to Firebase Storage
                     const fileRef = window.storageRef(window.storage, `form2_pdfs/${requestId}_official.pdf`);
                     await window.uploadBytes(fileRef, pdfBlob);
                     const pdfUrl = await window.getDownloadURL(fileRef);
 
-                    // 6. Attach the final PDF link to the database
                     updates[`${basePath}/form2PdfUrl`] = pdfUrl;
-
-                    // Clean up
                     document.body.removeChild(offScreenDiv);
                 
-
                     const plotImmediately = confirm("✅ Document officially stamped and saved.\n\nDo you want to automatically plot this event on the Facility Calendar right now?\n\n• Click 'OK' to plot immediately.\n• Click 'Cancel' to plot it manually later.");
                     
                     if (plotImmediately) {
-                        // Ties the calendar event directly to the request transaction number
                         const newEventId = "EVT-" + request.id;
                         
-                        // Add the new event directly into our Firebase updates payload
+                        // Updated to include Ingress and Egress times
                         updates[`events/${newEventId}`] = {
                             id: newEventId,
                             title: request.activityName || "Approved Activity",
-                            date: request.activityDate, // Ensures it lands on the right day
-                            time: request.time || "Not specified",
+                            date: request.activityDate,
+                            time: `${request.ingressTime || ''} - ${request.egressTime || ''}`.trim() || request.time || "Not specified",
                             status: "confirmed",
-                            description: `Auto-plotted from Request: ${request.id}\nRequested by: ${request.requestedBy}`
+                            description: `Auto-plotted from Request: ${request.id}\nRequested by: ${request.requestedBy}\nIngress: ${request.ingressDate || 'N/A'} ${request.ingressTime || ''}\nEgress: ${request.egressDate || 'N/A'} ${request.egressTime || ''}`
                         };
                     }
-                    // ==========================================
                 }
             
                 // Push all updates to Firebase
@@ -1210,7 +1222,6 @@
         function renderForm2Content(request) {
             if (!request) return '';
 
-            // 1. Data Setup
             const deptHead = request.approvals?.deptHead || {};
             const pmOfficer = request.approvals?.pmOfficer || {};
             const pmgsdDirector = request.approvals?.pmgsdDirector || {};
@@ -1219,7 +1230,6 @@
             const equipments = Array.isArray(request.equipment) ? request.equipment : (request.equipment ? Object.values(request.equipment) : []);
             const manpower = request.manpower || {};
             
-            // 2. Formatting Helpers
             const val = (v) => v || '';
             const formatDate = (dateStr) => {
                 if (!dateStr) return '';
@@ -1228,7 +1238,6 @@
                 return `${parts[1]}/${parts[2]}/${parts[0]}`;
             };
 
-            // Helpers to find specific items
             const hasVenue = (v) => venues.some(item => item.includes(v));
             const getVenueDetail = (v) => { const match = venues.find(item => item.includes(v)); return match ? match.replace(v, '').trim() : ''; };
             const hasEquip = (e) => equipments.some(item => item.name.includes(e));
@@ -1236,12 +1245,11 @@
             const hasMP = (k) => manpower[k] && manpower[k] !== 'false';
             const getMPDetail = (k) => manpower[k] === 'Requested' ? '' : val(manpower[k]);
 
-            // 🚨 PDF-SAFE CHECKBOX (Fixes html2canvas disappearing bug)
+            // Replaced 'X' with checkmark HTML Entity
             const checkIcon = (condition) => condition 
-                ? `<div class="check-box-fixed">X</div>` 
+                ? `<div class="check-box-fixed">&#10003;</div>` 
                 : `<div class="check-box-fixed"></div>`;
 
-            // 3. HTML Template (Combined your format + the anti-overlap locks)
             return `
                 <div class="bg-white p-8 border border-gray-300 relative text-black mx-auto" style="width: 1000px; min-width: 1000px; max-width: 1000px; box-sizing: border-box;">
                     
@@ -1292,11 +1300,11 @@
                         </div>
 
                         <div class="flex flex-wrap gap-4 items-end">
-                            <div class="w-1/3 font-normal text-gray-600">Expected # of Participants:</div>
-                            <div class="flex-1 flex items-center"><span class="mr-2">Internal:</span>
+                            <div class="w-1/3 font-normal text-gray-600 pb-1">Expected # of Participants:</div>
+                            <div class="flex-1 flex items-end"><span class="mr-2 pb-1">Internal:</span>
                                 <div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div>
                             </div>
-                            <div class="flex-1 flex items-center"><span class="mr-2">External:</span>
+                            <div class="flex-1 flex items-end"><span class="mr-2 pb-1">External:</span>
                                 <div class="read-only-field w-20 text-center">${val(request.externalParticipants)}</div>
                             </div>
                         </div>
@@ -1308,24 +1316,24 @@
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Gym Stage') || hasVenue('Gym'))} <span class="${hasVenue('Gym Stage') ? 'font-bold' : ''}">Gym Stage / Court</span></div>
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Multi-Purpose'))} <span class="${hasVenue('Multi-Purpose') ? 'font-bold' : ''}">Multi-Purpose Hall</span></div>
                             
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-end space-x-2">
                                  ${checkIcon(hasVenue('Classroom'))}
-                                 <span>Classroom #</span> 
+                                 <span class="pb-1">Classroom #</span> 
                                  <div class="read-only-field w-16 text-center">${getVenueDetail('Classroom')}</div>
                             </div>
 
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-end space-x-2">
                                  ${checkIcon(hasVenue('Laboratory'))}
-                                 <span>Laboratory #</span> 
+                                 <span class="pb-1">Laboratory #</span> 
                                  <div class="read-only-field w-16 text-center">${getVenueDetail('Laboratory')}</div>
                             </div>
 
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Library'))} <span class="${hasVenue('Library') ? 'font-bold' : ''}">Library</span></div>
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Cafeteria'))} <span class="${hasVenue('Cafeteria') ? 'font-bold' : ''}">Cafeteria</span></div>
                             
-                            <div class="col-span-2 flex items-center space-x-2">
+                            <div class="col-span-2 flex items-end space-x-2">
                                 ${checkIcon(hasVenue('Others'))}
-                                <span>Others:</span> 
+                                <span class="pb-1">Others:</span> 
                                 <div class="read-only-field flex-1">${getVenueDetail('Others:')}</div>
                             </div>
                         </div>
@@ -1344,17 +1352,17 @@
                         </div>
                         <div class="flex-1 p-2 text-sm" style="width: calc(100% - 180px); box-sizing: border-box;">
                             <div class="grid grid-cols-1 gap-2 mb-2">
-                                <div class="flex items-center space-x-2">
+                                <div class="flex items-end space-x-2">
                                     ${checkIcon(hasEquip('Chair'))}
-                                    <span class="${hasEquip('Chair') ? 'font-bold' : ''}">Chair #</span> 
+                                    <span class="pb-1 ${hasEquip('Chair') ? 'font-bold' : ''}">Chair #</span> 
                                     <div class="read-only-field w-16 text-center font-bold">${getEquipDetail('Chair', 'count')}</div>
-                                    <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquipDetail('Chair', 'type')}</div>
+                                    <span class="pb-1">Type:</span> <div class="read-only-field flex-1 font-bold">${getEquipDetail('Chair', 'type')}</div>
                                 </div>
-                                <div class="flex items-center space-x-2">
+                                <div class="flex items-end space-x-2">
                                     ${checkIcon(hasEquip('Table'))}
-                                    <span class="${hasEquip('Table') ? 'font-bold' : ''}">Table #</span> 
+                                    <span class="pb-1 ${hasEquip('Table') ? 'font-bold' : ''}">Table #</span> 
                                     <div class="read-only-field w-16 text-center font-bold">${getEquipDetail('Table', 'count')}</div>
-                                    <span>Type:</span> <div class="read-only-field flex-1 font-bold">${getEquipDetail('Table', 'type')}</div>
+                                    <span class="pb-1">Type:</span> <div class="read-only-field flex-1 font-bold">${getEquipDetail('Table', 'type')}</div>
                                 </div>
                             </div>
                             
@@ -1363,9 +1371,9 @@
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Sound'))} <span class="${hasEquip('Sound') ? 'font-bold' : ''}">Sound System</span></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Electric'))} <span class="${hasEquip('Electric') ? 'font-bold' : ''}">Electric fans</span></div>
                                 
-                                <div class="flex items-center space-x-2">
+                                <div class="flex items-end space-x-2">
                                     ${checkIcon(hasEquip('Microphone'))}
-                                    <span>Microphone #</span> 
+                                    <span class="pb-1">Microphone #</span> 
                                     <div class="read-only-field w-12 text-center font-bold">${getEquipDetail('Microphone', 'count')}</div>
                                 </div>
 
@@ -1375,9 +1383,9 @@
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Pamantasan'))} <span class="${hasEquip('Pamantasan') ? 'font-bold' : ''}">PnC Flag</span></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Projector'))} <span class="${hasEquip('Projector') ? 'font-bold' : ''}">Projector</span></div>
                                 
-                                <div class="flex items-center space-x-2">
+                                <div class="flex items-end space-x-2">
                                     ${checkIcon(hasEquip('Others:'))}
-                                    <span>Others:</span> 
+                                    <span class="pb-1">Others:</span> 
                                     <div class="read-only-field w-full font-bold">${getEquipDetail('Others:', 'name').replace('Others:', '').trim()}</div>
                                 </div>
                             </div>
@@ -1387,14 +1395,14 @@
                     <div class="border border-black border-t-0 flex w-full text-black">
                         <div class="font-bold p-3 bg-gray-50 border-r border-black flex items-center" style="width: 180px; min-width: 180px; flex-shrink: 0; box-sizing: border-box;">Manpower Requirement</div>
                         <div class="p-2 grid grid-cols-2 gap-4 text-sm" style="width: calc(100% - 180px); box-sizing: border-box;">
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-end space-x-2">
                                 ${checkIcon(hasMP('technical'))}
-                                <span>Technical</span> 
+                                <span class="pb-1">Technical</span> 
                                 <div class="read-only-field flex-1 font-bold">${getMPDetail('technical')}</div>
                             </div>
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-end space-x-2">
                                 ${checkIcon(hasMP('housekeeping'))}
-                                <span>Housekeeping</span> 
+                                <span class="pb-1">Housekeeping</span> 
                                 <div class="read-only-field flex-1 font-bold">${getMPDetail('housekeeping')}</div>
                             </div>
                         </div>
