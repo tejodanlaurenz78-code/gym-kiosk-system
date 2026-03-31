@@ -70,7 +70,7 @@
             display: flex; 
             align-items: flex-end; 
             line-height: 1.2;
-            word-break: break-word; /* Forces long strings to wrap */
+            word-break: break-all; /* CHANGED: Forces long unbreakable strings to respect width */
             overflow-wrap: break-word;
         }
 
@@ -172,12 +172,33 @@
 
         /* MOBILE FIXES */
         @media (max-width: 768px) {
+            #readOnlyFormContainer {
+                overflow: hidden !important; /* Lock scrolling, edges are fully visible */
+                display: flex;
+                justify-content: center;
+                width: 100%;
+                padding: 0 !important;
+            }
+
+            /* Dynamically scales the exact 1000px form to fit the viewport width */
+            .mobile-zoom-form {
+                width: 1000px !important;       
+                min-width: 1000px !important;
+                max-width: 1000px !important;
+                zoom: calc(100vw / 1020) !important; /* 1020 leaves a tiny safe margin */
+                margin: 0 auto;
+                transform-origin: top center;
+            }
+
             .calendar-zoom-container {
-                min-width: 600px; /* Force minimum width to prevent grid squish */
+                min-width: 600px;
+                zoom: calc(100vw / 650) !important; 
             }
             .calendar-overflow-wrapper {
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch;
+                overflow: hidden !important;
+                display: flex;
+                justify-content: center;
+                width: 100%;
             }
             #sidebarPanel {
                 position: absolute;
@@ -1015,10 +1036,18 @@
 
             const checkIcon = (condition) => condition ? `<div class="check-box-fixed">&#10003;</div>` : `<div class="check-box-fixed"></div>`;
 
-            const wrapperClass = isPdf ? 'form-container pdf-strict-container text-black mx-auto' : 'form-container w-full text-black mx-auto';
+            // CRITICAL FIX: Only apply mobile zoom if it is NOT rendering a PDF
+            const wrapperClass = isPdf 
+                ? 'bg-white p-8 border border-gray-300 relative text-black mx-auto' 
+                : 'bg-white p-8 border border-gray-300 relative text-black mx-auto mobile-zoom-form';
+
+            // Added style overrrides for PDF generation
+            const inlineStyles = isPdf 
+                ? 'width: 1000px; min-width: 1000px; max-width: 1000px; box-sizing: border-box; zoom: 1 !important; transform: none !important;'
+                : 'width: 1000px; min-width: 1000px; max-width: 1000px; box-sizing: border-box;';
 
             return `
-                <div class="${wrapperClass}">
+                <div class="${wrapperClass}" style="${inlineStyles}">
                     
                     <div class="form-header flex flex-col md:flex-row items-center justify-center space-x-0 md:space-x-4 space-y-2 md:space-y-0 mb-6">
                         <img src="pnc-logo.jpg" alt="PnC Logo" class="w-16 h-16 rounded-full border-2 border-gray-200 shadow-md">
