@@ -22,11 +22,22 @@
             background-color: #f3f4f6; 
         }
 
-        /* --- ADD THIS TO YOUR CSS --- */
+        /* --- RIGID FORM STYLES FOR PDF RENDERING --- */
         .form-container {
+            background: white;
+            border: 1px solid #000;
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
             color: black;
-            border: 1px solid black;
+            box-sizing: border-box;
         }
+        
+        .form-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
         .form-title {
             background-color: #D1D5DB; /* Gray background */
             font-weight: bold;
@@ -38,53 +49,44 @@
             border: 1px solid black;
             border-bottom: none;
         }
+
         .read-only-field {
             border-bottom: 1px solid black;
             width: 100%;
             padding-left: 0.25rem;
             font-weight: bold;
-            min-height: 20px;
-            display: block; /* Changed from inline-block to force a new line */
+            min-height: 18px; /* Fixed minimum height */
+            display: inline-flex; /* Forces strict baseline alignment */
+            align-items: flex-end; /* Keeps text glued to the bottom border */
             line-height: 1.2;
-            word-wrap: break-word;        /* Prevents text from overflowing */
-            overflow-wrap: break-word;    /* Prevents text from overflowing */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
             white-space: normal;
         }
+
         .check-box-fixed {
-            width: 16px;
-            height: 16px;
+            width: 14px; /* Slightly smaller for a crisper, professional look */
+            height: 14px;
             border: 1px solid black;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             font-weight: 900;
-            font-size: 14px;
-            background-color: #f3f4f6;
+            font-size: 12px;
+            background-color: white; /* White background looks cleaner in PDF */
             flex-shrink: 0;
+            color: black;
+            margin-bottom: 2px; /* Nudges the box up to align with text baseline */
         }
+
+        /* Essential utility to prevent labels from wrapping and breaking layout */
+        .whitespace-nowrap {
+            white-space: nowrap !important;
+        }
+
         .border-black { border-color: black; }
         .accent-black { accent-color: black; }
         
-        /* Form Template Styles */
-        .form-container {
-            background: white;
-            border: 1px solid #000;
-            padding: 2rem;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        .form-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-        .form-title {
-            font-weight: bold;
-            text-align: center;
-            padding: 0.25rem;
-            text-transform: uppercase;
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-        }
         .line-input {
             border-bottom: 1px solid #000;
             width: 100%;
@@ -1300,11 +1302,11 @@
                         </div>
 
                         <div class="flex flex-wrap gap-4 items-end">
-                            <div class="w-1/3 font-normal text-gray-600 pb-1">Expected # of Participants:</div>
-                            <div class="flex-1 flex items-end"><span class="mr-2 pb-1">Internal:</span>
+                            <div class="w-1/3 font-normal text-gray-600 whitespace-nowrap">Expected # of Participants:</div>
+                            <div class="flex-1 flex items-end"><span class="mr-2 whitespace-nowrap">Internal:</span>
                                 <div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div>
                             </div>
-                            <div class="flex-1 flex items-end"><span class="mr-2 pb-1">External:</span>
+                            <div class="flex-1 flex items-end"><span class="mr-2 whitespace-nowrap">External:</span>
                                 <div class="read-only-field w-20 text-center">${val(request.externalParticipants)}</div>
                             </div>
                         </div>
@@ -1318,13 +1320,13 @@
                             
                             <div class="flex items-end space-x-2">
                                  ${checkIcon(hasVenue('Classroom'))}
-                                 <span class="pb-1">Classroom #</span> 
+                                 <span class="whitespace-nowrap">Classroom #</span> 
                                  <div class="read-only-field w-16 text-center">${getVenueDetail('Classroom')}</div>
                             </div>
 
                             <div class="flex items-end space-x-2">
                                  ${checkIcon(hasVenue('Laboratory'))}
-                                 <span class="pb-1">Laboratory #</span> 
+                                 <span class="whitespace-nowrap">Laboratory #</span> 
                                  <div class="read-only-field w-16 text-center">${getVenueDetail('Laboratory')}</div>
                             </div>
 
@@ -1333,7 +1335,7 @@
                             
                             <div class="col-span-2 flex items-end space-x-2">
                                 ${checkIcon(hasVenue('Others'))}
-                                <span class="pb-1">Others:</span> 
+                                <span class="whitespace-nowrap">Others:</span> 
                                 <div class="read-only-field flex-1">${getVenueDetail('Others:')}</div>
                             </div>
                         </div>
@@ -1344,25 +1346,25 @@
                             <p>Equipment Reservation</p>
                             <p class="mt-4 text-xs font-bold">Set-up Details:</p>
                             <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
-                                <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black pb-1 align-bottom">${formatDate(request.ingressDate)}</span></p>
-                                <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black pb-1 align-bottom">${val(request.ingressTime)}</span></p>
-                                <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black pb-1 align-bottom">${formatDate(request.egressDate)}</span></p>
-                                <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black pb-1 align-bottom">${val(request.egressTime)}</span></p>
+                                <p>Ingress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black whitespace-nowrap align-bottom">${formatDate(request.ingressDate)}</span></p>
+                                <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black whitespace-nowrap align-bottom">${val(request.ingressTime)}</span></p>
+                                <p class="mt-1">Egress Date: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black whitespace-nowrap align-bottom">${formatDate(request.egressDate)}</span></p>
+                                <p>Time: <span class="border-b border-black px-1 min-w-[50px] inline-block font-bold text-black whitespace-nowrap align-bottom">${val(request.egressTime)}</span></p>
                             </div>
                         </div>
                         <div class="flex-1 p-2 text-sm" style="width: calc(100% - 180px); box-sizing: border-box;">
                             <div class="grid grid-cols-1 gap-2 mb-2">
                                 <div class="flex items-end space-x-2">
                                     ${checkIcon(hasEquip('Chair'))}
-                                    <span class="pb-1 ${hasEquip('Chair') ? 'font-bold' : ''}">Chair #</span> 
+                                    <span class="whitespace-nowrap ${hasEquip('Chair') ? 'font-bold' : ''}">Chair #</span> 
                                     <div class="read-only-field w-16 text-center font-bold">${getEquipDetail('Chair', 'count')}</div>
-                                    <span class="pb-1">Type:</span> <div class="read-only-field flex-1 font-bold">${getEquipDetail('Chair', 'type')}</div>
+                                    <span class="whitespace-nowrap">Type:</span> <div class="read-only-field flex-1 font-bold">${getEquipDetail('Chair', 'type')}</div>
                                 </div>
                                 <div class="flex items-end space-x-2">
                                     ${checkIcon(hasEquip('Table'))}
-                                    <span class="pb-1 ${hasEquip('Table') ? 'font-bold' : ''}">Table #</span> 
+                                    <span class="whitespace-nowrap ${hasEquip('Table') ? 'font-bold' : ''}">Table #</span> 
                                     <div class="read-only-field w-16 text-center font-bold">${getEquipDetail('Table', 'count')}</div>
-                                    <span class="pb-1">Type:</span> <div class="read-only-field flex-1 font-bold">${getEquipDetail('Table', 'type')}</div>
+                                    <span class="whitespace-nowrap">Type:</span> <div class="read-only-field flex-1 font-bold">${getEquipDetail('Table', 'type')}</div>
                                 </div>
                             </div>
                             
@@ -1373,7 +1375,7 @@
                                 
                                 <div class="flex items-end space-x-2">
                                     ${checkIcon(hasEquip('Microphone'))}
-                                    <span class="pb-1">Microphone #</span> 
+                                    <span class="whitespace-nowrap">Microphone #</span> 
                                     <div class="read-only-field w-12 text-center font-bold">${getEquipDetail('Microphone', 'count')}</div>
                                 </div>
 
@@ -1385,7 +1387,7 @@
                                 
                                 <div class="flex items-end space-x-2">
                                     ${checkIcon(hasEquip('Others:'))}
-                                    <span class="pb-1">Others:</span> 
+                                    <span class="whitespace-nowrap">Others:</span> 
                                     <div class="read-only-field w-full font-bold">${getEquipDetail('Others:', 'name').replace('Others:', '').trim()}</div>
                                 </div>
                             </div>
@@ -1397,12 +1399,12 @@
                         <div class="p-2 grid grid-cols-2 gap-4 text-sm" style="width: calc(100% - 180px); box-sizing: border-box;">
                             <div class="flex items-end space-x-2">
                                 ${checkIcon(hasMP('technical'))}
-                                <span class="pb-1">Technical</span> 
+                                <span class="whitespace-nowrap">Technical</span> 
                                 <div class="read-only-field flex-1 font-bold">${getMPDetail('technical')}</div>
                             </div>
                             <div class="flex items-end space-x-2">
                                 ${checkIcon(hasMP('housekeeping'))}
-                                <span class="pb-1">Housekeeping</span> 
+                                <span class="whitespace-nowrap">Housekeeping</span> 
                                 <div class="read-only-field flex-1 font-bold">${getMPDetail('housekeeping')}</div>
                             </div>
                         </div>
@@ -1417,28 +1419,28 @@
                     <div class="grid grid-cols-4 gap-4 text-center mt-4 text-black text-xs">
                         <div>
                             <p class="font-bold mb-8 text-gray-700">Requested by:</p>
-                            <div class="border-b border-black font-bold uppercase text-black pb-1">${request.requestedBy}</div>
+                            <div class="border-b border-black font-bold uppercase text-black whitespace-nowrap">${request.requestedBy}</div>
                             <p class="mt-1">Signature over Printed Name/Date</p>
                             <p class="text-[10px] mt-1 font-semibold">${formatDate(request.filingDate)}</p>
                         </div>
                         
                         <div class="opacity-90">
                             <p class="font-bold mb-8 text-gray-700">Reviewed by:</p>
-                            <div class="border-b border-black font-bold uppercase text-black pb-1">${deptHead.name || ''}</div>
+                            <div class="border-b border-black font-bold uppercase text-black whitespace-nowrap">${deptHead.name || ''}</div>
                             <p class="mt-1">Department/Division Head</p>
                             ${deptHead.status === 'Approved' ? `<div class="text-[10px] font-bold bg-green-100 text-green-800 rounded-full inline-block px-2 mt-1">Approved</div><div class="text-[10px] mt-1 font-semibold">${formatDate(deptHead.date)}</div>` : ''}
                         </div>
 
                         <div class="opacity-90">
                             <p class="font-bold mb-8 text-gray-700">Recommended by:</p>
-                            <div class="border-b border-black font-bold uppercase text-black pb-1">${pmOfficer.name || 'Mr. Colin B. Garcia'}</div>
+                            <div class="border-b border-black font-bold uppercase text-black whitespace-nowrap">${pmOfficer.name || 'Mr. Colin B. Garcia'}</div>
                             <p class="mt-1">PM Officer</p>
                             ${pmOfficer.status ? `<div class="text-[10px] font-bold ${pmOfficer.status.includes('Approved') ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} rounded-full inline-block px-2 mt-1">${pmOfficer.status}</div><div class="text-[10px] mt-1 font-semibold">${formatDate(pmOfficer.date)}</div>` : ''}
                         </div>
 
                         <div class="opacity-90">
                             <p class="font-bold mb-8 text-gray-700">Approved by:</p>
-                            <div class="border-b border-black font-bold uppercase text-black pb-1">${pmgsdDirector.name || 'Alfredo Glenn H. Beaño'}</div>
+                            <div class="border-b border-black font-bold uppercase text-black whitespace-nowrap">${pmgsdDirector.name || 'Alfredo Glenn H. Beaño'}</div>
                             <p class="mt-1">PMGSD Director</p>
                             ${pmgsdDirector.status ? `<div class="text-[10px] font-bold ${pmgsdDirector.status.includes('Approved') ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} rounded-full inline-block px-2 mt-1">${pmgsdDirector.status}</div><div class="text-[10px] mt-1 font-semibold">${formatDate(pmgsdDirector.date)}</div>` : ''}
                         </div>
