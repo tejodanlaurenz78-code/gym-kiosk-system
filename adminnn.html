@@ -175,8 +175,7 @@
             #readOnlyFormContainer {
                 overflow: hidden !important; 
                 width: 100%;
-                display: flex;
-                justify-content: center;
+                display: block; /* Removed flex center to fix scaling alignment */
                 padding: 0 !important;
             }
 
@@ -184,9 +183,8 @@
                 width: 1000px !important;       
                 min-width: 1000px !important;
                 max-width: 1000px !important;
-                transform-origin: top center; /* Anchors the scaling safely */
-                margin: 0 auto;
-                /* Removed zoom - using precise JS transform scale instead */
+                margin: 0 !important;
+                transform-origin: top left; /* CRITICAL: Anchors form to the top-left corner before shrinking */
             }
 
             .calendar-zoom-container {
@@ -1226,17 +1224,20 @@
             
             if (form && container) {
                 if (window.innerWidth <= 768) {
-                    // Divide exact screen width by the 1000px form
+                    // Divide exact screen width by the 1000px form (leaving a 10px safe margin)
                     const scale = (window.innerWidth - 10) / 1000; 
+                    
+                    form.style.transformOrigin = 'top left';
                     form.style.transform = `scale(${scale})`;
                     
-                    // Fixes the empty dead space that transforms leave behind
-                    setTimeout(() => {
-                        const rect = form.getBoundingClientRect();
-                        container.style.height = `${rect.height + 40}px`;
-                    }, 50);
+                    // Center it slightly and fix the container height
+                    container.style.paddingLeft = '5px';
+                    container.style.height = `${form.offsetHeight * scale + 20}px`;
                 } else {
+                    // Desktop view reset
+                    form.style.transformOrigin = 'top center';
                     form.style.transform = 'none';
+                    container.style.paddingLeft = '0';
                     container.style.height = 'auto';
                 }
             }
