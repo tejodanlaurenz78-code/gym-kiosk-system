@@ -668,9 +668,19 @@
             if (document.getElementById('eventEndTime').selectedIndex <= document.getElementById('eventStartTime').selectedIndex) {
                 return alert("End time must be after start time.");
             }
+
+            const timeStr = `${start} - ${end}`;
+
+            // NEW: Collision Detection Logic
+            // Allows multiple events on the same day, but stops exact time overlaps
+            const conflict = calendarEvents.find(e => e.date === date && e.time === timeStr && e.id !== id);
+            if (conflict) {
+                return customAlert(`⚠️ Time Conflict Detected\n\nThe time slot ${timeStr} is already reserved by "${conflict.title}".\n\nPlease adjust the start or end time.`);
+            }
+
             if (!id) id = "EVT-" + Date.now();
             
-            const eventData = { id, title, date, time: `${start} - ${end}`, status, description: desc };
+            const eventData = { id, title, date, time: timeStr, status, description: desc };
             
             window.set(window.ref(window.db, 'events/' + id), eventData).then(() => {
                 customAlert("✅ Event saved to cloud!");
@@ -807,14 +817,28 @@
                     document.body.removeChild(offScreenDiv);
                 
                     const plotImmediately = confirm("✅ Document officially stamped and saved.\n\nDo you want to automatically plot this event on the Facility Calendar right now?\n\n• Click 'OK' to plot immediately.\n• Click 'Cancel' to plot it manually later.");
+                    
                     if (plotImmediately) {
                         const newEventId = "EVT-" + request.id;
-                        updates[`events/${newEventId}`] = {
-                            id: newEventId, title: request.activityName || "Approved Activity", date: request.activityDate,
-                            time: `${request.ingressTime || ''} - ${request.egressTime || ''}`.trim() || request.time || "Not specified",
-                            status: "confirmed",
-                            description: `Auto-plotted from Request: ${request.id}\nRequested by: ${request.requestedBy}\nIngress: ${request.ingressDate || 'N/A'} ${request.ingressTime || ''}\nEgress: ${request.egressDate || 'N/A'} ${request.egressTime || ''}`
-                        };
+                        const eventTime = `${request.ingressTime || ''} - ${request.egressTime || ''}`.trim() || request.time || "Not specified";
+                        
+                        // NEW: Collision detection for Auto-plotting
+                        const conflict = calendarEvents.find(e => e.date === request.activityDate && e.time === eventTime);
+                        
+                        if (conflict) {
+                            // If there's a conflict, alert the admin but don't stop the overall document approval
+                            alert(`⚠️ Warning: Could not auto-plot to calendar because the time slot (${eventTime}) is already taken by "${conflict.title}".\n\nYou will need to plot this activity manually with a slightly adjusted time.`);
+                        } else {
+                            // Plot it normally
+                            updates[`events/${newEventId}`] = {
+                                id: newEventId, 
+                                title: request.activityName || "Approved Activity", 
+                                date: request.activityDate,
+                                time: eventTime,
+                                status: "confirmed",
+                                description: `Auto-plotted from Request: ${request.id}\nRequested by: ${request.requestedBy}\nIngress: ${request.ingressDate || 'N/A'} ${request.ingressTime || ''}\nEgress: ${request.egressDate || 'N/A'} ${request.egressTime || ''}`
+                            };
+                        }
                     }
                 }
             
@@ -928,9 +952,16 @@
                 
                 dayEvents.forEach(ev => {
                     const colorClass = ev.status === 'confirmed' ? 'event-confirmed' : 'event-temporary';
-                    dayHtml += `<div class="calendar-event ${colorClass} mt-1 text-[10px] md:text-xs p-1 rounded truncate shadow-sm" 
-                                     onclick="event.stopPropagation(); ${isEditable ? `editEvent('${ev.id}')` : `showEventDetailsFromCalendar('${ev.id}')`}">${ev.title}</div>`;
+                    const timeStr = ev.time || 'Not Set';
+                    
+                    // NEW: Formatted badge to explicitly show the time on top of the title
+                    dayHtml += `<div class="calendar-event ${colorClass} mt-1 text-[10px] md:text-[11px] p-1 rounded shadow-sm flex flex-col leading-tight" 
+                                     onclick="event.stopPropagation(); ${isEditable ? `editEvent('${ev.id}')` : `showEventDetailsFromCalendar('${ev.id}')`}">
+                                     <span class="font-bold truncate w-full">${timeStr}</span>
+                                     <span class="truncate w-full opacity-90">${ev.title}</span>
+                                </div>`;
                 });
+                
                 dayHtml += `</div>`;
                 grid.innerHTML += dayHtml;
             }
