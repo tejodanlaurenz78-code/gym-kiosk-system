@@ -173,10 +173,17 @@
         /* MOBILE FIXES */
         @media (max-width: 768px) {
             #readOnlyFormContainer {
-                overflow-x: auto !important; /* NEW: Allows horizontal scrolling */
+                overflow: hidden !important; 
                 width: 100%;
-                display: block; 
-                padding: 10px !important; /* Added a tiny bit of padding for easier swiping */
+                display: block !important; 
+                padding: 0 !important;
+                margin: 0 auto;
+            }
+
+            #formWrapperDynamic {
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
             }
 
             .mobile-zoom-form {
@@ -184,21 +191,20 @@
                 min-width: 1000px !important;
                 max-width: 1000px !important;
                 margin: 0 !important;
-                transform-origin: top left; /* CRITICAL: Anchors form to the top-left corner before shrinking */
+                transform-origin: top left; /* CRITICAL: Must be top left to avoid left-side clipping */
             }
 
+            /* Unrelated to form, but keeps calendar clean */
             .calendar-zoom-container {
                 width: 1000px !important;
                 transform-origin: top left;
                 transform: scale(0.35);
             }
-            
             .calendar-overflow-wrapper {
                 overflow-x: auto !important;
                 display: block;
                 width: 100%;
             }
-
             #sidebarPanel {
                 position: absolute;
                 z-index: 30;
@@ -1081,59 +1087,59 @@
             return `
                 <div class="${wrapperClass}" style="${inlineStyles}">
                     
-                    <div class="form-header flex flex-col md:flex-row items-center justify-center space-x-0 md:space-x-4 space-y-2 md:space-y-0 mb-6">
+                    <div class="form-header flex flex-row items-center justify-center space-x-4 mb-6">
                         <img src="pnc-logo.jpg" alt="PnC Logo" class="w-16 h-16 rounded-full border-2 border-gray-200 shadow-md">
                         <div class="text-center">
-                            <p class="text-xs md:text-sm">Republic of the Philippines</p>
-                            <h2 class="text-xl md:text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
-                            <p class="text-xs md:text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
-                            <p class="text-xs md:text-sm italic">Administration and Finance Division</p>
-                            <p class="font-bold text-gray-700 mt-1 text-sm md:text-base">Property Management and General Services Department</p>
-                            <p class="text-[10px] md:text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna</p>
+                            <p class="text-sm">Republic of the Philippines</p>
+                            <h2 class="text-2xl font-bold text-green-800 font-serif">Pamantasan ng Cabuyao</h2>
+                            <p class="text-sm font-bold">(UNIVERSITY OF CABUYAO)</p>
+                            <p class="text-sm italic">Administration and Finance Division</p>
+                            <p class="font-bold text-gray-700 mt-1 text-base">Property Management and General Services Department</p>
+                            <p class="text-xs text-gray-500">Katapatan Mutual Homes, Brgy. Banay-banay, City of Cabuyao, Laguna</p>
                         </div>
                     </div>
 
-                    <div class="form-title text-black bg-gray-300 border-x border-t border-black text-xs md:text-sm">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
+                    <div class="form-title text-black bg-gray-300 border-x border-t border-black text-sm">EQUIPMENT AND VENUE RESERVATION AND STATUS REPORT FORM</div>
 
-                    <div class="border border-black p-3 md:p-4 space-y-4 text-sm text-black mb-0 border-b-0">
-                        <div class="flex flex-col md:flex-row gap-4">
-                            <div class="flex-1"><label class="font-normal text-gray-600 block md:inline">Transaction Number:</label><div class="read-only-field">${val(request.id)}</div></div>
-                            <div class="flex-1"><label class="font-normal text-gray-600 block md:inline">Date of Filing:</label><div class="read-only-field">${formatDate(request.filingDate)}</div></div>
-                            <div class="flex-1"><label class="font-normal text-gray-600 block md:inline">Department:</label><div class="read-only-field">${val(request.department)}</div></div>
+                    <div class="border border-black p-4 space-y-4 text-sm text-black mb-0 border-b-0">
+                        <div class="flex flex-row gap-4">
+                            <div class="flex-1"><label class="font-normal text-gray-600 inline">Transaction Number:</label><div class="read-only-field">${val(request.id)}</div></div>
+                            <div class="flex-1"><label class="font-normal text-gray-600 inline">Date of Filing:</label><div class="read-only-field">${formatDate(request.filingDate)}</div></div>
+                            <div class="flex-1"><label class="font-normal text-gray-600 inline">Department:</label><div class="read-only-field">${val(request.department)}</div></div>
                         </div>
                         
-                        <div class="flex flex-col md:flex-row gap-4">
-                            <div class="flex-1"><label class="font-normal text-gray-600 block md:inline">Activity Date:</label><div class="read-only-field">${formatDate(request.activityDate)}</div></div>
-                            <div class="flex-1"><label class="font-normal text-gray-600 block md:inline">Time:</label><div class="read-only-field">${val(request.time)}</div></div>
+                        <div class="flex flex-row gap-4">
+                            <div class="flex-1"><label class="font-normal text-gray-600 inline">Activity Date:</label><div class="read-only-field">${formatDate(request.activityDate)}</div></div>
+                            <div class="flex-1"><label class="font-normal text-gray-600 inline">Time:</label><div class="read-only-field">${val(request.time)}</div></div>
                         </div>
 
                         <div>
-                            <label class="font-normal text-gray-600 block md:inline">Activity Name/Title/Purpose:</label>
+                            <label class="font-normal text-gray-600 inline">Activity Name/Title/Purpose:</label>
                             <div class="read-only-field">${val(request.activityName)}</div>
                         </div>
 
-                        <div class="flex flex-col md:flex-row md:items-end gap-2 md:gap-4">
+                        <div class="flex flex-row items-end gap-4">
                             <div class="font-normal text-gray-600 whitespace-nowrap">Expected # of Participants:</div>
                             <div class="flex items-end"><span class="mr-2">Internal:</span><div class="read-only-field w-20 text-center">${val(request.internalParticipants)}</div></div>
                             <div class="flex items-end"><span class="mr-2">External:</span><div class="read-only-field w-20 text-center">${val(request.externalParticipants)}</div></div>
                         </div>
                     </div>
 
-                    <div class="border border-black flex flex-col md:flex-row w-full text-black border-b-0">
-                        <div class="w-full md:w-[180px] md:min-w-[180px] shrink-0 p-3 bg-gray-50 border-b md:border-b-0 md:border-r border-black font-bold flex items-center">Venue Reservation</div>
-                        <div class="w-full p-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div class="border border-black flex flex-row w-full text-black border-b-0">
+                        <div class="w-[180px] min-w-[180px] shrink-0 p-3 bg-gray-50 border-r border-black font-bold flex items-center">Venue Reservation</div>
+                        <div class="w-full p-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Gym Stage') || hasVenue('Gym'))} <span>Gym Stage / Court</span></div>
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Multi-Purpose'))} <span>Multi-Purpose Hall</span></div>
                             <div class="flex items-end space-x-2">${checkIcon(hasVenue('Classroom'))}<span class="whitespace-nowrap">Classroom #</span><div class="read-only-field w-16 justify-center">${getVenueDetail('Classroom')}</div></div>
                             <div class="flex items-end space-x-2">${checkIcon(hasVenue('Laboratory'))}<span class="whitespace-nowrap">Laboratory #</span><div class="read-only-field w-16 justify-center">${getVenueDetail('Laboratory')}</div></div>
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Library'))} <span>Library</span></div>
                             <div class="flex items-center space-x-2">${checkIcon(hasVenue('Cafeteria'))} <span>Cafeteria</span></div>
-                            <div class="col-span-1 md:col-span-2 flex items-end space-x-2">${checkIcon(hasVenue('Others'))}<span class="whitespace-nowrap">Others:</span><div class="read-only-field flex-1">${getVenueDetail('Others:')}</div></div>
+                            <div class="col-span-2 flex items-end space-x-2">${checkIcon(hasVenue('Others'))}<span class="whitespace-nowrap">Others:</span><div class="read-only-field flex-1">${getVenueDetail('Others:')}</div></div>
                         </div>
                     </div>
 
-                    <div class="border border-black flex flex-col md:flex-row w-full text-black border-b-0">
-                        <div class="w-full md:w-[180px] md:min-w-[180px] shrink-0 p-3 bg-gray-50 border-b md:border-b-0 md:border-r border-black block">
+                    <div class="border border-black flex flex-row w-full text-black border-b-0">
+                        <div class="w-[180px] min-w-[180px] shrink-0 p-3 bg-gray-50 border-r border-black block">
                             <p class="font-bold">Equipment Reservation</p>
                             <p class="mt-4 text-xs font-bold">Set-up Details:</p>
                             <div class="mt-1 text-xs font-normal space-y-1 text-gray-600">
@@ -1144,11 +1150,11 @@
                             </div>
                         </div>
                         <div class="w-full p-2 text-sm">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                            <div class="grid grid-cols-2 gap-2 mb-2">
                                 <div class="flex items-end">${checkIcon(hasEquip('Chair'))}<span class="whitespace-nowrap ml-2">Chair #</span><div class="read-only-field w-16 justify-center font-bold ml-1">${getEquipDetail('Chair', 'count')}</div><span class="whitespace-nowrap ml-3">Type:</span><div class="read-only-field flex-1 font-bold ml-1">${getEquipDetail('Chair', 'type')}</div></div>
                                 <div class="flex items-end">${checkIcon(hasEquip('Table'))}<span class="whitespace-nowrap ml-2">Table #</span><div class="read-only-field w-16 justify-center font-bold ml-1">${getEquipDetail('Table', 'count')}</div><span class="whitespace-nowrap ml-3">Type:</span><div class="read-only-field flex-1 font-bold ml-1">${getEquipDetail('Table', 'type')}</div></div>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                            <div class="grid grid-cols-2 gap-x-4 gap-y-2">
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Podium'))} <span>Podium/Rostrum</span></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Sound'))} <span>Sound System</span></div>
                                 <div class="flex items-center space-x-2">${checkIcon(hasEquip('Electric'))} <span>Electric fans</span></div>
@@ -1163,21 +1169,21 @@
                         </div>
                     </div>
 
-                    <div class="border border-black flex flex-col md:flex-row w-full text-black">
-                        <div class="w-full md:w-[180px] md:min-w-[180px] shrink-0 p-3 bg-gray-50 border-b md:border-b-0 md:border-r border-black font-bold flex items-center">Manpower Requirement</div>
-                        <div class="w-full p-2 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="border border-black flex flex-row w-full text-black">
+                        <div class="w-[180px] min-w-[180px] shrink-0 p-3 bg-gray-50 border-r border-black font-bold flex items-center">Manpower Requirement</div>
+                        <div class="w-full p-2 grid grid-cols-2 gap-4 text-sm">
                             <div class="flex items-end space-x-2">${checkIcon(hasMP('technical'))}<span class="whitespace-nowrap">Technical</span><div class="read-only-field flex-1 font-bold">${getMPDetail('technical')}</div></div>
                             <div class="flex items-end space-x-2">${checkIcon(hasMP('housekeeping'))}<span class="whitespace-nowrap">Housekeeping</span><div class="read-only-field flex-1 font-bold">${getMPDetail('housekeeping')}</div></div>
                         </div>
                     </div>
 
-                    <div class="text-[10px] md:text-xs text-gray-600 mt-2 mb-6 space-y-1 italic p-2">
+                    <div class="text-xs text-gray-600 mt-2 mb-6 space-y-1 italic p-2">
                         <p>• Request must be submitted at least a week before the activity.</p>
                         <p>• For activities extending beyond regular hours, approval from VP Admin/Finance is required.</p>
                         <p>• In cases of damage/lost equipment, requesting party replaces item or facilitates repair.</p>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 text-center mt-4 text-black text-xs">
+                    <div class="grid grid-cols-4 gap-6 text-center mt-4 text-black text-xs">
                         <div class="flex flex-col h-full">
                             <p class="font-bold mb-8 text-gray-700">Requested by:</p>
                             <div class="border-b border-black font-bold uppercase text-black break-words min-h-[20px] flex items-end justify-center pb-1">${request.requestedBy}</div>
@@ -1248,17 +1254,35 @@
         }
 
 
-        // Forces the form to remain at its true 1000px desktop view and allows scrolling
+        // dynamically calculates exact scale needed to perfectly fit the screen
         window.scaleFormForMobile = function() {
             const form = document.querySelector('.mobile-zoom-form');
             const container = document.getElementById('readOnlyFormContainer');
+            const wrapper = document.getElementById('formWrapperDynamic');
             
-            if (form && container) {
-                // No more math to shrink the form. Keep it wide!
-                form.style.transformOrigin = 'top center';
-                form.style.transform = 'none';
-                container.style.paddingLeft = '0';
-                container.style.height = 'auto';
+            if (form && container && wrapper) {
+                if (window.innerWidth <= 768) {
+                    // Get exact screen width, calculate ratio for 1000px template
+                    const availableWidth = container.clientWidth;
+                    const scale = availableWidth / 1000;
+                    
+                    form.style.transformOrigin = 'top left';
+                    form.style.transform = `scale(${scale})`;
+                    
+                    // CRITICAL: We must manually collapse the wrapper's height
+                    // because CSS transform doesn't actually alter document flow
+                    const scaledHeight = form.offsetHeight * scale;
+                    wrapper.style.height = `${scaledHeight}px`;
+                    wrapper.style.width = `${availableWidth}px`;
+                    wrapper.style.overflow = 'hidden';
+                } else {
+                    // Desktop view reset
+                    form.style.transformOrigin = 'top center';
+                    form.style.transform = 'none';
+                    wrapper.style.height = 'auto';
+                    wrapper.style.width = '100%';
+                    wrapper.style.overflow = 'visible';
+                }
             }
         };
 
